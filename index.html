@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Vocab | Inspire English Center</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --red: #B31B2A; --black: #1a1a1a; --white: #ffffff; --gray: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gray); overflow-x: hidden; }
+
+        /* Header & Nav */
+        header { background: var(--white); padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo-box img { height: 50px; }
+        .nav-tabs { display: flex; gap: 10px; }
+        .tab-btn { padding: 8px 15px; cursor: pointer; border-radius: 20px; border: 1px solid var(--red); background: none; font-weight: bold; color: var(--red); transition: 0.3s; }
+        .tab-btn.active { background: var(--red); color: white; }
+
+        /* Main Content */
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        .hidden { display: none; }
+
+        /* Flashcard Styles */
+        .flashcard-area { perspective: 1000px; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+        .card { width: 350px; height: 250px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+        .card.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; text-align: center; }
+        .card-front { background: white; border: 3px solid var(--red); }
+        .card-back { background: var(--red); color: white; transform: rotateY(180deg); }
+        .card-en { font-size: 32px; font-weight: bold; color: var(--red); }
+        .card-ipa { color: #666; font-style: italic; margin-top: 10px; }
+        .card-vi { font-size: 26px; }
+
+        .card-controls { margin-top: 30px; display: flex; gap: 20px; align-items: center; }
+        .btn-round { width: 50px; height: 50px; border-radius: 50%; border: none; background: var(--black); color: white; cursor: pointer; font-size: 20px; }
+        .btn-audio { background: #27ae60; }
+
+        /* Matching Game Styles */
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .game-item { background: white; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #ddd; transition: 0.2s; font-weight: bold; }
+        .game-item.selected { border-color: var(--red); background: #fff5f5; }
+        .game-item.correct { background: #2ecc71; color: white; border-color: #27ae60; visibility: hidden; }
+
+        /* List View */
+        .list-search { width: 100%; padding: 12px; border-radius: 25px; border: 2px solid #ddd; margin-bottom: 20px; outline: none; }
+        .vocab-table { width: 100%; background: white; border-radius: 15px; overflow: hidden; border-collapse: collapse; }
+        .vocab-table th { background: var(--black); color: white; padding: 15px; text-align: left; }
+        .vocab-table td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+        .vocab-table tr:hover { background: #fff9f9; }
+
+        .unit-selector { margin-bottom: 20px; text-align: center; }
+        select { padding: 10px; border-radius: 10px; border: 2px solid var(--red); font-weight: bold; }
+
+        /* Animation */
+        @keyframes success { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .success-anim { animation: success 0.4s ease; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-box">
+        <h2 style="margin:0; color:var(--red);">INSPIRE <span style="color:var(--black); font-weight:normal;">LEARNING BY MR BANG</span></h2>
+    </div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('study')">Học Tập</button>
+        <button class="tab-btn" onclick="showTab('flashcard')">Flashcards</button>
+        <button class="tab-btn" onclick="showTab('game')">Trò Chơi</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="unit-selector">
+        <label>Chọn Unit học tập: </label>
+        <select id="currentUnit" onchange="changeUnit()">
+            <option value="1">Unit 1: Local Environment</option>
+            <option value="2">Unit 2: City Life</option>
+            <option value="3">Unit 3: Teen Stress</option>
+            <option value="4">Unit 4: Life in the past</option>
+            <option value="5">Unit 5: Wonders of VN</option>
+            <option value="6">Unit 6: VN Then & Now</option>
+            <option value="7">Unit 7: Recipes</option>
+            <option value="8">Unit 8: Tourism</option>
+            <option value="9">Unit 9: English in World</option>
+            <option value="10">Unit 10: Space Travel</option>
+        </select>
+    </div>
+
+    <div id="study-tab" class="tab-content">
+        <input type="text" class="list-search" id="searchInp" placeholder="Tìm từ vựng nhanh..." onkeyup="filterList()">
+        <table class="vocab-table">
+            <thead>
+                <tr>
+                    <th>Tiếng Anh</th>
+                    <th>Phiên âm</th>
+                    <th>Nghĩa tiếng Việt</th>
+                    <th>Nghe</th>
+                </tr>
+            </thead>
+            <tbody id="vocab-body"></tbody>
+        </table>
+    </div>
+
+    <div id="flashcard-tab" class="tab-content hidden">
+        <div class="flashcard-area">
+            <div class="card" id="mainCard" onclick="this.classList.toggle('flipped')">
+                <div class="card-face card-front">
+                    <div class="card-en" id="f-en">artisan</div>
+                    <div class="card-ipa" id="f-ipa">/ɑtɪ:’zæn/</div>
+                    <p style="color:#888; margin-top:20px; font-size:12px;">Chạm để xem nghĩa</p>
+                </div>
+                <div class="card-face card-back">
+                    <div class="card-vi" id="f-vi">thợ làm nghề thủ công</div>
+                </div>
+            </div>
+            <div class="card-controls">
+                <button class="btn-round" onclick="prevCard()"><i class="fas fa-chevron-left"></i></button>
+                <button class="btn-round btn-audio" onclick="speakCurrent()"><i class="fas fa-volume-up"></i></button>
+                <button class="btn-round" onclick="nextCard()"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <p id="card-progress" style="margin-top:15px; font-weight:bold;"></p>
+        </div>
+    </div>
+
+    <div id="game-tab" class="tab-content hidden" style="text-align:center;">
+        <h3>Nối Từ Anh - Việt (Phản xạ siêu tốc)</h3>
+        <p>Chọn 1 từ tiếng Anh và 1 nghĩa tiếng Việt tương ứng!</p>
+        <div class="game-grid" id="game-grid"></div>
+        <button class="tab-btn" style="margin-top:20px;" onclick="initGame()">Làm mới Game</button>
+    </div>
+</div>
+
+<script>
+    const fullData = {
+       1: [
+{ u: 1, en: "artisan", ipa: "/ɑːtɪˈzæn/", vi: "thợ làm nghề thủ công" },
+{ u: 1, en: "handicraft", ipa: "/ˈhændɪkrɑːft/", vi: "sản phẩm thủ công" },
+{ u: 1, en: "workshop", ipa: "/ˈwɜːkʃɒp/", vi: "xưởng, công xưởng" },
+{ u: 1, en: "attraction", ipa: "/əˈtrækʃn/", vi: "điểm hấp dẫn" },
+{ u: 1, en: "preserve", ipa: "/prɪˈzɜːv/", vi: "bảo tồn, gìn giữ" },
+{ u: 1, en: "authenticity", ipa: "/ˌɔːθenˈtɪsəti/", vi: "tính xác thực, chân thật" },
+{ u: 1, en: "cast", ipa: "/kɑːst/", vi: "đúc (kim loại)" },
+{ u: 1, en: "craft", ipa: "/krɑːft/", vi: "nghề thủ công" },
+{ u: 1, en: "craftsman", ipa: "/ˈkrɑːftsmən/", vi: "thợ làm đồ thủ công" },
+{ u: 1, en: "team-building", ipa: "/ˈtiːm bɪldɪŋ/", vi: "xây dựng tinh thần đội nhóm" },
+{ u: 1, en: "drumhead", ipa: "/ˈdrʌmhed/", vi: "mặt trống" },
+{ u: 1, en: "embroider", ipa: "/ɪmˈbrɔɪdə/", vi: "thêu" },
+{ u: 1, en: "frame", ipa: "/freɪm/", vi: "khung" },
+{ u: 1, en: "lacquerware", ipa: "/ˈlækəweə/", vi: "đồ sơn mài" },
+{ u: 1, en: "layer", ipa: "/ˈleɪə/", vi: "lớp" },
+{ u: 1, en: "mould", ipa: "/məʊld/", vi: "đổ khuôn, tạo khuôn" },
+{ u: 1, en: "sculpture", ipa: "/ˈskʌlptʃə/", vi: "điêu khắc, đồ điêu khắc" },
+{ u: 1, en: "surface", ipa: "/ˈsɜːfɪs/", vi: "bề mặt" },
+{ u: 1, en: "thread", ipa: "/θred/", vi: "chỉ, sợi" },
+{ u: 1, en: "weave", ipa: "/wiːv/", vi: "dệt, đan" },
+{ u: 1, en: "turn up", ipa: "/tɜːn ʌp/", vi: "xuất hiện, đến" },
+{ u: 1, en: "set off", ipa: "/set ɒf/", vi: "khởi hành, bắt đầu chuyến đi" },
+{ u: 1, en: "close down", ipa: "/kləʊz daʊn/", vi: "đóng cửa, ngừng hoạt động" },
+{ u: 1, en: "pass down", ipa: "/pɑːs daʊn/", vi: "truyền lại cho thế hệ sau" },
+{ u: 1, en: "face up to", ipa: "/feɪs ʌp tuː/", vi: "đối mặt, giải quyết" },
+{ u: 1, en: "turn down", ipa: "/tɜːn daʊn/", vi: "từ chối" },
+{ u: 1, en: "set up", ipa: "/set ʌp/", vi: "thành lập, tạo dựng" },
+{ u: 1, en: "take over", ipa: "/teɪk ˈəʊvə/", vi: "tiếp quản, kế nhiệm" },
+{ u: 1, en: "live on", ipa: "/lɪv ɒn/", vi: "sống bằng, sống dựa vào" },
+{ u: 1, en: "treat", ipa: "/triːt/", vi: "xử lí" },
+{ u: 1, en: "carve", ipa: "/kɑːv/", vi: "chạm, khắc" },
+{ u: 1, en: "stage", ipa: "/steɪdʒ/", vi: "giai đoạn" },
+{ u: 1, en: "artefact", ipa: "/ˈɑːtɪfækt/", vi: "đồ tạo tác" },
+{ u: 1, en: "loom", ipa: "/luːm/", vi: "khung cửi dệt vải" },
+{ u: 1, en: "versatile", ipa: "/ˈvɜːsətaɪl/", vi: "đa năng" },
+{ u: 1, en: "willow", ipa: "/ˈwɪləʊ/", vi: "cây liễu" },
+{ u: 1, en: "charcoal", ipa: "/ˈtʃɑːkəʊl/", vi: "than chì (vẽ)" },
+{ u: 1, en: "numerous", ipa: "/ˈnjuːmərəs/", vi: "nhiều, đông đảo" }
+],
+
+2: [
+{ u: 2, en: "fabulous", ipa: "/ˈfæbjələs/", vi: "tuyệt vời, tuyệt diệu" },
+{ u: 2, en: "reliable", ipa: "/rɪˈlaɪəbl/", vi: "đáng tin cậy" },
+{ u: 2, en: "metropolitan", ipa: "/ˌmetrəˈpɒlɪtən/", vi: "thuộc đô thị" },
+{ u: 2, en: "multicultural", ipa: "/ˌmʌltiˈkʌltʃərəl/", vi: "đa văn hóa" },
+{ u: 2, en: "variety", ipa: "/vəˈraɪəti/", vi: "sự đa dạng" },
+{ u: 2, en: "grow up", ipa: "/ɡrəʊ ʌp/", vi: "lớn lên" },
+{ u: 2, en: "packed", ipa: "/pækt/", vi: "chật ních" },
+{ u: 2, en: "urban", ipa: "/ˈɜːbən/", vi: "thuộc đô thị" },
+{ u: 2, en: "Oceania", ipa: "/ˌəʊsiˈɑːniə/", vi: "châu Đại Dương" },
+{ u: 2, en: "medium-sized", ipa: "/ˈmiːdiəm saɪzd/", vi: "cỡ trung" },
+{ u: 2, en: "forbidden", ipa: "/fəˈbɪdn/", vi: "bị cấm" },
+{ u: 2, en: "easy-going", ipa: "/ˈiːzi ɡəʊɪŋ/", vi: "dễ tính" },
+{ u: 2, en: "downtown", ipa: "/ˌdaʊnˈtaʊn/", vi: "trung tâm thành phố" },
+{ u: 2, en: "skyscraper", ipa: "/ˈskaɪskreɪpə/", vi: "nhà chọc trời" },
+{ u: 2, en: "stuck", ipa: "/stʌk/", vi: "mắc kẹt" },
+{ u: 2, en: "wander", ipa: "/ˈwɒndə/", vi: "đi lang thang" },
+{ u: 2, en: "affordable", ipa: "/əˈfɔːdəbl/", vi: "giá phải chăng" },
+{ u: 2, en: "conduct", ipa: "/kənˈdʌkt/", vi: "thực hiện" },
+{ u: 2, en: "determine", ipa: "/dɪˈtɜːmɪn/", vi: "xác định" },
+{ u: 2, en: "factor", ipa: "/ˈfæktə/", vi: "yếu tố" },
+{ u: 2, en: "conflict", ipa: "/ˈkɒnflɪkt/", vi: "xung đột" },
+{ u: 2, en: "indicator", ipa: "/ˈɪndɪkeɪtə/", vi: "chỉ số" },
+{ u: 2, en: "asset", ipa: "/ˈæset/", vi: "tài sản" },
+{ u: 2, en: "urban sprawl", ipa: "/ˈɜːbən sprɔːl/", vi: "sự đô thị hóa lan rộng" },
+{ u: 2, en: "index", ipa: "/ˈɪndeks/", vi: "chỉ số" },
+{ u: 2, en: "metro", ipa: "/ˈmetrəʊ/", vi: "tàu điện ngầm" },
+{ u: 2, en: "dweller", ipa: "/ˈdwelə/", vi: "cư dân" },
+{ u: 2, en: "negative", ipa: "/ˈneɡətɪv/", vi: "tiêu cực" },
+{ u: 2, en: "for the time being", ipa: "/fə ðə taɪm ˈbiːɪŋ/", vi: "hiện tại, tạm thời" }
+],
+
+3: [
+{ u: 3, en: "adolescence", ipa: "/ˌædəˈlesns/", vi: "giai đoạn vị thành niên" },
+{ u: 3, en: "adulthood", ipa: "/ˈædʌlthʊd/", vi: "giai đoạn trưởng thành" },
+{ u: 3, en: "calm", ipa: "/kɑːm/", vi: "bình tĩnh" },
+{ u: 3, en: "cognitive skill", ipa: "/ˈkɒɡnətɪv skɪl/", vi: "kỹ năng tư duy" },
+{ u: 3, en: "concentrate", ipa: "/ˈkɒnsntreɪt/", vi: "tập trung" },
+{ u: 3, en: "confident", ipa: "/ˈkɒnfɪdənt/", vi: "tự tin" },
+{ u: 3, en: "delighted", ipa: "/dɪˈlaɪtɪd/", vi: "vui sướng" },
+{ u: 3, en: "depressed", ipa: "/dɪˈprest/", vi: "tuyệt vọng" },
+{ u: 3, en: "embarrassed", ipa: "/ɪmˈbærəst/", vi: "xấu hổ" },
+{ u: 3, en: "emergency", ipa: "/iˈmɜːdʒənsi/", vi: "tình huống khẩn cấp" },
+{ u: 3, en: "frustrated", ipa: "/frʌˈstreɪtɪd/", vi: "bực bội" },
+{ u: 3, en: "helpline", ipa: "/ˈhelplaɪn/", vi: "đường dây nóng trợ giúp" },
+{ u: 3, en: "house-keeping skill", ipa: "/haʊs ˈkiːpɪŋ skɪl/", vi: "kỹ năng làm việc nhà" },
+{ u: 3, en: "independence", ipa: "/ˌɪndɪˈpendəns/", vi: "sự độc lập" },
+{ u: 3, en: "informed decision", ipa: "/ɪnˈfɔːmd dɪˈsɪʒn/", vi: "quyết định có cân nhắc" },
+{ u: 3, en: "left out", ipa: "/left aʊt/", vi: "bị bỏ rơi" },
+{ u: 3, en: "life skill", ipa: "/laɪf skɪl/", vi: "kỹ năng sống" },
+{ u: 3, en: "relaxed", ipa: "/rɪˈlækst/", vi: "thư giãn" },
+{ u: 3, en: "resolve conflict", ipa: "/rɪˈzɒlv ˈkɒnflɪkt/", vi: "giải quyết xung đột" },
+{ u: 3, en: "risk taking", ipa: "/rɪsk teɪkɪŋ/", vi: "liều lĩnh" },
+{ u: 3, en: "self-aware", ipa: "/self əˈweə/", vi: "tự nhận thức" },
+{ u: 3, en: "self-disciplined", ipa: "/self ˈdɪsəplɪnd/", vi: "tự kỷ luật" },
+{ u: 3, en: "stressed", ipa: "/strest/", vi: "căng thẳng" },
+{ u: 3, en: "tense", ipa: "/tens/", vi: "căng thẳng" },
+{ u: 3, en: "worried", ipa: "/ˈwʌrid/", vi: "lo lắng" },
+],
+
+4: [
+{ u: 4, en: "act out", ipa: "/ækt aʊt/", vi: "đóng vai" },
+{ u: 4, en: "arctic", ipa: "/ˈɑːktɪk/", vi: "thuộc Bắc Cực" },
+{ u: 4, en: "bare-footed", ipa: "/beə fʊtɪd/", vi: "chân đất" },
+{ u: 4, en: "behave", ipa: "/bɪˈheɪv/", vi: "cư xử" },
+{ u: 4, en: "dogsled", ipa: "/ˈdɒɡsled/", vi: "xe chó kéo" },
+{ u: 4, en: "domed", ipa: "/dəʊmd/", vi: "hình vòm" },
+{ u: 4, en: "downtown", ipa: "/ˌdaʊnˈtaʊn/", vi: "vào trung tâm thành phố" },
+{ u: 4, en: "eat out", ipa: "/iːt aʊt/", vi: "ăn ngoài" },
+{ u: 4, en: "entertain", ipa: "/ˌentəˈteɪn/", vi: "giải trí" },
+{ u: 4, en: "event", ipa: "/ɪˈvent/", vi: "sự kiện" },
+{ u: 4, en: "face to face", ipa: "/feɪs tu feɪs/", vi: "mặt đối mặt" },
+{ u: 4, en: "facility", ipa: "/fəˈsɪləti/", vi: "thiết bị" },
+{ u: 4, en: "igloo", ipa: "/ˈɪɡluː/", vi: "lều tuyết" },
+{ u: 4, en: "illiterate", ipa: "/ɪˈlɪtərət/", vi: "mù chữ" },
+{ u: 4, en: "loudspeaker", ipa: "/ˌlaʊdˈspiːkə/", vi: "loa" },
+{ u: 4, en: "occasion", ipa: "/əˈkeɪʒn/", vi: "dịp" },
+{ u: 4, en: "pass on", ipa: "/pɑːs ɒn/", vi: "truyền lại" },
+{ u: 4, en: "post", ipa: "/pəʊst/", vi: "đăng tải" },
+{ u: 4, en: "snack", ipa: "/snæk/", vi: "đồ ăn vặt" },
+{ u: 4, en: "street vendor", ipa: "/striːt ˈvendə/", vi: "người bán hàng rong" },
+{ u: 4, en: "strict", ipa: "/strɪkt/", vi: "nghiêm khắc" },
+{ u: 4, en: "treat", ipa: "/triːt/", vi: "cư xử" },
+],
+
+5: [
+{ u: 5, en: "administrative", ipa: "/ədˈmɪnɪstrətɪv/", vi: "thuộc hành chính" },
+{ u: 5, en: "astounding", ipa: "/əˈstaʊndɪŋ/", vi: "làm sửng sốt" },
+{ u: 5, en: "cavern", ipa: "/ˈkævən/", vi: "hang lớn" },
+{ u: 5, en: "citadel", ipa: "/ˈsɪtədəl/", vi: "thành lũy" },
+{ u: 5, en: "complex", ipa: "/ˈkɒmpleks/", vi: "quần thể" },
+{ u: 5, en: "contestant", ipa: "/kənˈtestənt/", vi: "thí sinh" },
+{ u: 5, en: "fortress", ipa: "/ˈfɔːtrəs/", vi: "pháo đài" },
+{ u: 5, en: "geological", ipa: "/ˌdʒiːəˈlɒdʒɪkl/", vi: "thuộc địa chất" },
+{ u: 5, en: "limestone", ipa: "/ˈlaɪmstəʊn/", vi: "đá vôi" },
+{ u: 5, en: "measure", ipa: "/ˈmeʒə/", vi: "biện pháp" },
+{ u: 5, en: "paradise", ipa: "/ˈpærədaɪs/", vi: "thiên đường" },
+{ u: 5, en: "picturesque", ipa: "/ˌpɪktʃəˈresk/", vi: "đẹp như tranh" },
+{ u: 5, en: "recognition", ipa: "/ˌrekəɡˈnɪʃn/", vi: "sự công nhận" },
+{ u: 5, en: "rickshaw", ipa: "/ˈrɪkʃɔː/", vi: "xe xích lô" },
+{ u: 5, en: "round", ipa: "/raʊnd/", vi: "vòng (trò chơi)" },
+{ u: 5, en: "sculpture", ipa: "/ˈskʌlptʃə/", vi: "tượng điêu khắc" },
+{ u: 5, en: "setting", ipa: "/ˈsetɪŋ/", vi: "bối cảnh" },
+{ u: 5, en: "spectacular", ipa: "/spekˈtækjələ/", vi: "ngoạn mục" },
+{ u: 5, en: "structure", ipa: "/ˈstrʌktʃə/", vi: "công trình kiến trúc" },
+{ u: 5, en: "tomb", ipa: "/tuːm/", vi: "ngôi mộ" },
+],
+
+6: [
+{ u: 6, en: "annoyed", ipa: "/əˈnɔɪd/", vi: "bực mình" },
+{ u: 6, en: "astonished", ipa: "/əˈstɒnɪʃt/", vi: "kinh ngạc" },
+{ u: 6, en: "boom", ipa: "/buːm/", vi: "sự bùng nổ" },
+{ u: 6, en: "compartment", ipa: "/kəmˈpɑːtmənt/", vi: "toa xe" },
+{ u: 6, en: "clanging", ipa: "/klæŋɪŋ/", vi: "tiếng leng keng" },
+{ u: 6, en: "cooperative", ipa: "/kəʊˈɒpərətɪv/", vi: "hợp tác" },
+{ u: 6, en: "elevated walkway", ipa: "/ˈelɪveɪtɪd ˈwɔːkweɪ/", vi: "lối đi bộ trên cao" },
+{ u: 6, en: "exporter", ipa: "/ekˈspɔːtə/", vi: "người xuất khẩu" },
+{ u: 6, en: "extended family", ipa: "/ɪkˈstendɪd ˈfæməli/", vi: "gia đình nhiều thế hệ" },
+{ u: 6, en: "flyover", ipa: "/ˈflaɪəʊvə/", vi: "cầu vượt" },
+{ u: 6, en: "manual", ipa: "/ˈmænjuəl/", vi: "làm bằng tay" },
+{ u: 6, en: "mushroom", ipa: "/ˈmʌʃruːm/", vi: "mọc lên nhanh chóng" },
+{ u: 6, en: "noticeable", ipa: "/ˈnəʊtɪsəbl/", vi: "đáng chú ý" },
+{ u: 6, en: "nuclear family", ipa: "/ˈnjuːkliə ˈfæməli/", vi: "gia đình hạt nhân" },
+{ u: 6, en: "photo exhibition", ipa: "/ˈfəʊtəʊ eksɪˈbɪʃn/", vi: "triển lãm ảnh" },
+{ u: 6, en: "pedestrian", ipa: "/pəˈdestriən/", vi: "người đi bộ" },
+{ u: 6, en: "roof", ipa: "/ruːf/", vi: "mái nhà" },
+{ u: 6, en: "rubber", ipa: "/ˈrʌbə/", vi: "cao su" },
+{ u: 6, en: "sandals", ipa: "/ˈsændlz/", vi: "dép" },
+{ u: 6, en: "thatched house", ipa: "/θætʃt haʊs/", vi: "nhà tranh" },
+{ u: 6, en: "tiled", ipa: "/taɪld/", vi: "lợp ngói" },
+{ u: 6, en: "tram", ipa: "/træm/", vi: "xe điện" },
+{ u: 6, en: "trench", ipa: "/trentʃ/", vi: "hào" },
+{ u: 6, en: "tunnel", ipa: "/ˈtʌnl/", vi: "đường hầm" },
+{ u: 6, en: "underpass", ipa: "/ˈʌndəpɑːs/", vi: "hầm đi bộ" },
+],
+
+7: [
+{ u: 7, en: "chop", ipa: "/tʃɒp/", vi: "chặt" },
+{ u: 7, en: "cube", ipa: "/kjuːb/", vi: "khối lập phương" },
+{ u: 7, en: "deep-fry", ipa: "/diːp fraɪ/", vi: "rán ngập dầu" },
+{ u: 7, en: "dip", ipa: "/dɪp/", vi: "nhúng" },
+{ u: 7, en: "drain", ipa: "/dreɪn/", vi: "làm ráo nước" },
+{ u: 7, en: "garnish", ipa: "/ˈɡɑːnɪʃ/", vi: "trang trí món ăn" },
+{ u: 7, en: "grate", ipa: "/ɡreɪt/", vi: "nạo" },
+{ u: 7, en: "grill", ipa: "/ɡrɪl/", vi: "nướng" },
+{ u: 7, en: "marinate", ipa: "/ˈmærɪneɪt/", vi: "ướp" },
+{ u: 7, en: "peel", ipa: "/piːl/", vi: "gọt vỏ" },
+{ u: 7, en: "purée", ipa: "/ˈpjʊəreɪ/", vi: "xay nhuyễn" },
+{ u: 7, en: "roast", ipa: "/rəʊst/", vi: "quay" },
+{ u: 7, en: "shallot", ipa: "/ʃəˈlɒt/", vi: "hành khô" },
+{ u: 7, en: "simmer", ipa: "/ˈsɪmə/", vi: "om" },
+{ u: 7, en: "spread", ipa: "/spred/", vi: "phết" },
+{ u: 7, en: "sprinkle", ipa: "/ˈsprɪŋkl/", vi: "rắc" },
+{ u: 7, en: "slice", ipa: "/slaɪs/", vi: "cắt lát" },
+{ u: 7, en: "staple", ipa: "/ˈsteɪpl/", vi: "lương thực chính" },
+{ u: 7, en: "starter", ipa: "/ˈstɑːtə/", vi: "món khai vị" },
+{ u: 7, en: "steam", ipa: "/stiːm/", vi: "hấp" },
+{ u: 7, en: "stew", ipa: "/stjuː/", vi: "hầm" },
+{ u: 7, en: "stir-fry", ipa: "/stɜː fraɪ/", vi: "xào" },
+{ u: 7, en: "tender", ipa: "/ˈtendə/", vi: "mềm" },
+{ u: 7, en: "versatile", ipa: "/ˈvɜːsətaɪl/", vi: "đa dụng" },
+{ u: 7, en: "whisk", ipa: "/wɪsk/", vi: "đánh trứng" },
+],
+
+8: [
+{ u: 8, en: "affordable", ipa: "/əˈfɔːdəbl/", vi: "có thể chi trả được" },
+{ u: 8, en: "air", ipa: "/eə/", vi: "phát sóng" },
+{ u: 8, en: "breathtaking", ipa: "/ˈbreθteɪkɪŋ/", vi: "ngoạn mục, hấp dẫn" },
+{ u: 8, en: "check-in", ipa: "/tʃek ɪn/", vi: "làm thủ tục lên máy bay" },
+{ u: 8, en: "checkout", ipa: "/ˈtʃekaʊt/", vi: "trả phòng khách sạn" },
+{ u: 8, en: "confusion", ipa: "/kənˈfjuːʒn/", vi: "sự bối rối" },
+{ u: 8, en: "erode away", ipa: "/ɪˈrəʊd əˈweɪ/", vi: "bị xói mòn" },
+{ u: 8, en: "exotic", ipa: "/ɪɡˈzɒtɪk/", vi: "kỳ lạ" },
+{ u: 8, en: "explore", ipa: "/ɪkˈsplɔː/", vi: "khám phá" },
+{ u: 8, en: "hyphen", ipa: "/ˈhaɪfn/", vi: "dấu gạch nối" },
+{ u: 8, en: "imperial", ipa: "/ɪmˈpɪəriəl/", vi: "thuộc hoàng đế" },
+{ u: 8, en: "inaccessible", ipa: "/ˌɪnækˈsesəbl/", vi: "không thể tiếp cận" },
+{ u: 8, en: "lush", ipa: "/lʌʃ/", vi: "tươi tốt" },
+{ u: 8, en: "magnificence", ipa: "/mæɡˈnɪfɪsns/", vi: "sự tráng lệ" },
+{ u: 8, en: "not break the bank", ipa: "/nɒt breɪk ðə bæŋk/", vi: "không tốn nhiều tiền" },
+{ u: 8, en: "orchid", ipa: "/ˈɔːkɪd/", vi: "hoa lan" },
+{ u: 8, en: "package tour", ipa: "/ˈpækɪdʒ tʊə/", vi: "tour du lịch trọn gói" },
+{ u: 8, en: "pile-up", ipa: "/paɪl ʌp/", vi: "tai nạn nhiều xe" },
+{ u: 8, en: "promote", ipa: "/prəˈməʊt/", vi: "quảng bá" },
+{ u: 8, en: "pyramid", ipa: "/ˈpɪrəmɪd/", vi: "kim tự tháp" },
+{ u: 8, en: "safari", ipa: "/səˈfɑːri/", vi: "chuyến đi săn" },
+{ u: 8, en: "stalagmite", ipa: "/stəˈlæɡmaɪt/", vi: "măng đá" },
+{ u: 8, en: "stimulating", ipa: "/ˈstɪmjuleɪtɪŋ/", vi: "thú vị, kích thích" },
+{ u: 8, en: "touchdown", ipa: "/ˈtʌtʃdaʊn/", vi: "sự hạ cánh" },
+{ u: 8, en: "varied", ipa: "/ˈveərid/", vi: "đa dạng" },
+],
+
+9: [
+{ u: 9, en: "accent", ipa: "/ˈæksent/", vi: "giọng" },
+{ u: 9, en: "bilingual", ipa: "/ˌbaɪˈlɪŋɡwəl/", vi: "song ngữ" },
+{ u: 9, en: "dialect", ipa: "/ˈdaɪəlekt/", vi: "phương ngữ" },
+{ u: 9, en: "dominance", ipa: "/ˈdɒmɪnəns/", vi: "sự thống trị" },
+{ u: 9, en: "establishment", ipa: "/ɪˈstæblɪʃmənt/", vi: "sự thành lập" },
+{ u: 9, en: "factor", ipa: "/ˈfæktə/", vi: "yếu tố" },
+{ u: 9, en: "get by in", ipa: "/get baɪ ɪn/", vi: "sử dụng tạm được (ngôn ngữ)" },
+{ u: 9, en: "global", ipa: "/ˈɡləʊbl/", vi: "toàn cầu" },
+{ u: 9, en: "flexibility", ipa: "/ˌfleksəˈbɪləti/", vi: "sự linh hoạt" },
+{ u: 9, en: "fluent", ipa: "/ˈfluːənt/", vi: "trôi chảy" },
+{ u: 9, en: "imitate", ipa: "/ˈɪmɪteɪt/", vi: "bắt chước" },
+{ u: 9, en: "immersion school", ipa: "/ɪˈmɜːʃn skuːl/", vi: "trường dạy bằng ngoại ngữ" },
+{ u: 9, en: "massive", ipa: "/ˈmæsɪv/", vi: "to lớn" },
+{ u: 9, en: "mother tongue", ipa: "/ˈmʌðə tʌŋ/", vi: "tiếng mẹ đẻ" },
+{ u: 9, en: "multinational", ipa: "/ˌmʌltiˈnæʃnəl/", vi: "đa quốc gia" },
+{ u: 9, en: "official", ipa: "/əˈfɪʃl/", vi: "chính thức" },
+{ u: 9, en: "openness", ipa: "/ˈəʊpənnəs/", vi: "sự cởi mở" },
+{ u: 9, en: "operate", ipa: "/ˈɒpəreɪt/", vi: "hoạt động" },
+{ u: 9, en: "pick up", ipa: "/pɪk ʌp/", vi: "học được (ngôn ngữ)" },
+{ u: 9, en: "punctual", ipa: "/ˈpʌŋktʃuəl/", vi: "đúng giờ" },
+{ u: 9, en: "rusty", ipa: "/ˈrʌsti/", vi: "mai một do lâu không dùng" },
+{ u: 9, en: "simplicity", ipa: "/sɪmˈplɪsəti/", vi: "sự đơn giản" },
+{ u: 9, en: "variety", ipa: "/vəˈraɪəti/", vi: "sự đa dạng" },
+],
+
+10: [
+{ u: 10, en: "astronaut", ipa: "/ˈæstrənɔːt/", vi: "phi hành gia" },
+{ u: 10, en: "astronomy", ipa: "/əˈstrɒnəmi/", vi: "thiên văn học" },
+{ u: 10, en: "attach", ipa: "/əˈtætʃ/", vi: "gắn, buộc" },
+{ u: 10, en: "float", ipa: "/fləʊt/", vi: "trôi (không trọng lực)" },
+{ u: 10, en: "habitable", ipa: "/ˈhæbɪtəbl/", vi: "có thể sinh sống" },
+{ u: 10, en: "International Space Station", ipa: "/ˌɪntəˈnæʃnəl speɪs ˈsteɪʃn/", vi: "Trạm vũ trụ quốc tế" },
+{ u: 10, en: "galaxy", ipa: "/ˈɡæləksi/", vi: "thiên hà" },
+{ u: 10, en: "land", ipa: "/lænd/", vi: "hạ cánh" },
+{ u: 10, en: "launch", ipa: "/lɔːntʃ/", vi: "phóng" },
+{ u: 10, en: "meteorite", ipa: "/ˈmiːtiəraɪt/", vi: "thiên thạch" },
+{ u: 10, en: "microgravity", ipa: "/ˈmaɪkrəʊ ˈɡrævəti/", vi: "tình trạng không trọng lực" },
+{ u: 10, en: "mission", ipa: "/ˈmɪʃn/", vi: "nhiệm vụ" },
+{ u: 10, en: "operate", ipa: "/ˈɒpəreɪt/", vi: "vận hành" },
+{ u: 10, en: "orbit", ipa: "/ˈɔːbɪt/", vi: "quỹ đạo" },
+{ u: 10, en: "parabolic flight", ipa: "/ˌpærəˈbɒlɪk flaɪt/", vi: "chuyến bay không trọng lực" },
+{ u: 10, en: "rocket", ipa: "/ˈrɒkɪt/", vi: "tên lửa" },
+{ u: 10, en: "rinseless", ipa: "/rɪnsles/", vi: "không cần xả nước" },
+{ u: 10, en: "satellite", ipa: "/ˈsætəlaɪt/", vi: "vệ tinh" },
+{ u: 10, en: "space tourism", ipa: "/speɪs ˈtʊərɪzəm/", vi: "du lịch vũ trụ" },
+{ u: 10, en: "spacecraft", ipa: "/ˈspeɪskrɑːft/", vi: "tàu vũ trụ" },
+{ u: 10, en: "spaceline", ipa: "/ˈspeɪslaɪn/", vi: "hãng hàng không vũ trụ" },
+{ u: 10, en: "spacesuit", ipa: "/ˈspeɪssuːt/", vi: "bộ đồ phi hành gia" },
+{ u: 10, en: "spacewalk", ipa: "/ˈspeɪswɔːk/", vi: "đi bộ ngoài không gian" },
+{ u: 10, en: "telescope", ipa: "/ˈtelɪskəʊp/", vi: "kính thiên văn" },
+{ u: 10, en: "universe", ipa: "/ˈjuːnɪvɜːs/", vi: "vũ trụ" },
+]
+        // Thêm dữ liệu các Unit khác tương tự tại đây...
+    };
+
+    let currentIdx = 0;
+    let currentUnitData = fullData[1];
+
+    // Chuyển Tab
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName + '-tab').classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+        if(tabName === 'game') initGame();
+    }
+
+    // Đổi Unit
+    function changeUnit() {
+        let u = document.getElementById('currentUnit').value;
+        currentUnitData = fullData[u] || [];
+        currentIdx = 0;
+        renderStudyList();
+        updateFlashcard();
+    }
+
+    // 1. Xử lý Study List
+    function renderStudyList() {
+        const body = document.getElementById('vocab-body');
+        body.innerHTML = currentUnitData.map(item => `
+            <tr>
+                <td style="font-weight:bold; color:var(--red)">${item.en}</td>
+                <td style="font-style:italic">${item.ipa}</td>
+                <td>${item.vi}</td>
+                <td><button onclick="speak('${item.en}')" style="border:none; background:none; cursor:pointer; color:#27ae60"><i class="fas fa-volume-up"></i></button></td>
+            </tr>
+        `).join('');
+    }
+
+    function filterList() {
+        let q = document.getElementById('searchInp').value.toLowerCase();
+        let rows = document.querySelectorAll('#vocab-body tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // 2. Xử lý Flashcards
+    function updateFlashcard() {
+        if(!currentUnitData.length) return;
+        document.getElementById('mainCard').classList.remove('flipped');
+        let word = currentUnitData[currentIdx];
+        document.getElementById('f-en').innerText = word.en;
+        document.getElementById('f-ipa').innerText = word.ipa;
+        document.getElementById('f-vi').innerText = word.vi;
+        document.getElementById('card-progress').innerText = `${currentIdx + 1} / ${currentUnitData.length}`;
+    }
+
+    function nextCard() { currentIdx = (currentIdx + 1) % currentUnitData.length; updateFlashcard(); }
+    function prevCard() { currentIdx = (currentIdx - 1 + currentUnitData.length) % currentUnitData.length; updateFlashcard(); }
+
+    // 3. Xử lý Game Nối Từ
+    let firstCard = null;
+    function initGame() {
+        const grid = document.getElementById('game-grid');
+        grid.innerHTML = "";
+        let words = [...currentUnitData].sort(() => 0.5 - Math.random()).slice(0, 5);
+        let items = [];
+        words.forEach(w => {
+            items.push({ text: w.en, type: 'en', match: w.vi });
+            items.push({ text: w.vi, type: 'vi', match: w.en });
+        });
+        items.sort(() => 0.5 - Math.random());
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'game-item';
+            div.innerText = item.text;
+            div.onclick = () => handleGameClick(div, item);
+            grid.appendChild(div);
+        });
+    }
+
+    function handleGameClick(div, item) {
+        if(div.classList.contains('correct') || div === firstCard?.div) return;
+        div.classList.add('selected');
+        if(!firstCard) {
+            firstCard = { div, item };
+        } else {
+            if(firstCard.item.match === item.text) {
+                div.classList.add('correct');
+                firstCard.div.classList.add('correct');
+                firstCard = null;
+            } else {
+                let temp = firstCard;
+                setTimeout(() => {
+                    div.classList.remove('selected');
+                    temp.div.classList.remove('selected');
+                }, 500);
+                firstCard = null;
+            }
+        }
+    }
+
+    // Phát âm
+    function speak(text) {
+        let msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'en-US';
+        window.speechSynthesis.speak(msg);
+    }
+    function speakCurrent() { speak(currentUnitData[currentIdx].en); }
+
+    // Khởi tạo
+    window.onload = () => { renderStudyList(); updateFlashcard(); };
+</script>
+</body>
+</html>

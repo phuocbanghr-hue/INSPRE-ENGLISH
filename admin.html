@@ -394,7 +394,7 @@ function shell() {
   root.innerHTML = `<div class="shell"><aside class="side"><div class="brand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>Quản trị</small></span></div>
     ${NAV.map(([k, i, n]) => `<button class="nb" data-v="${k}">${i} ${n}</button>`).join('')}
     <button class="kbd" data-pal="1"><span>Tìm nhanh</span><b>Ctrl K</b></button><a class="nb" href="index.html" target="_blank" rel="noopener"> Xem web học sinh</a>
-    <div class="who">${MODE === 'demo' ? '<span class="pill-demo">Dùng thử</span><br>' : ''}${esc(S.user.email)}<br><button class="btn soft sm" id="out" style="margin-top:8px">Đăng xuất</button></div></aside><main class="content" id="content"></main></div>`;
+    <div class="who">${MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span><br>' : '<span class="pill-demo" style="background:#d9f7e4">Firebase: ' + esc(firebaseConfig.projectId) + '</span><br>'}${esc(S.user.email)}<br><button class="btn soft sm" id="out" style="margin-top:8px">Đăng xuất</button></div></aside><main class="content" id="content"></main></div>`;
   root.querySelector('.side').onclick = e => { const b = e.target.closest('.nb[data-v]'); if (b) { S.view = b.dataset.v; draw(); } };
   $('#out').onclick = () => api.signOut();
   draw();
@@ -798,8 +798,8 @@ function startData() {
     api.watch('lessons', l => { S.lessons = l; refresh(); }, e => toast('Không đọc được bài học: ' + e.message, 'bad')),
     api.watch('users', u => { S.users = u; refresh(); }, e => toast('Không đọc được học sinh: ' + e.message, 'bad')),
     api.watch('assignments', a => { S.assignments = a; refresh(); }, e => toast('Không đọc được bài tập đã giao: ' + e.message, 'bad')),
-    api.watch('hwchecks', h => { S.hwx = Object.fromEntries(h.map(x => [x.id, x.s || {}])); if (S.view === 'hw') vHW(); }, () => {}),
-    api.watch('chuyende', c => { S.cd = Object.fromEntries(c.map(x => [x.id, x])); }, () => {}),
+    api.watch('hwchecks', h => { S.hwx = Object.fromEntries(h.map(x => [x.id, x.s || {}])); if (S.view === 'hw') vHW(); }, e => toast('Không đọc được hwchecks: ' + e.message, 'bad')),
+    api.watch('chuyende', c => { S.cd = Object.fromEntries(c.map(x => [x.id, x])); }, e => toast('Không đọc được chuyên đề: ' + e.message, 'bad')),
     api.watchAnn(a => { S.ann = a || { text: '', active: false }; }),
     MODE === 'firebase' ? FB.onSnapshot(FB.doc(db, 'config', 'admins'), d => { S.admins = d.exists() ? (d.data().emails || []) : []; if (S.view === 'admins') vAdmins(); }, () => {}) : null,
     MODE === 'firebase' ? FB.onSnapshot(FB.doc(db, 'config', 'site'), d => { S.site = d.exists() ? d.data() : {}; if (S.view === 'site') vSite(); }, () => {}) : (S.site = JSON.parse(localStorage.getItem('inspire_site') || '{}'), null)
@@ -807,6 +807,7 @@ function startData() {
 }
 const stopData = () => { unsubs.forEach(u => u && u()); unsubs = []; };
 
+if (MODE === 'demo') console.warn('ADMIN ĐANG Ở CHẾ ĐỘ DÙNG THỬ: chưa dán firebaseConfig, dữ liệu KHÔNG lên Firebase.');
 if (LOAD_ERR) viewLogin();
 else {
   root.innerHTML = '<div class="login"><p>Đang tải…</p></div>';

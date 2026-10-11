@@ -702,10 +702,10 @@ if (MODE === 'firebase' && FB) {
     signOut: () => FB.signOut(auth),
     reset: e => FB.sendPasswordResetEmail(auth, e),
     watchProfile: (uid, cb, err) => FB.onSnapshot(FB.doc(db, 'users', uid), s => cb(s.exists() ? s.data() : null), err),
-    watchLessons: (cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'lessons'), FB.orderBy('order')), s => cb(list(s)), err),
-    watchAssignments: cb => FB.onSnapshot(FB.collection(db, 'assignments'), s => cb(list(s)), () => {}),
-    watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), () => {}),
-    watchAnnounce: cb => FB.onSnapshot(FB.doc(db, 'config', 'announcement'), s => cb(s.exists() ? s.data() : null), () => {}),
+    watchLessons: (cb, err) => FB.onSnapshot(FB.collection(db, 'lessons'), s => cb(list(s)), err),
+    watchAssignments: cb => FB.onSnapshot(FB.collection(db, 'assignments'), s => cb(list(s)), e => { console.error('assignments', e); toast('Không đọc được bài được giao: ' + e.message, 'bad'); }),
+    watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), e => { console.error('chuyende', e); toast('Không đọc được chuyên đề (kiểm tra Firestore rules): ' + e.message, 'bad'); }),
+    watchAnnounce: cb => FB.onSnapshot(FB.doc(db, 'config', 'announcement'), s => cb(s.exists() ? s.data() : null), e => console.error('announcement', e)),
     watchTop: (n, cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n)), s => cb(list(s)), err),
     updateMe: f => FB.updateDoc(FB.doc(db, 'users', S.user.uid), f),
     createProfile: (uid, d) => FB.setDoc(FB.doc(db, 'users', uid), d)
@@ -982,7 +982,7 @@ const stopRank = () => { rankUnsub && rankUnsub(); rankUnsub = null; };
 function renderFoot() { const f = $('#foot'); if (!f) return; const t = S.site;
   f.innerHTML = `<b>Inspire Connect</b>${String(t.campuses || '').split('\n').filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}<span>Hotline: <b>${esc(t.phone || '')}</b></span><span>${/^https?:/.test(t.facebook || '') ? `<a class="soc" href="${esc(t.facebook)}" target="_blank" rel="noopener">Facebook</a>` : ''}${/^https?:/.test(t.zalo || '') ? `<a class="soc" href="${esc(t.zalo)}" target="_blank" rel="noopener">Zalo</a>` : ''}</span>`; }
 function watchSite() {
-  if (MODE === 'firebase' && FB) FB.onSnapshot(FB.doc(db, 'config', 'site'), d => { S.site = { ...SITE_DEF, ...(d.exists() ? d.data() : {}) }; renderFoot(); if (S.view === 'auth' || S.site.maintenance) go(S.view); }, () => {});
+  if (MODE === 'firebase' && FB) FB.onSnapshot(FB.doc(db, 'config', 'site'), d => { S.site = { ...SITE_DEF, ...(d.exists() ? d.data() : {}) }; renderFoot(); if (S.view === 'auth' || S.site.maintenance) go(S.view); }, e => console.error('site', e));
   else { try { S.site = { ...SITE_DEF, ...JSON.parse(store.get('inspire_site') || '{}') }; } catch {} }
   renderFoot();
 }
@@ -1773,7 +1773,7 @@ else {
     }, err => toast('Không đọc được hồ sơ: ' + err.message, 'bad'));
     uL = api.watchLessons(list => { S.lessons = [...list.filter(l => l.published !== false), ...GS9L].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)); if (S.view === 'home') { drawDash(); drawCourses(); } }, err => toast('Không tải được bài học: ' + err.message, 'bad'));
     uA = api.watchAssignments(list => { S.assignments = list; if (S.view === 'home') drawDash(); });
-    api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
+    let cdFirst = true; api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
   });
   go('loading');
 }

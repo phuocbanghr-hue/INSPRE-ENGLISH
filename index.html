@@ -2733,6 +2733,12 @@ function dueTag(due) {
   const [txt, cls] = days < 0 ? ['Đã quá hạn', 'bad'] : days === 0 ? ['Hôm nay là hạn', 'warn'] : days <= 3 ? ['Còn ' + days + ' ngày', 'warn'] : ['Còn ' + days + ' ngày', 'ok'];
   return `<span class="due-tag ${cls}">${txt}</span> `;
 }
+const THEME_DEF_S = { accent: '#0B5CA8', heroBg: '#FFFFFF', secBg: '#FFFFFF', secBorder: '#ECECF0', nextBg: '#FFF5F6', nextBorder: '#C8142D', text: '#1F2937', radius: 14, fontScale: 100, gap: 16 };
+function themeCSS(c) {
+  if (!c.theme) return '';
+  const T = {}; Object.keys(THEME_DEF_S).forEach(k => { const v = c.theme[k]; T[k] = (v === undefined || v === '') ? THEME_DEF_S[k] : String(v).replace(/[^#\w.%-]/g, ''); });
+  return `<style id="cx-theme">.cxl-hero{background:${T.heroBg}!important;border-left:6px solid ${T.accent}!important;border-radius:${T.radius}px!important}.cxl-hero h1{color:${T.accent}!important}.cxl-sec{background:${T.secBg}!important;border:1px solid ${T.secBorder}!important;border-radius:${T.radius}px!important;margin-bottom:${T.gap}px!important;font-size:${T.fontScale}%;color:${T.text}}.cxl-sec>h2{color:${T.accent}!important}.cl-next{background:${T.nextBg}!important;border-color:${T.nextBorder}!important;border-radius:${T.radius}px!important}</style>`;
+}
 function viewClass() {
   const c = cxClass(); if (!c) { go('classes'); return; }
   if (CX.tab !== 'chat') stopCxThreads();
@@ -2741,7 +2747,7 @@ function viewClass() {
     ${secs.map(s => `<div class="cxl-drw-g"><button class="cxl-drw-t" data-sec="${esc(s.id)}">${esc(s.title)}</button>${(s.items || []).filter(i => !i.hidden).map(i => `<div class="cxl-drw-i" data-sec="${esc(s.id)}"><span class="cxl-dot"></span>${esc(i.title || ITYPE_N[i.type] || 'Nội dung')}</div>`).join('')}</div>`).join('')}</div>
     <div class="cxl-drw-bg" data-drawer-close></div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="classes">Lớp học</a><span>›</span><b>${esc(c.name)}</b></nav>
-    <section class="cxl-hero">${/^https:\/\//.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small></div></section>
+    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small></div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
     <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['people', 'Bạn cùng lớp'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}</button>`).join('')}</nav></aside>

@@ -820,7 +820,29 @@ th[data-dir=asc]::after,th[data-dir=desc]::after{color:var(--brand)}
 .login.lg2{background:#fff!important}
 .rt-hl{background:linear-gradient(transparent 38%,#FFE066 38%,#FFE066 92%,transparent 92%);color:inherit;padding:0 3px}
 .rt-h{background:#FFC089;padding:0 4px;border-radius:4px}.rt-k{background:#FFC2D4;padding:0 4px;border-radius:4px}
-.rt-r{color:#D61F3A;font-weight:600}.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
+.rt-r{color:#D61F3A;font-weight:600}
+.rb-h{font-size:1.08em;font-weight:800;margin:14px 0 6px;color:#0B5CA8}
+.rb-ul,.rb-ol{margin:6px 0 10px;padding-left:24px}.rb-ul li,.rb-ol li{margin:3px 0}
+.rb-box{border-radius:10px;padding:10px 14px;margin:8px 0;border-left:4px solid}
+.rb-note{background:#EAF2FB;border-color:#0B5CA8}.rb-tip{background:#E9F7EF;border-color:#17803D}.rb-warn{background:#FDECEE;border-color:#D61F3A}
+.rt-p{color:#7048E8;font-weight:600}
+.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
+/* đăng nhập admin: nền đỏ, chữ trắng */
+.login.lg2{background:linear-gradient(135deg,#8F0620 0,#BE0B2E 55%,#E0243A 100%)!important;color:#fff}
+.lg-form{background:transparent}
+.lg-box h1{color:#fff!important}
+.lg-brand b,.lg-brand small{color:#fff!important}
+.lg-brand img{box-shadow:0 0 0 2px #fff!important}
+.lg-help{color:#fff!important}
+.lg-box .msg{color:#FFE066!important}
+.lg-in{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45)}
+.lg-in:focus-within{background:rgba(255,255,255,.24);border-color:#fff}
+.lg-in svg,.lg-eye svg{fill:#fff}
+.lg-in input{color:#fff!important}
+.lg-in input::placeholder{color:rgba(255,255,255,.85)}
+.lg-btn{background:#fff!important;color:#B10B32!important}
+.lg-btn:hover{background:#FCEBEF!important}
+.qrow{display:flex;gap:10px;align-items:center;border-bottom:1px solid #EEE;padding:8px 0}
 </style>
 </head>
 <body>
@@ -1190,13 +1212,13 @@ const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" dat
 function itemRow(s, it, ii, n) {
   const t = ITYPE[it.type] || ITYPE.link, b = (it.type === 'bank' || it.type === 'test') ? (S.banks || []).find(x => x.id === it.bankId) : null;
   const sub = it.type === 'text' ? esc(String(it.text || '').slice(0, 100)) : (it.type === 'bank' || it.type === 'test') ? (b ? esc(b.title) + ' · ' + (b.count || (b.qs || []).length) + ' câu' + (it.type === 'test' ? ' · ' + (it.minutes || 30) + ' phút' : '') : '<span class="tag bad">Không tìm thấy đề</span>') : it.type === 'task' ? 'Hạn: ' + fmtDue(it.due) : `<a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(String(it.url || '').slice(0, 80))}</a>`;
-  return `<div class="cxi ${it.hidden ? 'off' : ''}" data-i="${esc(it.id)}"><span class="cxi-ic">${itIc(it.type)}</span><div class="grow" style="min-width:0"><b>${esc(it.title || t.n)}</b> <span class="tag">${t.s}</span>${it.hidden ? ' <span class="tag off">Ẩn</span>' : ''}<br><small class="muted">${sub}</small></div>
-    <div class="acts"><button class="btn soft sm" data-a="item-up" ${ii ? '' : 'disabled'}>↑</button><button class="btn soft sm" data-a="item-dn" ${ii < n - 1 ? '' : 'disabled'}>↓</button><button class="btn soft sm" data-a="item-edit">Sửa</button><button class="btn soft sm" data-a="item-hide">${it.hidden ? 'Hiện' : 'Ẩn'}</button><button class="btn soft sm" data-a="item-del">Xoá</button></div></div>`;
+  return `<div class="cxi" data-i="${esc(it.id)}"><span class="cxi-ic">${itIc(it.type)}</span><div class="grow" style="min-width:0"><b>${esc(it.title || t.n)}</b> <span class="tag">${t.s}</span><br><small class="muted">${sub}</small></div>
+    <div class="acts"><button class="btn soft sm" data-a="item-up" ${ii ? '' : 'disabled'}>↑</button><button class="btn soft sm" data-a="item-dn" ${ii < n - 1 ? '' : 'disabled'}>↓</button><button class="btn soft sm" data-a="item-edit">Sửa</button>${it.type === 'youtube' ? '<button class="btn soft sm" data-a="item-q">Câu hỏi</button>' : ''}<button class="btn soft sm" data-a="item-del">Xoá</button></div></div>`;
 }
 function cxContent(c, el) {
   const secs = c.sections || [];
   el.innerHTML = `<div class="row"><button class="btn" data-a="sec-add">＋ Thêm chương / phần</button><button class="btn soft" data-a="bulk">Dán nhiều link một lần</button><span class="grow"></span></div>
-    <div class="hint">Học sinh thấy các phần theo đúng thứ tự này, giống trang môn học trên Moodle. Phần hoặc mục đang <b>ẩn</b> chỉ giáo viên thấy. Link Drive cần chia sẻ “Bất kỳ ai có đường liên kết” (quyền Người xem) để học sinh mở được.</div>
+    <div class="hint">Học sinh thấy các phần theo đúng thứ tự này, giống trang môn học trên Moodle. Phần đang <b>ẩn</b> chỉ giáo viên thấy. Link Drive cần chia sẻ “Bất kỳ ai có đường liên kết” (quyền Người xem) để học sinh mở được.</div>
     ${secs.map((s, i) => secHTML(s, i, secs.length)).join('') || '<div class="card empty">Lớp chưa có phần nào. Bấm “Thêm chương / phần”.</div>'}`;
 }
 
@@ -1218,8 +1240,8 @@ async function cxClick(e) {
       case 'sec-del': if (confirm('Xoá phần “' + sec.title + '” cùng ' + (sec.items || []).length + ' nội dung bên trong?')) await editSections(c, S2 => { S2.splice(S2.findIndex(s => s.id === sid), 1); }); return;
       case 'item-add': return itemForm(c, sid);
       case 'item-edit': return itemForm(c, sid, (sec.items || []).find(i => i.id === iid));
+      case 'item-q': return itemQForm(c, sid, (sec.items || []).find(i => i.id === iid));
       case 'item-up': case 'item-dn': return void await editSections(c, S2 => { const s = S2.find(z => z.id === sid); mv(s.items, s.items.findIndex(i => i.id === iid), A === 'item-up' ? -1 : 1); });
-      case 'item-hide': return void await editSections(c, S2 => { const it = S2.find(z => z.id === sid).items.find(i => i.id === iid); it.hidden = !it.hidden; });
       case 'item-del': if (confirm('Xoá nội dung này?')) await editSections(c, S2 => { const s = S2.find(z => z.id === sid); s.items = s.items.filter(i => i.id !== iid); }); return;
       case 'bulk': return bulkForm(c);
       case 'mem-ok': return void await addMembers(c, S.users.filter(u => u.id === x.dataset.u)), toast('Đã duyệt.');
@@ -1278,7 +1300,6 @@ function itemForm(c, sid, it) {
     <label class="field" id="w-b"><span>Chọn đề</span><select id="if-b"><option value="">– Chọn đề –</option>${own.length ? `<optgroup label="Đề của lớp này">${own.map(bo).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="Đề khác của trung tâm">${others.map(bo).join('')}</optgroup>` : ''}</select>${own.length || others.length ? '' : '<small>Lớp chưa có đề. Sang tab “Đề và kiểm tra” để tạo đề trước.</small>'}</label>
     <div class="g2b" id="w-m"><label class="field"><span>Thời gian làm bài (phút)</span><input id="if-m" type="number" min="1" max="300" value="${esc(it?.minutes || 30)}"></label><label class="field"><span>Số lần được làm (0 = không giới hạn)</span><input id="if-r" type="number" min="0" max="20" value="${esc(it?.tries || 0)}"></label></div>
     <label class="field" id="w-d"><span>Hạn nộp</span><input id="if-d" type="date" value="${esc(it?.due || '')}"></label>
-    <label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:12px"><input type="checkbox" id="if-h" ${it?.hidden ? 'checked' : ''}> Ẩn với học sinh (chỉ giáo viên thấy)</label>
     <div class="row"><span class="grow"></span><button class="btn soft" id="if-x2">Huỷ</button><button class="btn" id="if-ok">${it ? 'Lưu' : 'Thêm vào lớp'}</button></div>`);
   const kind = () => $('#if-k', ov).value;
   const sync = () => { const k = kind(), F = ITEM_FIELDS[k]; ['t', 'u', 'x', 'b', 'm', 'd'].forEach(w => $('#w-' + w, ov).classList.toggle('hidden', !F.includes(w)));
@@ -1292,12 +1313,64 @@ function itemForm(c, sid, it) {
     if (k === 'text' && !x) return toast('Nhập nội dung nhé.', 'bad');
     if (F.includes('b') && !bid) return toast('Chọn một đề nhé.', 'bad');
     if (k === 'task' && !t) return toast('Nhập tiêu đề bài tập nhé.', 'bad');
-    const bk = (S.banks || []).find(b => b.id === bid), item = { id: it?.id || nid('i'), type: k, title: t || (bk ? bk.title : ''), hidden: $('#if-h', ov).checked };
+    const bk = (S.banks || []).find(b => b.id === bid), item = { id: it?.id || nid('i'), type: k, title: t || (bk ? bk.title : ''), hidden: false };
     if (F.includes('u')) item.url = u; if (F.includes('x')) item.text = x; if (F.includes('b')) item.bankId = bid;
     if (F.includes('m')) { item.minutes = Math.max(1, Math.min(300, +$('#if-m', ov).value || 30)); item.tries = Math.max(0, Math.min(20, +$('#if-r', ov).value || 0)); }
     if (F.includes('d')) item.due = $('#if-d', ov).value || '';
+    if (k === 'youtube' && it?.qs) item.qs = it.qs;
     try { await editSections(c, S2 => { const s = S2.find(z => z.id === sid); if (it) { const i = s.items.findIndex(z => z.id === it.id); if (i >= 0) s.items[i] = item; else s.items.push(item); } else s.items.push(item); }); close(); toast('Đã lưu nội dung.'); vClasses(); } catch (er) { toast(er.message, 'bad'); }
   };
+}
+function itemQForm(c, sid, it) {
+  if (!it) return;
+  let qs = (it.qs || []).slice();
+  const tsec = v => { const p = String(v || '').trim().split(':').map(Number); return (!String(v || '').trim() || p.some(isNaN)) ? null : p.reduce((a, x) => a * 60 + x, 0); };
+  const fmtT = t => Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+  const { ov, close } = modal(`<h3>Câu hỏi trong video · ${esc(it.title || 'Video')}</h3>
+    <p class="muted" style="margin:0 0 12px">Video sẽ tự dừng đúng mốc và hiện câu hỏi, học sinh trả lời xong mới xem tiếp. Mốc thời gian dạng mm:ss, ví dụ 02:30.</p>
+    <div id="iq-list"></div>
+    <div style="border:1px dashed #D7DBE2;border-radius:10px;padding:14px;margin:12px 0">
+      <b style="display:block;margin-bottom:10px">Thêm câu hỏi mới</b>
+      <div class="g2b">
+        <label class="field"><span>Thời điểm dừng (mm:ss)</span><input id="iq-t" placeholder="02:30"></label>
+        <label class="field"><span>Đáp án đúng</span><select id="iq-a"><option>A</option><option>B</option><option>C</option><option>D</option></select></label>
+      </div>
+      <label class="field"><span>Câu hỏi</span><input id="iq-q" maxlength="300"></label>
+      <div class="g2b">
+        <label class="field"><span>Đáp án A</span><input id="iq-o0" maxlength="200"></label>
+        <label class="field"><span>Đáp án B</span><input id="iq-o1" maxlength="200"></label>
+        <label class="field"><span>Đáp án C</span><input id="iq-o2" maxlength="200"></label>
+        <label class="field"><span>Đáp án D</span><input id="iq-o3" maxlength="200"></label>
+      </div>
+      <label class="field"><span>Giải thích (không bắt buộc)</span><input id="iq-e" maxlength="300"></label>
+      <button class="btn" id="iq-add" type="button">+ Thêm câu hỏi</button>
+    </div>
+    <div class="row"><span class="grow"></span><button class="btn soft" id="iq-done" type="button">Đóng</button></div>`);
+  const save = async next => {
+    await editSections(c, S2 => { const s = S2.find(z => z.id === sid); const i = s && s.items.find(x => x.id === it.id); if (i) i.qs = next; });
+    qs = next; draw();
+  };
+  const draw = () => {
+    $('#iq-list', ov).innerHTML = qs.length ? qs.map((x, i) => `<div class="qrow"><div class="grow"><b>${fmtT(x.t)}</b> — ${esc(x.q)}<br><small class="muted">Đáp án ${esc(x.a)} · ${(x.o || []).map((o, k) => 'ABCD'[k] + '. ' + esc(o)).join(' · ')}</small></div><button class="btn soft sm" type="button" data-iqd="${i}">Xoá</button></div>`).join('') : '<p class="muted">Chưa có câu hỏi nào.</p>';
+  };
+  draw();
+  $('#iq-list', ov).onclick = async e => {
+    const b = e.target.closest('[data-iqd]'); if (!b || !confirm('Xoá câu hỏi này?')) return;
+    try { await save(qs.filter((_, i) => i !== +b.dataset.iqd)); toast('Đã xoá câu hỏi.'); } catch (er) { toast(er.message, 'bad'); }
+  };
+  $('#iq-add', ov).onclick = async () => {
+    const raw = $('#iq-t', ov).value, t = tsec(raw), q = $('#iq-q', ov).value.trim(), o = [0, 1, 2, 3].map(k => $('#iq-o' + k, ov).value.trim());
+    if (raw.trim() && t == null) return toast('Thời điểm phải dạng mm:ss, ví dụ 02:30.', 'bad');
+    if (t == null) return toast('Nhập thời điểm dừng video.', 'bad');
+    if (!q) return toast('Nhập nội dung câu hỏi.', 'bad');
+    if (o.some(x => !x)) return toast('Điền đủ 4 đáp án A–D.', 'bad');
+    try {
+      await save([...qs, { t, q, o, a: $('#iq-a', ov).value, e: $('#iq-e', ov).value.trim() }].sort((x, y) => x.t - y.t));
+      ['#iq-t', '#iq-q', '#iq-o0', '#iq-o1', '#iq-o2', '#iq-o3', '#iq-e'].forEach(id => { $(id, ov).value = ''; });
+      toast('Đã thêm câu hỏi.');
+    } catch (er) { toast(er.message, 'bad'); }
+  };
+  $('#iq-done', ov).onclick = close;
 }
 function bulkForm(c) {
   const secs = c.sections || []; if (!secs.length) return toast('Hãy thêm một phần trước.', 'warn');
@@ -2318,25 +2391,93 @@ document.addEventListener('click', async e => {
 const CD_NAMES = ["NGỮ ÂM", "THÌ", "CÂU PHỨC", "CỤM ĐỘNG TỪ", "SO SÁNH", "CÂU GIÁN TIẾP", "USED TO VÀ BE/GET USED TO", "CÂU ƯỚC", "CÂU BỊ ĐỘNG", "CÁCH SỬ DỤNG CỦA SUGGEST", "CẤU TRÚC CỦA TÍNH TỪ", "TỪ CHỈ ĐỊNH LƯỢNG", "CÂU ĐIỀU KIỆN", "MẠO TỪ", "MỆNH ĐỀ QUAN HỆ", "DESPITE VÀ ALTHOUGH", "DẠNG CỦA ĐỘNG TỪ", "HÒA HỢP CHỦ NGỮ VÀ ĐỘNG TỪ", "CÂU HỎI ĐUÔI", "QUÁ KHỨ ĐƠN VÀ HIỆN TẠI HOÀN THÀNH", "CẤU TẠO CỦA TỪ", "TRẬT TỰ CỦA TÍNH TỪ", "LIÊN TỪ", "GIỚI TỪ", "TÌM LỖI SAI", "TỪ ĐỒNG NGHĨA, TRÁI NGHĨA", "CÂU CÓ CHỨC NĂNG GIAO TIẾP", "KĨ NĂNG ĐỌC HIỂU", "CÂU ĐỒNG NGHĨA", "VIẾT LẠI CÂU VỚI TỪ CHO SẴN"];
 function vExam() {
   const c = $('#content');
-  const tsec = v => { if (!v) return null; const p = v.split(':').map(Number); return p.some(isNaN) ? null : p.reduce((a, x) => a * 60 + x, 0); };
-  const parseQ = v => v.split('\n').map(l => l.split('|').map(x => x.trim())).filter(f => f.length >= 8 && /^[ABCD]$/i.test(f[7])).map(f => ({ v: +f[0] || 0, t: tsec(f[1]), q: f[2], o: [f[3], f[4], f[5], f[6]], a: f[7].toUpperCase(), e: f[8] || '' }));
-  const fmtQ = qs => (qs || []).map(x => [x.v, x.t == null ? '' : Math.floor(x.t / 60) + ':' + String(x.t % 60).padStart(2, '0'), x.q, ...x.o, x.a, x.e].join(' | ')).join('\n');
-  c.innerHTML = `<h1>Ôn thi chuyên đề</h1><div class="hint" style="margin:8px 0 16px"><b>Cách nhập:</b> mỗi dòng một mục theo dạng <b>Tiêu đề | đường link</b>. <b>Video</b>: YouTube, Vimeo, Facebook, Drive. <b>Tài liệu lý thuyết</b>: Google Docs, Slides, Sheets, file PDF hoặc thư mục trên Drive. Trên Drive phải chọn chia sẻ <b>Bất kỳ ai có đường liên kết</b> thì học sinh mới xem được. <b>Đáp án</b>: gõ liền các chữ A B C D theo thứ tự câu, ví dụ ABCDDBCA, để web chấm điểm tự động.<br><b>Câu hỏi video và luyện tập</b>: mỗi dòng <b>Số video | Thời điểm | Câu hỏi | A | B | C | D | Đáp án đúng | Giải thích</b>. Số video 0 là câu luyện tập; số 1, 2… là câu hỏi của video thứ 1, 2… Thời điểm dạng 03:25 sẽ làm video YouTube tự dừng để hỏi; bỏ trống thì câu hỏi hiện ngay dưới video. Không dùng dấu | trong nội dung câu hỏi.</div><div class="row" style="margin-bottom:14px;gap:10px"><button class="btn" id="cd-add">+ Thêm chuyên đề mới</button><button class="btn soft" id="cd-del">Xoá chuyên đề mới nhất</button></div>` +
-    cdNames().map((t, i) => { const n = i + 1, m = S.cd[n] || {}, fmt = a => (a || []).map(x => x.t + ' | ' + x.u).join('\n');
-      return `<details class="card" style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:900">Chuyên đề ${n}: ${esc(t)} <span class="muted">(${(m.videos || []).length} video, ${(m.docs || []).length} tài liệu, ${(m.key || '').length} câu có đáp án, ${(m.qs || []).length} câu hỏi)</span></summary>
-      <label class="field"><span>Video bài giảng</span><textarea data-n="${n}" data-f="v" rows="3" style="width:100%" placeholder="Bài giảng 1 | https://youtu.be/xxxxxxxxxxx">${esc(fmt(m.videos))}</textarea></label>
-      <label class="field"><span>Tài liệu lý thuyết (Drive)</span><textarea data-n="${n}" data-f="d" rows="3" style="width:100%" placeholder="Slide chuyên đề | https://drive.google.com/file/d/xxxx/view">${esc(fmt(m.docs))}</textarea></label>
+  const tsec = v => { if (!v) return null; const p = v.trim().split(':').map(Number); return p.some(isNaN) ? null : p.reduce((a, x) => a * 60 + x, 0); };
+  const fmtT = t => Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+  const parseLinks = v => v.split('\n').map(x => x.trim()).filter(Boolean).map(l => { const i = l.lastIndexOf('|'); return { t: (i < 0 ? '' : l.slice(0, i).trim()) || 'Tài liệu', u: (i < 0 ? l : l.slice(i + 1)).trim() }; }).filter(x => /^https?:\/\//.test(x.u));
+  const fmtLinks = a => (a || []).map(x => x.t + ' | ' + x.u).join('\n');
+  const cdQS = n => (S.cd[n] && S.cd[n].qs) || [];
+  const fld = (n, f) => c.querySelector(`[data-n="${n}"][data-f="${f}"]`);
+  const qf = (n, k) => c.querySelector(`[data-qform="${n}"] [data-qf="${k}"]`);
+  const vidOpts = txt => '<option value="0">Luyện tập (không gắn video)</option>' + parseLinks(txt).map((x, i) => `<option value="${i + 1}">Video ${i + 1}: ${esc(x.t)}</option>`).join('');
+  const qRow = (x, i) => `<div class="qrow"><div class="grow"><b>${x.v ? 'Video ' + x.v : 'Luyện tập'}${x.t != null ? ' · ' + fmtT(x.t) : ''}</b> — ${esc(x.q)}<br><small class="muted">Đáp án ${esc(x.a)} · ${(x.o || []).map((o, k) => 'ABCD'[k] + '. ' + esc(o)).join(' · ')}</small></div><button class="btn soft sm" type="button" data-qdel="${i}">Xoá</button></div>`;
+  const qList = n => { const L = cdQS(n); return L.length ? L.map(qRow).join('') : '<p class="muted" style="margin:6px 0">Chưa có câu hỏi nào.</p>'; };
+  const renderQ = n => {
+    const el = c.querySelector(`[data-qlist="${n}"]`); if (el) el.innerHTML = qList(n);
+    const k = c.querySelector(`[data-qcount="${n}"]`); if (k) k.textContent = cdQS(n).length;
+  };
+
+  c.innerHTML = `<h1>Ôn thi chuyên đề</h1><div class="hint" style="margin:8px 0 16px"><b>Cách nhập:</b> mỗi chuyên đề có <b>Video bài giảng</b> và <b>Tài liệu</b> dạng <b>Tiêu đề | đường link</b>. Trên Drive phải chọn chia sẻ <b>Bất kỳ ai có đường liên kết</b> thì học sinh mới xem được. <b>Đáp án</b>: gõ liền các chữ A B C D theo thứ tự câu, ví dụ ABCDDBCA, để web chấm điểm tự động.<br><b>Câu hỏi trong video</b>: chọn video, nhập mốc thời gian (mm:ss) để video tự dừng và hỏi. Bỏ trống mốc thời gian thì câu hỏi hiện ngay dưới video. Chọn “Luyện tập” nếu câu hỏi không gắn với video.</div>
+  <div class="row" style="margin-bottom:14px;gap:10px"><button class="btn" id="cd-add">+ Thêm chuyên đề mới</button><button class="btn soft" id="cd-del">Xoá chuyên đề mới nhất</button></div>` +
+  cdNames().map((t, i) => {
+    const n = i + 1, m = S.cd[n] || {}, L = cdQS(n);
+    return `<details class="card" style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:900">Chuyên đề ${n}: ${esc(t)} <span class="muted">(${(m.videos || []).length} video, ${(m.docs || []).length} tài liệu, ${(m.key || '').length} câu có đáp án, <span data-qcount="${n}">${L.length}</span> câu hỏi)</span></summary>
+      <label class="field"><span>Video bài giảng</span><textarea data-n="${n}" data-f="v" rows="3" style="width:100%" placeholder="Bài giảng 1 | https://youtu.be/xxxxxxxxxxx">${esc(fmtLinks(m.videos))}</textarea></label>
+      <label class="field"><span>Tài liệu lý thuyết (Drive)</span><textarea data-n="${n}" data-f="d" rows="3" style="width:100%" placeholder="Slide chuyên đề | https://drive.google.com/file/d/xxxx/view">${esc(fmtLinks(m.docs))}</textarea></label>
       <label class="field"><span>Đáp án trắc nghiệm</span><input data-n="${n}" data-f="k" style="width:100%" value="${esc(m.key || '')}" placeholder="ABCDDBCA"></label>
-      <label class="field"><span>Câu hỏi trong video và luyện tập</span><textarea data-n="${n}" data-f="q" rows="5" style="width:100%" placeholder="1 | 02:30 | She ___ to school. | go | goes | going | gone | B | Ngôi thứ ba số ít dùng goes.">${esc(fmtQ(m.qs))}</textarea></label>
-      <button class="btn sm" data-save="${n}">Lưu chuyên đề ${n}</button></details>`; }).join('');
-  const parse = v => v.split('\n').map(x => x.trim()).filter(Boolean).map(l => { const i = l.lastIndexOf('|'); return { t: (i < 0 ? '' : l.slice(0, i).trim()) || 'Tài liệu', u: (i < 0 ? l : l.slice(i + 1)).trim() }; }).filter(x => /^https?:\/\//.test(x.u));
+      <div class="field"><span>Câu hỏi đã có (video và luyện tập)</span><div data-qlist="${n}">${qList(n)}</div></div>
+      <div data-qform="${n}" style="border:1px dashed #D7DBE2;border-radius:10px;padding:14px;margin:10px 0">
+        <b style="display:block;margin-bottom:10px">Thêm câu hỏi mới</b>
+        <div class="g2b">
+          <label class="field"><span>Gắn với</span><select data-qf="v">${vidOpts(fmtLinks(m.videos))}</select></label>
+          <label class="field"><span>Thời điểm dừng video (mm:ss)</span><input data-qf="t" placeholder="02:30"><small>Bỏ trống: câu hỏi hiện ngay dưới video.</small></label>
+        </div>
+        <label class="field"><span>Câu hỏi</span><input data-qf="q" maxlength="300"></label>
+        <div class="g2b">
+          <label class="field"><span>Đáp án A</span><input data-qf="o0" maxlength="200"></label>
+          <label class="field"><span>Đáp án B</span><input data-qf="o1" maxlength="200"></label>
+          <label class="field"><span>Đáp án C</span><input data-qf="o2" maxlength="200"></label>
+          <label class="field"><span>Đáp án D</span><input data-qf="o3" maxlength="200"></label>
+        </div>
+        <div class="g2b">
+          <label class="field"><span>Đáp án đúng</span><select data-qf="a"><option>A</option><option>B</option><option>C</option><option>D</option></select></label>
+          <label class="field"><span>Giải thích (không bắt buộc)</span><input data-qf="e" maxlength="300"></label>
+        </div>
+        <button class="btn sm" type="button" data-qadd="${n}">+ Thêm câu hỏi</button>
+      </div>
+      <button class="btn sm" type="button" data-save="${n}">Lưu chuyên đề ${n}</button>
+    </details>`;
+  }).join('');
+
+  c.oninput = e => {
+    const ta = e.target.closest('[data-f="v"]'); if (!ta) return;
+    const sel = qf(ta.dataset.n, 'v'); if (!sel) return;
+    const cur = sel.value; sel.innerHTML = vidOpts(ta.value);
+    sel.value = [...sel.options].some(o => o.value === cur) ? cur : '0';
+  };
+
   c.onclick = async e => {
-    const b = e.target.closest('[data-save]'); if (!b) return; const n = +b.dataset.save, g = f => $(`[data-n="${n}"][data-f="${f}"]`).value;
-    try { await api.saveCD(n, { videos: parse(g('v')), docs: parse(g('d')), qs: parseQ(g('q')), key: g('k').toUpperCase().replace(/[^ABCD]/g, ''), updatedAt: NOW() }); toast('Đã lưu chuyên đề ' + n + '.'); } catch (er) { toast(er.message, 'bad'); }
+    const sv = e.target.closest('[data-save]'), ad = e.target.closest('[data-qadd]'), dl = e.target.closest('[data-qdel]');
+    if (!sv && !ad && !dl) return;
+    try {
+      if (sv) {
+        const n = +sv.dataset.save;
+        await api.saveCD(n, { videos: parseLinks(fld(n, 'v').value), docs: parseLinks(fld(n, 'd').value), key: fld(n, 'k').value.toUpperCase().replace(/[^ABCD]/g, ''), updatedAt: NOW() });
+        toast('Đã lưu chuyên đề ' + n + '.');
+      } else if (ad) {
+        const n = +ad.dataset.qadd, get = k => qf(n, k).value.trim();
+        const v = +qf(n, 'v').value || 0, ts = get('t'), t = v && ts ? tsec(ts) : null;
+        const o = [0, 1, 2, 3].map(k => get('o' + k));
+        if (!get('q')) return toast('Nhập nội dung câu hỏi.', 'bad');
+        if (o.some(x => !x)) return toast('Điền đủ 4 đáp án A–D.', 'bad');
+        if (v && ts && t == null) return toast('Thời điểm phải dạng mm:ss, ví dụ 02:30.', 'bad');
+        const item = { v, t, q: get('q'), o, a: qf(n, 'a').value, e: get('e') };
+        const list = [...cdQS(n), item];
+        await api.saveCD(n, { qs: list, updatedAt: NOW() });
+        S.cd[n] = { ...(S.cd[n] || {}), qs: list };
+        ['q', 't', 'o0', 'o1', 'o2', 'o3', 'e'].forEach(k => { qf(n, k).value = ''; });
+        renderQ(n); toast('Đã thêm câu hỏi.');
+      } else if (dl) {
+        const n = +dl.closest('[data-qlist]').dataset.qlist;
+        if (!confirm('Xoá câu hỏi này?')) return;
+        const list = cdQS(n).filter((_, i) => i !== +dl.dataset.qdel);
+        await api.saveCD(n, { qs: list, updatedAt: NOW() });
+        S.cd[n] = { ...(S.cd[n] || {}), qs: list };
+        renderQ(n); toast('Đã xoá câu hỏi.');
+      }
+    } catch (er) { toast(er.message, 'bad'); }
   };
 }
-
-
 
 /* ---------- Check bài tập theo ngày ---------- */
 function vHW() {
@@ -2478,14 +2619,33 @@ function vAdmins() {
 
 /* ---------- chat với học sinh ---------- */
 const escM = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const RB_ICO = { star: '⭐', check: '✅', warn: '⚠️', idea: '💡', book: '📖', pen: '✏️', fire: '🔥', target: '🎯', pin: '📌' };
 const fmtRich = t => t
   .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
   .replace(/(^|[^*])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?!\*)/g, '$1<em>$2</em>')
   .replace(/__([^_\n]+?)__/g, '<u>$1</u>')
   .replace(/==([^=\n]+?)==/g, '<mark class="rt-hl">$1</mark>')
   .replace(/~~([^~\n]+?)~~/g, '<s>$1</s>')
-  .replace(/\{([robgkh]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>');
-const linkM = s => escM(s).split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('').replace(/\n/g, '<br>');
+  .replace(/\{([robgkhp]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>')
+  .replace(/:([a-z]+):/g, (m, k) => RB_ICO[k] || m);
+const fmtBlocks = (t, inl) => {
+  const out = []; let list = null;
+  const flush = () => { if (list) { out.push(`<${list.tag} class="rb-${list.tag}">${list.items.map(x => `<li>${x}</li>`).join('')}</${list.tag}>`); list = null; } };
+  const box = (cls, s) => { flush(); out.push(`<div class="rb-box ${cls}">${inl(s)}</div>`); };
+  t.split('\n').forEach(line => {
+    let m;
+    if ((m = line.match(/^##\s+(.+)$/))) { flush(); out.push(`<h4 class="rb-h">${inl(m[1])}</h4>`); }
+    else if ((m = line.match(/^(?:-|•)\s+(.+)$/))) { if (!list || list.tag !== 'ul') { flush(); list = { tag: 'ul', items: [] }; } list.items.push(inl(m[1])); }
+    else if ((m = line.match(/^(\d+)\.\s+(.+)$/))) { if (!list || list.tag !== 'ol') { flush(); list = { tag: 'ol', items: [] }; } list.items.push(inl(m[2])); }
+    else if ((m = line.match(/^&gt;&gt;\s+(.+)$/))) box('rb-tip', m[1]);
+    else if ((m = line.match(/^&gt;!\s+(.+)$/))) box('rb-warn', m[1]);
+    else if ((m = line.match(/^&gt;\s+(.+)$/))) box('rb-note', m[1]);
+    else { flush(); out.push(inl(line) + '\n'); }
+  });
+  flush();
+  return out.join('').replace(/\n$/, '');
+};
+const linkM = s => fmtBlocks(escM(s), t => t.split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('')).replace(/\n/g, '<br>');
 const chTime = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1); };
 const chMs = m => m.atMs || (m.at && m.at.toMillis ? m.at.toMillis() : Date.now());
 let threadUnsub = null;
@@ -2720,5 +2880,35 @@ addEventListener('unhandledrejection',function(e){setTimeout(function(){show('L�
 })();
 </script>
 <script src="rich-toolbar.js"></script>
+<script type="module">
+(() => {
+  const RT_BTN = [
+    ['H', 'line', '## ', '', '', 'Tiêu đề'], ['B', 'wrap', '**', '**', 'chữ đậm', 'Đậm'], ['I', 'wrap', '*', '*', 'chữ nghiêng', 'Nghiêng'], ['U', 'wrap', '__', '__', 'chữ gạch chân', 'Gạch chân'], ['S', 'wrap', '~~', '~~', 'chữ gạch ngang', 'Gạch ngang'], ['HL', 'wrap', '==', '==', 'nội dung nổi bật', 'Highlight'],
+    ['Đỏ', 'wrap', '{r:', '}', 'chữ đỏ', 'Chữ đỏ'], ['Xanh', 'wrap', '{b:', '}', 'chữ xanh', 'Chữ xanh'], ['Cam', 'wrap', '{o:', '}', 'chữ cam', 'Chữ cam'], ['Lá', 'wrap', '{g:', '}', 'chữ xanh lá', 'Chữ xanh lá'], ['Tím', 'wrap', '{p:', '}', 'chữ tím', 'Chữ tím'],
+    ['• Danh sách', 'line', '- ', '', '', 'Danh sách có dấu chấm'], ['1. Số', 'line', '1. ', '', '', 'Danh sách đánh số'],
+    ['Ghi chú', 'line', '> ', '', '', 'Khung ghi chú (xanh dương)'], ['Mẹo', 'line', '>> ', '', '', 'Khung mẹo (xanh lá)'], ['Cảnh báo', 'line', '>! ', '', '', 'Khung cảnh báo (đỏ)'],
+    ['⭐', 'ins', ':star:', '', '', 'Biểu tượng ngôi sao'], ['✅', 'ins', ':check:', '', '', 'Biểu tượng dấu tick'], ['⚠️', 'ins', ':warn:', '', '', 'Biểu tượng cảnh báo'], ['💡', 'ins', ':idea:', '', '', 'Biểu tượng ý tưởng'], ['📖', 'ins', ':book:', '', '', 'Biểu tượng sách'], ['✏️', 'ins', ':pen:', '', '', 'Biểu tượng bút'], ['🔥', 'ins', ':fire:', '', '', 'Biểu tượng lửa'], ['🎯', 'ins', ':target:', '', '', 'Biểu tượng mục tiêu'], ['📌', 'ins', ':pin:', '', '', 'Biểu tượng ghim']
+  ];
+  const rtAct = (ta, [, kind, pre, post, ph]) => {
+    const s = ta.selectionStart, e = ta.selectionEnd, v = ta.value; let nv, ns, ne;
+    if (kind === 'line') { const ls = v.lastIndexOf('\n', s - 1) + 1; nv = v.slice(0, ls) + pre + v.slice(ls); ns = s + pre.length; ne = e + pre.length; }
+    else if (kind === 'ins') { nv = v.slice(0, s) + pre + v.slice(e); ns = ne = s + pre.length; }
+    else { const txt = v.slice(s, e) || ph; nv = v.slice(0, s) + pre + txt + post + v.slice(e); ns = s + pre.length; ne = ns + txt.length; }
+    ta.value = nv; ta.setSelectionRange(ns, ne); ta.dispatchEvent(new Event('input', { bubbles: true })); ta.focus();
+  };
+  const rtBar = ta => {
+    const d = document.createElement('div'); d.className = 'rt-tb';
+    d.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px';
+    d.innerHTML = RT_BTN.map((b, i) => `<button type="button" class="btn soft sm" data-i="${i}" title="${b[5]}" style="padding:3px 8px;font-size:12px">${b[0]}</button>`).join('');
+    d.onmousedown = e => e.preventDefault();
+    d.onclick = e => { const b = e.target.closest('button[data-i]'); if (b) rtAct(ta, RT_BTN[+b.dataset.i]); };
+    return d;
+  };
+  document.addEventListener('focusin', e => {
+    const ta = e.target; if (!(ta instanceof HTMLTextAreaElement) || !ta.hasAttribute('data-rich') || ta.dataset.rtb) return;
+    ta.dataset.rtb = '1'; const host = ta.closest('label') || ta; host.parentNode.insertBefore(rtBar(ta), host);
+  });
+})();
+</script>
 </body>
 </html>

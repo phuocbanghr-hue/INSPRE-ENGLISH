@@ -1388,6 +1388,28 @@ mark.hl-k{background:#FFC2D4;color:inherit;padding:1px 5px;border-radius:5px}
 /* ======== Bài đăng / bản tin ======== */
 .post,.post-card{border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 14px 30px -24px rgba(16,24,40,.35)}
 .post-b{font-size:1rem}
+
+/* ======== Thẻ khóa học: mỗi khóa một màu nền riêng, dễ nhận biết ======== */
+.cc{--t1:#8F0620;--t2:#CF1B47;--tk:#BE0B2E;--tp:#FCEBEE;--pt:radial-gradient(circle,rgba(255,255,255,.16) 0 3px,transparent 4px);--pz:22px 22px}
+.cc-t1{--t1:#0B3F8A;--t2:#3D8BD6;--tk:#0B5CA8;--tp:#EAF2FB;--pt:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 12px,transparent 12px 36px),repeating-linear-gradient(90deg,rgba(0,0,0,.10) 0 12px,transparent 12px 36px);--pz:auto}
+.cc-t2{--t1:#C2410C;--t2:#FF9A3D;--tk:#E8590C;--tp:#FFF1E6;--pt:repeating-linear-gradient(45deg,rgba(255,255,255,.16) 0 8px,transparent 8px 22px);--pz:auto}
+.cc-t3{--t1:#0B6B3A;--t2:#34C77B;--tk:#17803D;--tp:#E7F6EE;--pt:radial-gradient(circle at 50% 50%,transparent 0 16px,rgba(255,255,255,.2) 17px 22px,transparent 23px);--pz:60px 60px}
+.cc-t4{--t1:#4B1FA8;--t2:#9B6BF2;--tk:#6D3FD1;--tp:#F1EBFD;--pt:linear-gradient(45deg,rgba(255,255,255,.14) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.14) 75%);--pz:34px 34px}
+.cc-t5{--t1:#B3124F;--t2:#FF6B9A;--tk:#D6336C;--tp:#FFEAF1;--pt:radial-gradient(circle at 30% 40%,rgba(255,255,255,.24) 0 28px,transparent 29px),radial-gradient(circle at 80% 75%,rgba(0,0,0,.10) 0 28px,transparent 29px);--pz:110px 90px}
+.cc-t6{--t1:#0B6E7A;--t2:#2BC4D8;--tk:#0C8599;--tp:#E3F7FA;--pt:linear-gradient(60deg,rgba(255,255,255,.14) 25%,transparent 25%),linear-gradient(-60deg,rgba(255,255,255,.14) 25%,transparent 25%);--pz:46px 80px}
+.cc-t7{--t1:#8A5A00;--t2:#F5B921;--tk:#B97A00;--tp:#FFF6DC;--pt:radial-gradient(circle,rgba(255,255,255,.28) 0 3px,transparent 4px);--pz:18px 18px}
+.cc .cc-img{background:linear-gradient(120deg,var(--t1),var(--t2))!important}
+.cc .cc-img:after{content:"";position:absolute;inset:0;background-image:var(--pt);background-size:var(--pz);pointer-events:none;z-index:0}
+.cc .cc-sun,.cc .cc-bd,.cc .cc-new{z-index:1}
+.cc .cc-sun{opacity:.55}
+.cc .cc-bd:not(.ok){color:var(--tk)}
+.cc .cc-k{color:var(--tk)}
+.cc .cc-meta span{background:var(--tp);color:var(--tk)}
+.cc .cc-p{background:var(--tp)}
+.cc .cc-p i{background:linear-gradient(90deg,var(--t1),var(--t2))}
+.cc .cc-new{background:var(--tk)}
+.cc .cc-f .btn{background:var(--tk)!important;border-color:var(--tk)!important;box-shadow:0 8px 18px -10px var(--tk)}
+.cc:hover:not(:disabled){border-color:var(--t2)!important;box-shadow:0 22px 40px -22px var(--t1)!important}
 </style>
 </head>
 <body>
@@ -3783,7 +3805,7 @@ function drawCC() {
     const ls = (S.allLessons || []).filter(l => courseOf(l) === c), on = isEnrolled(c.id), done = ls.filter(l => doneCount(l.id) >= 6).length;
     const pc = on && ls.length ? Math.round(ls.reduce((n, l) => n + doneCount(l.id), 0) / (ls.length * NA) * 100) : 0;
     const nw = on ? newIn(c.id, '') : 0, bd = !S.enrolReady ? 'Đang kiểm tra' : on ? 'Đã ghi danh' : 'Chương trình mới';
-    return `<button class="cc ${on ? 'on' : ''}" data-c="${esc(c.id)}" ${S.enrolReady ? '' : 'disabled'}>
+    return `<button class="cc cc-t${Math.max(0, COURSES.indexOf(c)) % 8} ${on ? 'on' : ''}" data-c="${esc(c.id)}" ${S.enrolReady ? '' : 'disabled'}>
       <span class="cc-img">${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<span class="cc-sun"></span><span class="cc-bd ${on ? 'ok' : ''}">${bd}</span>${nw ? `<span class="cc-new">${nw} tin mới</span>` : ''}</span>
       <span class="cc-b"><small class="cc-k">${esc(c.sub || progOf(c))}</small><h3>${esc(c.name)}</h3><span class="cc-meta">${meta(c)}</span><span class="cc-d">${esc(c.desc || '')}</span>
       <span class="cc-f">${on ? `<span class="cc-p"><i style="width:${pc}%"></i></span><em>${done}/${ls.length} bài · ${pc}%</em><span class="btn sm">Vào học</span>` : `<em>${ls.length} bài học</em><span class="btn sm">Xem và Enroll me</span>`}</span></span></button>`;

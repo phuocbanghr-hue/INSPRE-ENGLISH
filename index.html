@@ -1276,7 +1276,13 @@ body:has(.auth){overflow-x:hidden}
 .dz .asg{margin-top:6px}
 .rt-hl{background:linear-gradient(transparent 38%,#FFE066 38%,#FFE066 92%,transparent 92%);color:inherit;padding:0 3px}
 .rt-h{background:#FFC089;padding:0 4px;border-radius:4px}.rt-k{background:#FFC2D4;padding:0 4px;border-radius:4px}
-.rt-r{color:#D61F3A;font-weight:600}.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
+.rt-r{color:#D61F3A;font-weight:600}
+.rb-h{font-size:1.08em;font-weight:800;margin:14px 0 6px;color:#0B5CA8}
+.rb-ul,.rb-ol{margin:6px 0 10px;padding-left:24px}.rb-ul li,.rb-ol li{margin:3px 0}
+.rb-box{border-radius:10px;padding:10px 14px;margin:8px 0;border-left:4px solid}
+.rb-note{background:#EAF2FB;border-color:#0B5CA8}.rb-tip{background:#E9F7EF;border-color:#17803D}.rb-warn{background:#FDECEE;border-color:#D61F3A}
+.rt-p{color:#7048E8;font-weight:600}
+.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
 </style>
 </head>
 <body>
@@ -1629,14 +1635,33 @@ if (MODE === 'firebase' && FB) {
 /* ---------- Chat hỏi admin (Tương tác – Trao đổi học tập) ---------- */
 const CH = { open: false, msgs: [], meta: null, uns: [], ready: false, last: 0 };
 const escM = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const RB_ICO = { star: '⭐', check: '✅', warn: '⚠️', idea: '💡', book: '📖', pen: '✏️', fire: '🔥', target: '🎯', pin: '📌' };
 const fmtRich = t => t
   .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
   .replace(/(^|[^*])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?!\*)/g, '$1<em>$2</em>')
   .replace(/__([^_\n]+?)__/g, '<u>$1</u>')
   .replace(/==([^=\n]+?)==/g, '<mark class="rt-hl">$1</mark>')
   .replace(/~~([^~\n]+?)~~/g, '<s>$1</s>')
-  .replace(/\{([robgkh]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>');
-const linkM = s => escM(s).split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('').replace(/\n/g, '<br>');
+  .replace(/\{([robgkhp]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>')
+  .replace(/:([a-z]+):/g, (m, k) => RB_ICO[k] || m);
+const fmtBlocks = (t, inl) => {
+  const out = []; let list = null;
+  const flush = () => { if (list) { out.push(`<${list.tag} class="rb-${list.tag}">${list.items.map(x => `<li>${x}</li>`).join('')}</${list.tag}>`); list = null; } };
+  const box = (cls, s) => { flush(); out.push(`<div class="rb-box ${cls}">${inl(s)}</div>`); };
+  t.split('\n').forEach(line => {
+    let m;
+    if ((m = line.match(/^##\s+(.+)$/))) { flush(); out.push(`<h4 class="rb-h">${inl(m[1])}</h4>`); }
+    else if ((m = line.match(/^(?:-|•)\s+(.+)$/))) { if (!list || list.tag !== 'ul') { flush(); list = { tag: 'ul', items: [] }; } list.items.push(inl(m[1])); }
+    else if ((m = line.match(/^(\d+)\.\s+(.+)$/))) { if (!list || list.tag !== 'ol') { flush(); list = { tag: 'ol', items: [] }; } list.items.push(inl(m[2])); }
+    else if ((m = line.match(/^&gt;&gt;\s+(.+)$/))) box('rb-tip', m[1]);
+    else if ((m = line.match(/^&gt;!\s+(.+)$/))) box('rb-warn', m[1]);
+    else if ((m = line.match(/^&gt;\s+(.+)$/))) box('rb-note', m[1]);
+    else { flush(); out.push(inl(line) + '\n'); }
+  });
+  flush();
+  return out.join('').replace(/\n$/, '');
+};
+const linkM = s => fmtBlocks(escM(s), t => t.split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('')).replace(/\n/g, '<br>');
 const chTime = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1); };
 const chMs = m => m.atMs || (m.at && m.at.toMillis ? m.at.toMillis() : Date.now());
 
@@ -2760,9 +2785,7 @@ function itemCard(c, it) {
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${linkM(it.text)}</div></div>`;
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
   const open = `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">`;
-  if (it.type === 'drive') return /drive\.google\.com\/file\//.test(u)
-    ? row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, '')
-    : row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
+  if (it.type === 'drive') return row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
   if (it.type === 'folder') return row('Thư mục Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'cxl-doc'));
   if (it.type === 'youtube') { const tq = YT_RE.test(u) && (it.qs || []).some(q => q.t != null);
     return row('Video bài giảng', `${open}Mở YouTube</a>`, tq ? `<div class="vframe cxl-vid"><div id="cyt-${esc(it.id)}" style="position:absolute;inset:0"></div><div class="vovl" id="cov-${esc(it.id)}" hidden></div></div>` : fr(vidEmbed(u), 'cxl-vid')); }

@@ -2138,7 +2138,7 @@ function postForm(p) {
     <div class="row"><label class="field grow"><span>Link đính kèm (tuỳ chọn)</span><input id="p-link" value="${esc(d.link || '')}" placeholder="https://..."></label><label class="field grow"><span>Chữ trên nút link</span><input id="p-lt" maxlength="40" value="${esc(d.linkText || '')}" placeholder="Mở tài liệu"></label></div>
     <label class="field"><span>Tên người đăng</span><input id="p-by" maxlength="40" value="${esc(d.authorName || 'Thầy cô Inspire')}"></label>
     <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="p-pin" ${d.pinned ? 'checked' : ''}><i></i></span> Ghim lên đầu</label><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="p-lock" ${d.locked ? 'checked' : ''}><i></i></span> Khoá bình luận</label><span class="grow"></span><button class="btn soft" id="p-x">Huỷ</button><button class="btn" id="p-save">${n ? 'Đăng bài' : 'Lưu'}</button></div>`);
-  ov.querySelector('#p-x').onclick = close;
+  ov.querySelector('#p-x').onclick = close; attachFmt(ov.querySelector('#p-body'));
   ov.querySelector('#p-save').onclick = async () => {
     const g = id => ov.querySelector('#' + id), title = g('p-title').value.trim(), body = g('p-body').value.trim();
     if (!title) return toast('Nhập tiêu đề nhé.', 'bad'); if (!body) return toast('Nhập nội dung nhé.', 'bad');

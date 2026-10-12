@@ -233,7 +233,7 @@ button.tool:hover{border-color:var(--blue);background:#F8FBFE}.tool small{color:
 .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vframe.tall{aspect-ratio:3/4;max-height:86vh}
 .vwrap{position:relative}
-.ovl{position:absolute;inset:0;background:#fff;border-radius:6px;overflow:auto;padding:16px;z-index:5;border:2px solid var(--blue)}.ovl[hidden]{display:none}
+.vovl{position:absolute;inset:0;background:#fff;border-radius:16px;overflow:auto;z-index:5;display:flex;align-items:center;justify-content:center;padding:clamp(14px,3vw,36px)}.vovl[hidden]{display:none}.vovl .ask{width:min(640px,100%);margin:auto}.vovl .ask h4{font-size:clamp(1.15rem,2.4vw,1.6rem);margin:6px 0 18px}.vovl .aopt{padding:14px 16px;font-size:1.02rem}.vwrap:fullscreen{background:#000;display:flex;flex-direction:column;justify-content:center}.vwrap:fullscreen .vframe{height:100%;aspect-ratio:auto;border-radius:0}.vwrap:fullscreen .vovl{border-radius:0}
 .vq{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:12px 14px;border-radius:6px;background:var(--blue-l);border:1px dashed #9DBFE3}
 .vq .result{width:100%;margin:0}
 .cdoc{line-height:1.75;overflow-wrap:anywhere}
@@ -985,6 +985,7 @@ const COURSES = [
   { id: 'unlock7', name: 'UNLOCK 7', sub: 'Unlock', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', desc: 'Từ vựng và luyện tập theo giáo trình Unlock 7.', img: 'img/course-unlock7.jpg', test: t => /unlock\s*7/.test(t) }
 ];
 const courseOf = l => { const t = String(l.topic || '').toLowerCase(); return COURSES.find(c => c.test(t)) || null; };
+const forMyClass = x => { const L = (x && x.classes) || []; return !L.length || L.some(c => norm(c) === norm(S.profile && S.profile.className)); };
 const isEnrolled = id => S.enrol.includes(id);
 function applyLessons() { S.lessons = (S.allLessons || []).filter(l => { const c = courseOf(l); return c && isEnrolled(c.id); }); }
 function askKey(c) {
@@ -1566,7 +1567,7 @@ async function viewCD() {
   const prev = CD.find(x => x.n === d.n - 1), next = CD.find(x => x.n === d.n + 1);
   const vqsOf = vi => (cdMeta(d).qs || []).filter(q => q.v === vi);
   const frame = (t, u, cls, vi = 0) => { const qs = vi ? vqsOf(vi) : [], id = (u.match(YT_RE) || [])[1], timed = id && qs.some(q => q.t != null);
-    const box = timed ? `<div class="vwrap"><div class="vframe"><div id="yt${vi}"></div></div><div class="ovl" id="ov${vi}" hidden></div></div>` : `<div class="vframe ${cls}"><iframe src="${esc(cls === 'tall' ? embedUrl(u) : vidEmbed(u))}" loading="lazy" allowfullscreen allow="encrypted-media;picture-in-picture;fullscreen" referrerpolicy="strict-origin-when-cross-origin" title="${esc(t)}"></iframe></div>`;
+    const box = timed ? `<div class="vwrap"><div class="vframe"><div id="yt${vi}"></div></div><div class="vovl" id="ov${vi}" hidden></div></div>` : `<div class="vframe ${cls}"><iframe src="${esc(cls === 'tall' ? embedUrl(u) : vidEmbed(u))}" loading="lazy" allowfullscreen allow="encrypted-media;picture-in-picture;fullscreen" referrerpolicy="strict-origin-when-cross-origin" title="${esc(t)}"></iframe></div>`;
     return `<div class="vid"><div class="vtool"><span class="vic ${/drive\.google|docs\.google/.test(u) ? 'dr' : 'vd'}">${/drive\.google|docs\.google/.test(u) ? 'Drive' : 'Video'}</span><h4>${esc(t)}</h4><span class="vbtn"><button class="btn soft sm" data-fs>Phóng to toàn màn hình</button><a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener">${/drive\.google|docs\.google/.test(u) ? 'Mở trong Drive' : 'Mở link gốc'}</a></span></div>${box}${qs.length ? `<div class="vq" id="vq${vi}"><b>${qs.length} câu hỏi kiểm tra video</b><button class="btn sm" data-vq="${vi}">Làm ngay</button></div>` : ''}</div>`; };
   const runVQ = vi => { const qs = vqsOf(vi), el = $('#vq' + vi); runSeq(el, qs, ok => { el.innerHTML = `<div class="result ${ok === qs.length ? 'ok' : ''}"><b>Đúng ${ok}/${qs.length} câu hỏi của video.</b></div>`; }, (r, qi) => vidRight(d, vi, qi, r)); };
   const body = () => {
@@ -2044,6 +2045,7 @@ function asgStatus(a) {
   const p = prog(a.lessonId), since = a.createdAtMs || 0, acts = a.activity === 'any' ? Object.keys(ACTS) : [a.activity];
   let done = acts.some(k => isDone(p, k) && (p[k + 'At'] || 0) >= since);
   if (String(a.lessonId).startsWith('cd:')) { const n = a.lessonId.slice(3), P = S.profile || {}; done = [(P.cdp || {})[n], (P.cdq || {})[n]].filter(Boolean).some(x => (x.at || 0) >= since) || ((P.cd || {})[n] || 0) >= since; }
+  if (String(a.lessonId).startsWith('bk:')) done = ((S.profile?.bankat || {})[a.lessonId.slice(3)] || 0) >= since;
   const end = a.due ? new Date(a.due + 'T23:59:59') : null;
   return { done, overdue: !done && !!end && end < new Date(), days: end ? Math.ceil((end - new Date()) / 864e5) : null };
 }
@@ -2067,7 +2069,7 @@ function viewHome() {
   };
   $('#dash').onclick = e => {
     if (dashExtra(e)) return;
-    const a = e.target.closest('[data-asg]'); if (a) { const x = S.assignments.find(y => y.id === a.dataset.asg); if (x && String(x.lessonId).startsWith('cd:')) { S.cd = +x.lessonId.slice(3); S.cdTab = null; go('cd'); } else if (x) openLesson(x.lessonId, x.activity === 'any' ? null : x.activity); return; }
+    const a = e.target.closest('[data-asg]'); if (a) { const x = S.assignments.find(y => y.id === a.dataset.asg); if (x && String(x.lessonId).startsWith('bk:')) { const bb = (S.banks || []).find(y => y.id === x.lessonId.slice(3)), cc = bb && COURSES.find(y => y.id === bb.course); if (cc && isEnrolled(cc.id)) { S.bank = bb.id; go('bank'); } else toast('Em cần ghi danh khoá của đề này trước nhé.', 'bad'); } else if (x && String(x.lessonId).startsWith('cd:')) { S.cd = +x.lessonId.slice(3); S.cdTab = null; go('cd'); } else if (x) openLesson(x.lessonId, x.activity === 'any' ? null : x.activity); return; }
     const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; }
     if (e.target.closest('[data-go]')) go(e.target.closest('[data-go]').dataset.go);
   };
@@ -2142,7 +2144,7 @@ function drawCourses() {
 /* ---------- ngân hàng đề luyện tập ---------- */
 function viewBank() {
   const b = (S.banks || []).find(x => x.id === S.bank), c = b && COURSES.find(x => x.id === b.course);
-  if (!b || !c || !isEnrolled(c.id)) { go('home'); return; }
+  if (!b || !c || !isEnrolled(c.id) || !forMyClass(b)) { go('home'); return; }
   S.course = c.id;
   main.innerHTML = `<div class="crumb"><button class="btn soft sm" id="back">Về khoá học</button></div><section class="card bank-head"><span class="cc-k">${esc(c.name)} · Ngân hàng đề</span><h2>${esc(b.title)}</h2>${b.desc ? `<p class="muted">${esc(b.desc)}</p>` : ''}</section><section class="card" id="bk" style="margin:16px 0 50px"></section>`;
   $('#back').onclick = () => go('course');
@@ -2179,7 +2181,7 @@ function runBank(el, b) {
     if (pct >= 80) { sfx.win(); confetti(); }
     el.innerHTML = `<div class="result"><h3>${grade}</h3><p>Đúng ${score}/${N} câu (${pct}%) · +${xp} XP</p>${wrong.length ? `<div class="wronglist" style="display:block"><b>Các câu cần xem lại:</b>${wrong.map(w => `<div style="display:block;text-align:left;padding:8px 0;border-top:1px solid var(--line-s)"><b>${esc(w.q.q)}</b><br><span>Đáp án: ${LET[w.right]}. ${esc(w.q.opts[w.right].t)}</span>${w.q.e ? `<br><small class="muted">${esc(w.q.e)}</small>` : ''}</div>`).join('')}</div>` : ''}<div class="row"><button class="btn soft" id="again">Làm lại</button><button class="btn" id="gr">Về khoá học</button></div></div>`;
     el.onclick = e => { if (e.target.closest('#again')) intro(); else if (e.target.closest('#gr')) go('course'); };
-    award(null, xp); const old = (S.profile?.bankbest || {})[b.id]; if (old == null || pct > old) api.updateMe({ ['bankbest.' + b.id]: pct }).catch(() => {});
+    award(null, xp); const old = (S.profile?.bankbest || {})[b.id]; const up = { ['bankat.' + b.id]: Date.now() }; if (old == null || pct > old) up['bankbest.' + b.id] = pct; api.updateMe(up).catch(() => {});
   }
   intro();
 }
@@ -2198,7 +2200,7 @@ function viewCourse() {
   const flt = S.cflt || 'all', q = (S.cq || '').trim().toLowerCase();
   const list = all.filter(l => (flt === 'all' || st(l) === flt) && (!q || (l.title + ' ' + (l.description || '')).toLowerCase().includes(q)));
   const TAG = { new: ['MỚI', 'tn'], doing: ['ĐANG HỌC', 'td'], done: ['HOÀN THÀNH', 'tk'] };
-  const bks = (S.banks || []).filter(b => b.course === c.id), best = S.profile?.bankbest || {};
+  const bks = (S.banks || []).filter(b => b.course === c.id && forMyClass(b)), best = S.profile?.bankbest || {};
   const bank = bks.length ? `<h2 class="sec" style="margin-top:22px">Ngân hàng đề luyện tập</h2><div class="bgrid">${bks.map(b => `<button class="bcard" data-b="${esc(b.id)}"><span class="bc-k">${b.count || (b.qs || []).length} câu</span><b>${esc(b.title)}</b><small>${esc(b.desc || 'Trắc nghiệm có giải thích đáp án')}</small><span class="bc-f"><em>${best[b.id] != null ? 'Điểm cao nhất ' + best[b.id] + '%' : 'Chưa làm'}</em><span class="btn sm">Làm đề</span></span></button>`).join('')}</div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="home">Khoá học</a><span>›</span><b>${esc(c.name)}</b></nav>
     <section class="chero"><img class="w-bg" src="${c.img}" alt="" onerror="this.remove()"><div class="chero-sun"></div>
@@ -2206,7 +2208,7 @@ function viewCourse() {
         <div class="w-cta">${cont ? `<button class="btn w-main" id="cont">${st(cont) === 'new' ? 'Bắt đầu' : 'Tiếp tục'}: ${esc(cont.title)}</button>` : ''}<button class="btn w-sub" data-go="home">Về trang khoá học</button></div>
         <div class="chero-st"><div><b>${all.length}</b><span>Bài học</span></div><div><b>${done}</b><span>Hoàn thành</span></div><div><b>${doing}</b><span>Đang học</span></div><div><b>${words}</b><span>Từ vựng</span></div></div></div>
       <div class="chero-r"><div class="ring big"><svg viewBox="0 0 100 100" role="img" aria-label="Tiến độ ${pc}%"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="9"/><circle cx="50" cy="50" r="44" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * pc / 100} ${C}" transform="rotate(-90 50 50)"/></svg><b>${pc}%</b></div><small>Tiến độ khoá học</small></div></section>
-    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${bank}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
+    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${bank}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
     <div class="flt" style="margin:0 0 18px"><input id="cq" type="search" placeholder="Tìm bài trong khoá ${esc(c.name)}…" value="${esc(S.cq || '')}" aria-label="Tìm bài"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${flt === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
     <div class="ugrid">${list.length ? list.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), p = Math.round(d / NA * 100), k = st(l);
       return `<button class="ucard ${k}" data-id="${l.id}"><span class="u-n">${pad(lessonNum(l) % 100)}</span><span class="u-b"><span class="tg ${TAG[k][1]}" style="display:inline-block">${TAG[k][0]}</span><b>${esc(l.title)}</b><small>${l.description ? esc(l.description) : n + ' từ vựng'}</small></span>
@@ -2215,6 +2217,7 @@ function viewCourse() {
     if (await postClick(e)) return;
     const ct = e.target.closest('[data-ct]'); if (ct) { S.ctab = ct.dataset.ct; closeThread(); viewCourse(); return; }
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(g.dataset.go); return; }
+    const rv = e.target.closest('[data-rv]'); if (rv) { const b = rv.closest('.rs-i').querySelector('.rs-f'); if (b.dataset.on) { b.innerHTML = ''; delete b.dataset.on; rv.textContent = 'Xem ngay'; } else { b.dataset.on = 1; b.innerHTML = `<div class="vframe tall"><iframe src="${esc(embedUrl(rv.dataset.rv))}" loading="lazy" allowfullscreen allow="fullscreen" referrerpolicy="no-referrer" title="Tài liệu"></iframe></div>`; rv.textContent = 'Đóng'; } return; }
     const bb = e.target.closest('.bcard'); if (bb) { S.bank = bb.dataset.b; go('bank'); return; }
     if (e.target.closest('#cont') && cont) { openLesson(cont.id); return; }
     const u = e.target.closest('.ucard'); if (u) { openLesson(u.dataset.id); return; }
@@ -2738,9 +2741,16 @@ function courseIntro(c) {
     ${goals.length ? `<div class="card"><h3>Sau khoá học, em sẽ</h3><ul class="ticks">${goals.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
     ${outline.length ? `<div class="card"><h3>Lộ trình học</h3><ol class="outl">${outline.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div>` : ''}</div>`;
 }
+function courseRes(c) {
+  const R = (c.resources || []).filter(r => r && /^https?:\/\//.test(r.url || '') && forMyClass(r));
+  if (!R.length) return empty('Thầy cô chưa đăng video hay tài liệu cho khoá này.');
+  const vids = R.filter(r => r.type === 'video'), docs = R.filter(r => r.type !== 'video');
+  return `<div class="rs">${vids.length ? `<h2 class="sec" style="margin-top:22px">Video bài giảng</h2>${vids.map(r => `<div class="vid"><div class="vtool"><span class="vic vd">Video</span><h4>${esc(r.title || 'Video')}</h4><span class="vbtn"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Mở link gốc</a></span></div><div class="vframe"><iframe src="${esc(vidEmbed(r.url))}" loading="lazy" allowfullscreen allow="encrypted-media;picture-in-picture;fullscreen" referrerpolicy="strict-origin-when-cross-origin" title="${esc(r.title || 'Video')}"></iframe></div></div>`).join('')}` : ''}
+    ${docs.length ? `<h2 class="sec" style="margin-top:22px">Tài liệu</h2>${docs.map(r => `<div class="rs-i card" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:10px"><span class="vic dr">Drive</span><b class="grow">${esc(r.title || 'Tài liệu')}</b><button class="btn soft sm" data-rv="${esc(r.url)}">Xem ngay</button><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Mở link gốc</a></div><div class="rs-f" style="margin-top:10px"></div></div>`).join('')}` : ''}</div>`;
+}
 function courseTabs(c) {
   const t = S.ctab || 'lessons', nA = newIn(c.id, 'announce'), nF = newIn(c.id, 'forum');
-  return `<div class="ctabs" role="tablist">${[['lessons', 'Bài học', 0], ['announce', 'Thông báo', nA], ['forum', 'Diễn đàn', nF], ['intro', 'Giới thiệu', 0]].map(([k, n, b]) => `<button role="tab" aria-selected="${t === k}" class="ctab ${t === k ? 'on' : ''}" data-ct="${k}">${n}${b ? `<span class="bdg-n">${b}</span>` : ''}</button>`).join('')}</div>`;
+  return `<div class="ctabs" role="tablist">${[['lessons', 'Bài học', 0], ['announce', 'Thông báo', nA], ['forum', 'Diễn đàn', nF], ['res', 'Tài liệu và video', 0], ['intro', 'Giới thiệu', 0]].map(([k, n, b]) => `<button role="tab" aria-selected="${t === k}" class="ctab ${t === k ? 'on' : ''}" data-ct="${k}">${n}${b ? `<span class="bdg-n">${b}</span>` : ''}</button>`).join('')}</div>`;
 }
 function drawCourseTab(c) {
   const el = $('#cpost'); if (!el) return;
@@ -2875,6 +2885,6 @@ else {
 }
 </script>
 <script>(function(){var b=document.createElement('button');b.className='fab';b.textContent='\u2191';b.setAttribute('aria-label','Lên đầu trang');b.style.display='none';b.onclick=function(){scrollTo({top:0,behavior:'smooth'})};document.body.appendChild(b);addEventListener('scroll',function(){b.style.display=scrollY>400?'block':'none'},{passive:true})})()</script>
-<script>document.addEventListener('click',function(e){var f=e.target.closest('[data-fs]');if(f){var v=f.closest('.vid'),x=v&&v.querySelector('.vframe');if(x){(x.requestFullscreen||x.webkitRequestFullscreen||function(){}).call(x)}return}var w=e.target.closest('#wide');if(w){var l=document.querySelector('.lms');if(l){var on=l.classList.toggle('wide');w.textContent=on?'Hiện mục lục':'Mở rộng màn hình'}}});</script>
+<script>document.addEventListener('click',function(e){var f=e.target.closest('[data-fs]');if(f){var v=f.closest('.vid'),x=v&&(v.querySelector('.vwrap')||v.querySelector('.vframe'));if(x){(x.requestFullscreen||x.webkitRequestFullscreen||function(){}).call(x)}return}var w=e.target.closest('#wide');if(w){var l=document.querySelector('.lms');if(l){var on=l.classList.toggle('wide');w.textContent=on?'Hiện mục lục':'Mở rộng màn hình'}}});</script>
 </body>
 </html>

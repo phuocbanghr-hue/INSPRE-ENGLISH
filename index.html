@@ -1274,6 +1274,9 @@ body:has(.auth){overflow-x:hidden}
 .dz .rm{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #EEF1F5}
 .dz .rm:first-of-type{border-top:0;padding-top:0}.dz .rm p{font-weight:700;margin:2px 0 0}
 .dz .asg{margin-top:6px}
+.rt-hl{background:linear-gradient(transparent 38%,#FFE066 38%,#FFE066 92%,transparent 92%);color:inherit;padding:0 3px}
+.rt-h{background:#FFC089;padding:0 4px;border-radius:4px}.rt-k{background:#FFC2D4;padding:0 4px;border-radius:4px}
+.rt-r{color:#D61F3A;font-weight:600}.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
 </style>
 </head>
 <body>
@@ -1626,7 +1629,14 @@ if (MODE === 'firebase' && FB) {
 /* ---------- Chat hỏi admin (Tương tác – Trao đổi học tập) ---------- */
 const CH = { open: false, msgs: [], meta: null, uns: [], ready: false, last: 0 };
 const escM = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const linkM = s => escM(s).replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`).replace(/\n/g, '<br>');
+const fmtRich = t => t
+  .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/(^|[^*])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?!\*)/g, '$1<em>$2</em>')
+  .replace(/__([^_\n]+?)__/g, '<u>$1</u>')
+  .replace(/==([^=\n]+?)==/g, '<mark class="rt-hl">$1</mark>')
+  .replace(/~~([^~\n]+?)~~/g, '<s>$1</s>')
+  .replace(/\{([robgkh]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>');
+const linkM = s => escM(s).split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('').replace(/\n/g, '<br>');
 const chTime = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1); };
 const chMs = m => m.atMs || (m.at && m.at.toMillis ? m.at.toMillis() : Date.now());
 
@@ -2015,13 +2025,15 @@ async function viewExam() {
     <div class="hero-t"><span class="cdn">Khoá ôn thi</span><h2>${CD.length} chuyên đề Tiếng Anh</h2><p>Lộ trình mỗi chuyên đề: xem bài giảng, đọc lý thuyết, làm phiếu trả lời, ôn lại phần còn yếu.</p>
     <button class="btn" data-cd="${cont.n}">${last ? 'Học tiếp' : 'Bắt đầu'}: Chuyên đề ${cont.n}</button></div>
     <div class="hstats"><div><b>${done}/${CD.length}</b><small>Đã học</small></div><div><b>${mast}</b><small>Thành thạo</small></div><div><b>${avg}%</b><small>Điểm trung bình</small></div></div></section>
-    <section class="tools"><button class="tool" data-mock="exam"><b>Thi thử tổng hợp</b><small>20 câu trộn từ mọi chuyên đề, có bấm giờ</small></button><button class="tool" data-mock="wrong"><b>Sổ lỗi sai (${nw})</b><small>Ôn lại đúng những câu em từng làm sai</small></button><div class="tool"><b>Điểm thi thử cao nhất</b><small>${S.profile.mock ? S.profile.mock.score + '%' : 'Chưa thi'}</small></div></section>
+    <section class="tools"><button class="tool" data-mock="exam"><span class="tk">Luyện đề</span><b>Thi thử tổng hợp</b><small>20 câu trộn từ mọi chuyên đề, có bấm giờ</small><span class="tgo">Bắt đầu thi</span></button><button class="tool" data-mock="wrong"><span class="tk">Củng cố</span><b>Sổ lỗi sai <em class="tcount">${nw}</em></b><small>Ôn lại đúng những câu em từng làm sai</small><span class="tgo">Ôn ngay</span></button><div class="tool tscore"><span class="tk">Thành tích</span><b>Điểm thi thử cao nhất</b><span class="tbig">${S.profile.mock ? S.profile.mock.score + '%' : '--'}</span><small>${S.profile.mock ? 'Làm thêm đề để vượt kỷ lục của em' : 'Em chưa thi lần nào'}</small></div></section>
     ${rev.length ? `<section class="card revbox"><h3>Cần ôn lại hôm nay (${rev.length})</h3><p class="muted">Các chuyên đề dưới 80%. Làm lại đúng các câu sai để lên mức thành thạo.</p>${rev.map(d => `<button class="tag v" data-cd="${d.n}">CĐ ${d.n}: ${esc(d.title)} (${cdP(d.n).score}%)</button>`).join('')}</section>` : ''}
-    <div class="toolbar"><h2 style="font-size:1.6rem;margin-right:8px">Tất cả chuyên đề</h2><input id="q" type="search" placeholder="Tìm chuyên đề…" aria-label="Tìm chuyên đề"></div><div id="cdgrid" class="cdgrid"></div>`;
-  const draw = () => { const q = norm($('#q').value);
-    $('#cdgrid').innerHTML = CD.filter(d => !q || norm(d.n + ' ' + d.title + ' ' + d.en).includes(q)).map(d => { const st = cdState(d.n), nv = cdVids(d).length, nd = cdDocs(d).length;
-      return `<button class="cdc ${st}" data-cd="${d.n}"><span class="cdnum">${d.n}</span><b>${esc(d.title)}</b><small>${esc(d.en)}</small><span class="cdmeta"><span class="tag st">${STL[st]}</span>${nv ? `<span class="tag">${nv} video</span>` : ''}${nd ? `<span class="tag">${nd} tài liệu</span>` : ''}</span></button>`; }).join('') || empty('Không tìm thấy chuyên đề.'); };
-  $('#q').oninput = draw; main.onclick = cdClick; draw();
+    <div class="toolbar cdtb"><h2>Tất cả chuyên đề</h2><input id="q" type="search" placeholder="Tìm chuyên đề…" aria-label="Tìm chuyên đề"></div><div class="cdf" id="cdf"></div><div id="cdgrid" class="cdgrid"></div>`;
+  const FL = [['all', 'Tất cả'], ['new', 'Chưa học'], ['seen', 'Đã học'], ['review', 'Cần ôn lại'], ['master', 'Thành thạo']];
+  const draw = () => { const q = norm($('#q').value), ff = S.cdf || 'all';
+    $('#cdf').innerHTML = FL.map(([k, n]) => `<button class="fchip ${ff === k ? 'on' : ''}" data-cdf="${k}">${n}<span>${k === 'all' ? CD.length : CD.filter(d => cdState(d.n) === k).length}</span></button>`).join('');
+    $('#cdgrid').innerHTML = CD.filter(d => (ff === 'all' || cdState(d.n) === ff) && (!q || norm(d.n + ' ' + d.title + ' ' + d.en).includes(q))).map(d => { const st = cdState(d.n), nv = cdVids(d).length, nd = cdDocs(d).length;
+      return `<button class="cdc ${st}" data-cd="${d.n}"><span class="cdnum">${d.n}</span><b>${esc(d.title)}</b><small>${esc(d.en)}</small><span class="cdmeta"><span class="tag st">${STL[st]}</span>${nv ? `<span class="tag">${nv} video</span>` : ''}${nd ? `<span class="tag">${nd} tài liệu</span>` : ''}</span>${cdP(d.n) ? `<span class="cdbar"><i style="width:${cdP(d.n).score}%"></i></span>` : ''}</button>`; }).join('') || empty('Không tìm thấy chuyên đề.'); };
+  $('#q').oninput = draw; main.onclick = e => { const f = e.target.closest('[data-cdf]'); if (f) { S.cdf = f.dataset.cdf; draw(); return; } cdClick(e); }; draw();
 }
 
 async function viewCD() {
@@ -2033,10 +2045,102 @@ async function viewCD() {
   const TABS = [['lec', 'Bài giảng'], ['doc', 'Lý thuyết và bài tập'], ['prac', 'Luyện tập'], ['sheet', 'Phiếu trả lời'], ['ans', 'Đáp án'], ['note', 'Ghi chú']];
   const prev = CD.find(x => x.n === d.n - 1), next = CD.find(x => x.n === d.n + 1);
   const vqsOf = vi => (cdMeta(d).qs || []).filter(q => q.v === vi);
+  /* HW: câu hỏi gắn mốc thời gian trong video YouTube; phải trả lời đúng lúc video chạy mới tính */
+  const hw = []; vs.forEach((v, k) => { if (!YT_RE.test(v.u)) return; vqsOf(k + 1).forEach((q, qi) => { if (q.t != null) hw.push({ vi: k + 1, qi, q, title: v.t }); }); });
+  const hwDone = h => { const c = (S.profile.cdv || {})[d.n + '_' + h.vi + '_' + h.qi]; return c !== undefined; };
+  const hwDraw = () => { const el = $('#hwbar'); if (!el) return; if (!hw.length) { el.innerHTML = ''; return; }
+    const n = hw.filter(hwDone).length;
+    el.innerHTML = `<style>.hwl{margin:8px 0 0;padding:0;list-style:none}.hwl li{padding:6px 0;border-bottom:1px solid var(--line-s,#eee)}.hwl li.ok{color:#17784D}
+/* ---------- v8: hero lớp nổi bật, không viền cam; diễn đàn dạng bảng ---------- */
+.cxl-hero,.cxl-hero{border:0!important;border-left:0!important;background:linear-gradient(135deg,#FFFFFF 0%,#F4F8FD 100%)!important;border-radius:18px;padding:28px 32px;box-shadow:0 18px 40px -22px rgba(11,92,168,.45),0 2px 6px rgba(16,24,40,.06)}
+.cxl-hero .eyebrow{background:var(--due-blue,#0B5CA8)!important;font-size:12px;padding:4px 12px}
+.cxl-hero h1{font-size:2.1rem!important;font-weight:800!important;line-height:1.2;margin:2px 0 10px!important;color:var(--due-blue,#0B5CA8)!important;-webkit-text-fill-color:currentColor}
+.cxl-hero p{font-size:1.05rem!important;line-height:1.65;color:#1F2937!important;margin:0 0 14px!important;max-width:880px}
+.cxl-hero small{display:inline-block;background:#E8F1FA;color:#0B5CA8!important;font-weight:600;font-size:.88rem!important;border-radius:999px;padding:5px 14px}
+@media(max-width:700px){.cxl-hero{padding:20px 18px}.cxl-hero h1{font-size:1.5rem!important}}
+.ftbl{background:#fff;border:1px solid #DEE2E6;border-radius:6px;overflow:hidden;margin-bottom:18px}
+.ft-h,.ft-r{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1.3fr) minmax(0,1.3fr) 84px;gap:14px;align-items:center;padding:12px 16px}
+.ft-h{font-weight:700;color:#0B5CA8;border-bottom:2px solid #DEE2E6;font-size:.92rem}
+.ft-r{border-top:1px solid #E9ECEF;cursor:pointer;font-size:.92rem;color:#1F2937}
+.ft-h+.ft-r{border-top:0}
+.ft-r:nth-of-type(odd){background:#F8F9FA}.ft-r:hover,.ft-r.on{background:#EAF2FB}
+.ft-r:focus-visible{outline:2px solid #0B5CA8;outline-offset:-2px}
+.ft-t b{color:#0B5CA8;font-weight:600;font-size:1rem}
+.ft-t i{font-style:normal;font-size:.68rem;font-weight:700;border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:middle;background:#E8F1FB;color:#0B5CA8}
+.ft-t i.ft-pin{background:var(--brand,#C8142D);color:#fff}
+.ft-a,.ft-l{display:flex;flex-direction:column;min-width:0}.ft-a b,.ft-l b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ft-a small,.ft-l small{color:#6B7280;font-size:.8rem}
+.c{text-align:center}
+.ft-d{padding:14px 18px 18px;background:#fff;border-top:1px dashed #DEE2E6}
+.ft-sec{margin:22px 0 10px!important;font-size:1.1rem}
+@media(max-width:760px){.ft-h{display:none}.ft-r{grid-template-columns:1fr auto;gap:4px 12px}.ft-t{grid-column:1/-1}.ft-l{display:none}.ft-n.c{text-align:right}.ft-n:before{content:"Phúc đáp: ";color:#6B7280}}
+
+/* ---------- v8: thanh điều hướng IN HOA + trang Ôn thi đẹp hơn ---------- */
+.bar .nav .navb,.bar .nav .navb[data-go]{text-transform:uppercase;letter-spacing:.045em;font-size:.8rem;font-weight:700;padding:11px 13px}
+.bar .nav .navb.on{box-shadow:inset 0 -3px 0 var(--due-orange,#F26522)}
+.bar .menu{min-width:200px;padding:8px;border-radius:16px;border:1px solid #E6E6EA;box-shadow:0 22px 44px -18px rgba(11,40,80,.35)}
+.bar .menu .mi{text-transform:uppercase;letter-spacing:.045em;font-size:.82rem;font-weight:700;color:#0B5CA8;padding:12px 14px;border-radius:10px}
+.bar .menu .mi:hover,.bar .menu .mi.on{background:#E8F1FA;color:#0B5CA8}
+.bar .menu .mi.on{box-shadow:inset 3px 0 0 var(--due-orange,#F26522)}
+
+.hero{position:relative;overflow:hidden;padding:38px 42px!important;gap:30px 34px!important;border-radius:26px!important;background:radial-gradient(520px 260px at 96% -20%,rgba(255,193,69,.45),transparent 70%),linear-gradient(125deg,#7A0620 0%,#B10B32 55%,#D8183F 100%)!important;box-shadow:0 30px 60px -28px rgba(122,6,32,.75)!important}
+.hero:after{content:"";position:absolute;right:-70px;bottom:-110px;width:320px;height:320px;border-radius:50%;border:44px solid rgba(255,255,255,.07);pointer-events:none}
+.hero>*{position:relative;z-index:1}
+.hero .ring{width:140px;height:140px;box-shadow:0 14px 30px -12px rgba(0,0,0,.45)}
+.hero .ring:before{inset:13px;background:#A50A2E!important}
+.hero .ring b{font-size:2rem;font-weight:800}
+.hero-t .cdn{background:rgba(255,255,255,.2)!important;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px!important}
+.hero-t h2{font-size:2.2rem!important;font-weight:800;line-height:1.15;margin:10px 0 8px!important;text-transform:none}
+.hero-t p{font-size:1.02rem;line-height:1.6;max-width:640px;margin-bottom:18px!important;color:rgba(255,255,255,.92)}
+.hero .btn{background:#fff!important;color:#A50A2E!important;border-color:#fff!important;min-height:46px;padding:11px 26px!important;font-size:.95rem;box-shadow:0 12px 24px -12px rgba(0,0,0,.5)!important}
+.hero .btn:hover{background:#FFF1D6!important;transform:translateY(-1px)}
+.hstats{gap:16px!important;margin-top:4px}
+.hstats div{padding:18px 12px!important;border-radius:16px!important;background:rgba(255,255,255,.13)!important;border:1px solid rgba(255,255,255,.28)!important;backdrop-filter:blur(4px)}
+.hstats b{font-size:2rem!important;font-weight:800;line-height:1.1}
+.hstats small{display:block;margin-top:4px;font-size:.85rem;letter-spacing:.02em;color:rgba(255,255,255,.9)}
+
+.tools{gap:18px!important;margin:26px 0 8px!important}
+.tool{position:relative;overflow:hidden;gap:6px!important;padding:20px 22px!important;border-radius:18px!important;border:1px solid #E9E9EE;background:#fff;box-shadow:0 10px 24px -18px rgba(16,24,40,.35);transition:transform .18s,box-shadow .18s,border-color .18s}
+.tool:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#B10B32,#F26522)}
+button.tool:hover{transform:translateY(-3px);border-color:#F0B5C2;box-shadow:0 22px 36px -22px rgba(122,6,32,.55);background:#fff}
+.tool .tk{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F26522}
+.tool>b{font-size:1.08rem;color:#0B5CA8;font-weight:700}
+.tool>small{font-size:.9rem;line-height:1.5;color:#5F6670}
+.tool .tgo{margin-top:6px;align-self:flex-start;font-size:.8rem;font-weight:700;color:#B10B32;background:#FCEBEF;border-radius:99px;padding:5px 14px}
+.tool .tcount{font-style:normal;display:inline-block;min-width:26px;text-align:center;margin-left:6px;background:#B10B32;color:#fff;border-radius:99px;font-size:.8rem;padding:1px 9px;vertical-align:middle}
+.tool .tbig{font-size:2.3rem;font-weight:800;line-height:1.1;color:#B10B32}
+.tool.tscore:before{background:linear-gradient(180deg,#FFC145,#F26522)}
+
+.cdtb{margin:38px 0 14px!important;gap:14px!important}
+.cdtb h2{font-size:1.7rem!important;font-weight:800;margin:0 8px 0 0!important;color:#B10B32;position:relative;padding-bottom:10px}
+.cdtb h2:after{content:"";position:absolute;left:0;bottom:0;width:48px;height:4px;border-radius:99px;background:#F26522}
+.cdtb input{max-width:380px!important;min-height:44px;border-radius:99px!important;padding:10px 20px!important;border:1.5px solid #E6D3D8!important;background:#fff}
+.cdf{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
+.cdf .fchip{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.88rem;padding:8px 16px;border-radius:99px;border:1.5px solid #E6D3D8;background:#fff;color:#0B5CA8}
+.cdf .fchip span{font-size:.75rem;font-weight:700;background:#F1F3F5;color:#5F6670;border-radius:99px;padding:1px 8px}
+.cdf .fchip:hover{border-color:#B10B32}
+.cdf .fchip.on{background:#B10B32;border-color:#B10B32;color:#fff}.cdf .fchip.on span{background:rgba(255,255,255,.25);color:#fff}
+
+.cdgrid{gap:24px!important}
+.cdc{border-radius:20px!important;border:1px solid #ECECF0!important;box-shadow:0 12px 26px -20px rgba(16,24,40,.45)!important}
+.cdc:before{height:104px!important}
+.cdc:hover{transform:translateY(-5px)!important;box-shadow:0 26px 40px -22px rgba(122,6,32,.6)!important}
+.cdc .cdnum{left:14px;top:14px;min-width:38px;height:38px;font-size:1rem;font-weight:800}
+.cdc>b{padding:16px 20px 0!important;font-size:1.02rem!important;line-height:1.35;color:#0B5CA8!important}
+.cdc>small{padding:4px 20px 0!important;font-size:.82rem;letter-spacing:.03em;text-transform:uppercase;color:#7A8088!important}
+.cdc .cdmeta{padding:14px 20px 18px!important;gap:6px!important}
+.cdc .tag{font-size:.68rem;padding:3px 11px}
+.cdc.master .tag.st{background:#E7F6EE;color:#17784D}
+.cdbar{display:block;height:5px;background:#F1E3E7;margin-top:auto}.cdbar i{display:block;height:100%;background:#F26522}
+.cdc.master .cdbar i{background:#17A56B}
+@media(max-width:700px){.hero{padding:26px 20px!important}.hero-t h2{font-size:1.6rem!important}.hero .ring{width:110px;height:110px}.hstats b{font-size:1.5rem!important}}
+</style><section class="card"><h3 style="margin:0">HW: trả lời câu hỏi theo mốc thời gian trong video <span class="tag ${n === hw.length ? 'ok' : ''}">${n}/${hw.length}</span></h3><ul class="hwl">${hw.map(h => `<li class="${hwDone(h) ? 'ok' : ''}"><b>${hwDone(h) ? '✔' : '○'}</b> ${esc(h.title)} · tại ${fmtT(h.q.t)} — ${esc(h.q.q)}</li>`).join('')}</ul>${n === hw.length ? '<p class="okx"><b>Đã trả lời đủ. Có thể đánh dấu hoàn thành.</b></p>' : '<p class="muted">Xem video đến đúng mốc để câu hỏi hiện ra và trả lời.</p>'}</section>`; };
+  const onHW = () => { if (!$('#hwbar')) return document.removeEventListener('hwupdate', onHW); hwDraw(); };
+  document.addEventListener('hwupdate', onHW);
   const frame = (t, u, cls, vi = 0) => { const qs = vi ? vqsOf(vi) : [], id = (u.match(YT_RE) || [])[1], timed = id && qs.some(q => q.t != null);
     const box = timed ? `<div class="vwrap"><div class="vframe"><div id="yt${vi}"></div></div><div class="vovl" id="ov${vi}" hidden></div></div>` : `<div class="vframe ${cls}"><iframe src="${esc(cls === 'tall' ? embedUrl(u) : vidEmbed(u))}" loading="lazy" allowfullscreen allow="encrypted-media;picture-in-picture;fullscreen" referrerpolicy="strict-origin-when-cross-origin" title="${esc(t)}"></iframe></div>`;
     return `<div class="vid"><div class="vtool"><span class="vic ${/drive\.google|docs\.google/.test(u) ? 'dr' : 'vd'}">${/drive\.google|docs\.google/.test(u) ? 'Drive' : 'Video'}</span><h4>${esc(t)}</h4><span class="vbtn"><button class="btn soft sm" data-fs>Phóng to toàn màn hình</button><a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener">${/drive\.google|docs\.google/.test(u) ? 'Mở trong Drive' : 'Mở link gốc'}</a></span></div>${box}${qs.length ? `<div class="vq" id="vq${vi}"><b>${qs.length} câu hỏi kiểm tra video</b><button class="btn sm" data-vq="${vi}">Làm ngay</button></div>` : ''}</div>`; };
-  const runVQ = vi => { const qs = vqsOf(vi), el = $('#vq' + vi); runSeq(el, qs, ok => { el.innerHTML = `<div class="result ${ok === qs.length ? 'ok' : ''}"><b>Đúng ${ok}/${qs.length} câu hỏi của video.</b></div>`; }, (r, qi) => vidRight(d, vi, qi, r)); };
+  const runVQ = vi => { const qs = vqsOf(vi), el = $('#vq' + vi); runSeq(el, qs, ok => { el.innerHTML = `<div class="result ${ok === qs.length ? 'ok' : ''}"><b>Đúng ${ok}/${qs.length} câu hỏi của video.</b></div>`; }, (r, qi) => { if (qs[qi].t == null) vidRight(d, vi, qi, r); }); };
   const body = () => {
     main.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     const el = $('#cdbody');
@@ -2051,11 +2155,12 @@ async function viewCD() {
     <div class="lbox"><button class="btn soft sm" id="back">← Tổng quan khoá học</button>
     <section class="card lhead2"><span class="cdn">Chuyên đề ${d.n} · ${STL[cdState(d.n)]}</span><h2>${esc(d.title)}</h2><p class="muted">${esc(d.en)}</p>
     <div class="cdtabs">${TABS.map(([k, n]) => `<button class="btn soft sm" data-t="${k}">${n}</button>`).join('')}</div><button class="btn soft sm wide-btn" id="wide">Mở rộng màn hình</button></section>
+    <div id="hwbar"></div>
     <section class="card" id="cdbody"></section>
     <div class="cdnav"><button class="btn soft" ${prev ? `data-cd="${prev.n}"` : 'disabled'}>← Chuyên đề trước</button><button class="btn mint" id="dn">${cdDone(d.n) ? 'Đã hoàn thành' : 'Đánh dấu đã học (+30 XP)'}</button><button class="btn soft" ${next ? `data-cd="${next.n}"` : 'disabled'}>Chuyên đề sau →</button></div></div></div>`;
   main.onclick = e => { const t = e.target.closest('[data-t]'); if (t) { tab = S.cdTab = t.dataset.t; body(); return; } const vq = e.target.closest('[data-vq]'); if (vq) return runVQ(+vq.dataset.vq); if (e.target.closest('#back')) return go('exam'); cdClick(e); };
-  $('#dn').onclick = async () => { if (cdDone(d.n)) return; try { await api.updateMe({ ['cd.' + d.n]: Date.now() }); await award(null, 30); confetti(); toast('Hoàn thành chuyên đề ' + d.n + ', +30 XP', 'ok'); $('#dn').textContent = 'Đã hoàn thành'; } catch (e) { toast(e.message, 'bad'); } };
-  body();
+  $('#dn').onclick = async () => { if (cdDone(d.n)) return; if (hw.length && !hw.every(hwDone)) return toast('Trả lời đủ câu hỏi trong video (' + hw.filter(hwDone).length + '/' + hw.length + ') để hoàn thành HW.', 'warn'); try { await api.updateMe({ ['cd.' + d.n]: Date.now() }); await award(null, 30); confetti(); toast('Hoàn thành chuyên đề ' + d.n + ', +30 XP', 'ok'); $('#dn').textContent = 'Đã hoàn thành'; } catch (e) { toast(e.message, 'bad'); } };
+  hwDraw(); body();
 }
 
 function sheet(d, key) {
@@ -2104,8 +2209,11 @@ function runSeq(el, qs, done, each) {
   return { stop() { wr = wr.concat(qs.slice(i)); fin(); } };
 }
 async function vidRight(d, vi, qi, ok) {
-  if (!ok) return; const k = d.n + '_' + vi + '_' + qi; if (S.profile.cdv && S.profile.cdv[k]) return;
-  try { await api.updateMe({ ['cdv.' + k]: 1 }); await award(null, 5); toast('+5 XP', 'ok'); } catch {}
+  const k = d.n + '_' + vi + '_' + qi, cur = (S.profile.cdv || {})[k];
+  if (cur === 1 || (!ok && cur !== undefined)) return;
+  const v = ok ? 1 : 0;
+  try { await api.updateMe({ ['cdv.' + k]: v }); S.profile.cdv = { ...(S.profile.cdv || {}), [k]: v }; if (ok) { await award(null, 5); toast('+5 XP', 'ok'); } } catch {}
+  document.dispatchEvent(new Event('hwupdate'));
 }
 async function mountYT(vi, id, all, d) {
   await ytReady(); const cps = all.filter(q => q.t != null), asked = new Set(); let timer, p;
@@ -3540,7 +3648,7 @@ const ageTxt = c => (c.ageMin && c.ageMax) ? `${c.ageMin} đến ${c.ageMax} tu�
 const lineList = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
 
 /* ----- bảng tin + diễn đàn ----- */
-const PF = { open: null, un: null, cm: [], redraw: null };
+const PF = { open: null, un: null, cm: [], redraw: null, meta: {}, busy: {} };
 const POST_TAG = { announce: ['THÔNG BÁO', 'pt-a'], forum: ['DIỄN ĐÀN', 'pt-f'] };
 const cname = id => id === 'all' ? 'Toàn trung tâm' : (courseBy(id) || {}).name || 'Khoá học';
 const dFmt = ms => { const d = new Date(ms); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
@@ -3562,19 +3670,43 @@ function drawThread() {
   const el = $('#thl'); if (!el) return;
   el.innerHTML = PF.cm.length ? PF.cm.map(c => `<div class="cmt ${c.role === 'admin' ? 'ad' : ''}"><div><b>${esc(c.name || 'Học sinh')}</b>${c.role === 'admin' ? '<span class="pt pt-a">THẦY CÔ</span>' : ''}<small>${dFmt(c.atMs || 0)}</small>${c.uid === S.user.uid ? `<button class="cmt-x" data-delc="${esc(c.id)}" aria-label="Xoá bình luận">Xoá</button>` : ''}</div><p>${linkM(c.text)}</p></div>`).join('') : '<p class="muted" style="font-size:.9rem">Chưa có bình luận nào. Em là người đầu tiên nhé!</p>';
 }
+const metaCell = (m, pid) => m ? `<b>${m.n}</b>` : '<span class="muted">…</span>';
+const lastCell = (p, m) => { const who = m && m.last ? m.last.name : (p.authorName || 'Thầy cô Inspire'), at = m && m.last ? m.last.atMs : postMs(p); return `<b>${esc(who || 'Học sinh')}</b><small>${dFmt(at || 0)}</small>`; };
+function forumRows(list, showCourse) {
+  return `<div class="ftbl" role="table"><div class="ft-h" role="row"><span>Thảo luận</span><span>Người khởi tạo</span><span>Bài viết gần đây nhất</span><span class="c">Phúc đáp</span></div>` + list.map(p => {
+    const id = esc(p.id), open = PF.open === p.id, m = PF.meta[p.id];
+    return `<div class="ft-r ${open ? 'on' : ''} ${p.pinned ? 'pin' : ''}" role="row" tabindex="0" data-open="${id}" aria-expanded="${open}"><span class="ft-t"><b>${esc(p.title)}</b>${p.pinned ? '<i class="ft-pin">Ghim</i>' : ''}${showCourse ? `<i class="ft-co">${esc(cname(p.courseId))}</i>` : ''}${p.locked ? '<i class="ft-co">Đã khoá</i>' : ''}</span>
+      <span class="ft-a"><b>${esc(p.authorName || 'Thầy cô Inspire')}</b><small>${dFmt(postMs(p))}</small></span>
+      <span class="ft-l" data-cl="${id}">${lastCell(p, m)}</span><span class="ft-n c" data-cn="${id}">${metaCell(m, p.id)}</span></div>
+    ${open ? `<div class="ft-d"><div class="post-b">${linkM(p.body || '')}</div>${/^https?:\/\//.test(p.link || '') ? `<a class="btn soft sm" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${esc(p.linkText || 'Mở tài liệu / liên kết')}</a>` : ''}<div class="thread"><div class="th-l" id="thl"></div>${p.locked ? '' : `<div class="th-f"><textarea id="thx" maxlength="1000" rows="2" placeholder="Viết bình luận của em…"></textarea><button class="btn sm" data-send="${id}">Gửi</button></div>`}</div></div>` : ''}`;
+  }).join('') + '</div>';
+}
+function loadMeta(list) {
+  list.filter(p => p.type === 'forum' && !PF.meta[p.id] && !PF.busy[p.id]).forEach(p => {
+    PF.busy[p.id] = 1;
+    api.cmtMeta(p.id).then(m => { PF.meta[p.id] = m; paintMeta(p); }).catch(() => { }).finally(() => delete PF.busy[p.id]);
+  });
+}
+function paintMeta(p) {
+  const m = PF.meta[p.id], a = document.querySelector(`[data-cn="${CSS.escape(p.id)}"]`), b = document.querySelector(`[data-cl="${CSS.escape(p.id)}"]`);
+  if (a) a.innerHTML = metaCell(m, p.id); if (b) b.innerHTML = lastCell(p, m);
+}
 function renderPosts(el, list, showCourse, emptyMsg) {
   const keep = $('#thx') ? $('#thx').value : '';
-  el.innerHTML = list.length ? list.map(p => postCard(p, showCourse)).join('') : empty(emptyMsg);
+  const ann = list.filter(p => p.type !== 'forum'), fo = list.filter(p => p.type === 'forum');
+  el.innerHTML = list.length ? ann.map(p => postCard(p, showCourse)).join('') + (fo.length ? (ann.length ? '<h3 class="ft-sec">Diễn đàn thảo luận</h3>' : '') + forumRows(fo, showCourse) : '') : empty(emptyMsg);
   const t = $('#thx'); if (t && keep) { t.value = keep; }
   if (PF.open) drawThread();
+  loadMeta(fo);
 }
 function togglePost(pid) {
   if (PF.un) { PF.un(); PF.un = null; }
   PF.cm = [];
   if (PF.open === pid) { PF.open = null; PF.redraw && PF.redraw(); return; }
   PF.open = pid; PF.redraw && PF.redraw();
-  PF.un = api.watchComments(pid, l => { PF.cm = l; drawThread(); });
+  PF.un = api.watchComments(pid, l => { PF.cm = l; drawThread(); const x = l[l.length - 1]; PF.meta[pid] = { n: l.length, last: x ? { name: x.name, atMs: x.atMs } : null }; const p = (S.posts || []).find(q => q.id === pid); if (p) paintMeta(p); });
 }
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('ft-r')) { e.preventDefault(); e.target.click(); } });
 function closeThread() { if (PF.un) { PF.un(); PF.un = null; } PF.open = null; PF.cm = []; PF.redraw = null; }
 async function postClick(e) {
   const o = e.target.closest('[data-open]'); if (o) { togglePost(o.dataset.open); return true; }
@@ -3708,6 +3840,10 @@ if (MODE === 'firebase' && FB) {
   api.watchComments = (pid, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'posts', pid, 'comments'), FB.orderBy('atMs', 'asc'), FB.limitToLast(200)), s => cb(L(s)), e => console.error('comments', e));
   api.addComment = (pid, text) => FB.addDoc(FB.collection(db, 'posts', pid, 'comments'), { uid: S.user.uid, name: myName(), role: 'student', text, atMs: Date.now(), at: FB.serverTimestamp() });
   api.delComment = (pid, cid) => FB.deleteDoc(FB.doc(db, 'posts', pid, 'comments', cid));
+  api.cmtMeta = async pid => { const col = FB.collection(db, 'posts', pid, 'comments'); let n = 0, last = null;
+    try { const q = await FB.getDocs(FB.query(col, FB.orderBy('atMs', 'desc'), FB.limit(1))); if (!q.empty) last = q.docs[0].data(); } catch (e) { }
+    try { n = (await FB.getCountFromServer(col)).data().count; } catch (e) { try { n = (await FB.getDocs(FB.query(col, FB.limit(200)))).size; } catch (e2) { } }
+    return { n, last: last ? { name: last.name, atMs: last.atMs } : null }; };
 } else {
   const lsj = (k, d) => { try { const v = JSON.parse(store.get(k) || 'null'); return v ?? d; } catch { return d; } }, fs = [];
   const fire = () => fs.forEach(f => f()); addEventListener('storage', fire);
@@ -3716,6 +3852,7 @@ if (MODE === 'firebase' && FB) {
   api.watchPosts = cb => { if (store.get('inspire_posts') == null) store.set('inspire_posts', JSON.stringify([{ id: 'p0', courseId: 'all', type: 'announce', title: 'Chào mừng đến với Inspire', body: 'Đây là bảng tin của trung tâm. Thầy cô sẽ đăng thông báo và mở diễn đàn trao đổi bài ở đây.', pinned: true, authorName: 'Thầy cô Inspire', atMs: Date.now() }])); return sub(() => cb(lsj('inspire_posts', []))); };
   api.watchComments = (pid, cb) => sub(() => cb(lsj('inspire_cmts', {})[pid] || []));
   api.addComment = async (pid, text) => { const m = lsj('inspire_cmts', {}); (m[pid] ||= []).push({ id: 'c' + Date.now(), uid: S.user.uid, name: myName(), role: 'student', text, atMs: Date.now() }); store.set('inspire_cmts', JSON.stringify(m)); fire(); };
+  api.cmtMeta = async pid => { const l = lsj('inspire_cmts', {})[pid] || [], x = l[l.length - 1]; return { n: l.length, last: x ? { name: x.name, atMs: x.atMs } : null }; };
   api.delComment = async (pid, cid) => { const m = lsj('inspire_cmts', {}); m[pid] = (m[pid] || []).filter(c => c.id !== cid); store.set('inspire_cmts', JSON.stringify(m)); fire(); };
 }
 

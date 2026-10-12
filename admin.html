@@ -793,6 +793,34 @@ th[data-dir=asc]::after,th[data-dir=desc]::after{color:var(--brand)}
   .modal{border-radius:18px 18px 0 0!important}
   .toasts{left:12px;right:12px;width:auto}
 }
+.fmtbar{display:flex;gap:6px;margin:4px 0 6px;flex-wrap:wrap}.fmtbar button{min-width:34px;height:30px;padding:0 8px;border:1px solid #d9dde6;background:#fff;border-radius:6px;cursor:pointer;font-size:.9rem}.fmtbar button:hover{background:#f3f4f8}
+
+.fmtbar{display:flex;gap:6px;align-items:center;margin:6px 0 8px;padding:6px;background:#FAF5F6;border:1px solid #F0E1E5;border-radius:12px;flex-wrap:wrap}
+.fmtbar button{min-width:36px;height:32px;padding:0 10px;border:1px solid #E6D3D8;background:#fff;border-radius:9px;cursor:pointer;font:600 .92rem/1 inherit;transition:.15s}
+.fmtbar button:hover{background:#B10B32;border-color:#B10B32;color:#fff!important;transform:translateY(-1px)}
+.fmtbar i{width:1px;height:20px;background:#E6D3D8;margin:0 2px}
+.fmtbar .hint{margin-left:auto;font-size:.76rem;color:#7A6B72}
+.fmtprev{margin-top:8px;padding:12px 16px;border:1px dashed #E3A9B6;border-left:5px solid #B10B32;border-radius:4px 14px 14px 4px;background:linear-gradient(135deg,#FFF6F7,#FFFBF1);line-height:1.8;font-size:.98rem;max-height:200px;overflow:auto}
+.fmtprev:empty::before{content:"Xem trước chữ sẽ hiện ở đây…";color:#9a8c92}
+.fmtprev small.t{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;color:#B10B32;margin-bottom:4px;text-transform:uppercase}
+.fmtprev strong{font-weight:800;color:#7E0824}.fmtprev u{text-decoration-thickness:3px;text-underline-offset:4px;text-decoration-color:#F5B73B}
+.fmtprev mark.hl{background:linear-gradient(transparent 40%,#FFD966 40%,#FFD966 92%,transparent 92%);padding:0 3px}.fmtprev mark.hl-h{background:#FFC089;padding:1px 5px;border-radius:5px}.fmtprev mark.hl-k{background:#FFC2D4;padding:1px 5px;border-radius:5px}
+.fmtprev .c-r{color:#D61F3A;font-weight:600}.fmtprev .c-b{color:#0B5CA8;font-weight:600}.fmtprev .c-o{color:#E8590C;font-weight:600}.fmtprev .c-g{color:#17803D;font-weight:600}
+
+/* ===== admin: đồng bộ tông crimson + nâng cấp modal ===== */
+:root{--ds-red:#B10B32;--ds-red-d:#6E0620;--ds-red-l:#FCEBEF;--ds-gold:#E8B04B}
+:focus-visible{outline:3px solid rgba(177,11,50,.35);outline-offset:2px}
+input:focus,textarea:focus,select:focus{border-color:var(--ds-red)!important;box-shadow:0 0 0 4px rgba(177,11,50,.12)!important;outline:none}
+::selection{background:#F7C9D4}
+*{scrollbar-width:thin;scrollbar-color:#D9B9C1 transparent}
+.modal{border-radius:22px!important;border:0!important;box-shadow:0 40px 80px -30px rgba(40,4,16,.65)!important;position:relative;overflow:hidden}
+.modal::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--ds-red-d),var(--ds-red) 50%,var(--ds-gold))}
+.modal h3{color:var(--ds-red-d);letter-spacing:.02em}
+.navb{color:var(--ds-red)!important}
+th{background:var(--ds-red-l)!important;color:var(--ds-red-d)!important}
+.card{border-radius:18px!important;box-shadow:0 1px 2px rgba(40,8,18,.05),0 18px 36px -28px rgba(110,6,32,.45)!important}
+.btn{border-radius:99px!important}
+.btn:not(.soft){box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 20px -12px rgba(177,11,50,.9)}
 </style>
 </head>
 <body>
@@ -1221,12 +1249,37 @@ async function cxClick(e) {
 }
 
 /* ----- form phần / nội dung ----- */
+/* ----- thanh định dạng chữ cho ô nhập (in đậm, nghiêng, gạch chân, tô màu) ----- */
+function attachFmt(ta) {
+  if (!ta || ta.dataset.fmt) return; ta.dataset.fmt = 1;
+  const X = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const F = t => t.replace(/&lt;(\/?)(b|strong|i|em|u|s|mark|br)&gt;/gi, '<$1$2>').replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?!\*)/g, '$1<em>$2</em>').replace(/__([^_\n]+?)__/g, '<u>$1</u>').replace(/==([^=\n]+?)==/g, '<mark class="hl">$1</mark>').replace(/~~([^~\n]+?)~~/g, '<s>$1</s>').replace(/\{([robgkh]):([^{}\n]+?)\}/g, (m, c, x) => /^[hk]$/.test(c) ? `<mark class="hl-${c}">${x}</mark>` : `<span class="c-${c}">${x}</span>`);
+  const R = s => X(s).split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener">${p}</a>` : F(p)).join('').replace(/\n/g, '<br>');
+  const pv = document.createElement('div'); pv.className = 'fmtprev';
+  const upd = () => { pv.innerHTML = ta.value.trim() ? '<small class="t">Học sinh sẽ thấy</small>' + R(ta.value) : ''; };
+  const wrap = (a, b, ph) => {
+    const s = ta.selectionStart, e = ta.selectionEnd, v = ta.value, sel = v.slice(s, e) || ph;
+    ta.value = v.slice(0, s) + a + sel + b + v.slice(e);
+    ta.focus(); ta.setSelectionRange(s + a.length, s + a.length + sel.length); upd();
+  };
+  const clear = () => { const s = ta.selectionStart, e = ta.selectionEnd; if (s === e) return; const t = ta.value.slice(s, e).replace(/\*\*|__|==|~~/g, '').replace(/\{[robgkh]:([^{}]*)\}/g, '$1'); ta.value = ta.value.slice(0, s) + t + ta.value.slice(e); ta.focus(); ta.setSelectionRange(s, s + t.length); upd(); };
+  const B = [['B', '**', '**', 'chữ đậm', 'In đậm (Ctrl+B)', 'font-weight:900'], ['I', '*', '*', 'chữ nghiêng', 'In nghiêng (Ctrl+I)', 'font-style:italic;font-family:serif'], ['U', '__', '__', 'gạch chân', 'Gạch chân (Ctrl+U)', 'text-decoration:underline'], ['S', '~~', '~~', 'gạch ngang', 'Gạch ngang', 'text-decoration:line-through'], '|',
+    ['Tô vàng', '==', '==', 'nổi bật', 'Tô vàng nổi bật', 'background:#FFE066'], ['Tô cam', '{h:', '}', 'nổi bật', 'Tô cam', 'background:#FFC089'], ['Tô hồng', '{k:', '}', 'nổi bật', 'Tô hồng', 'background:#FFC2D4'], '|',
+    ['A', '{r:', '}', 'chữ đỏ', 'Chữ đỏ', 'color:#D61F3A;font-weight:800'], ['A', '{b:', '}', 'chữ xanh', 'Chữ xanh dương', 'color:#0B5CA8;font-weight:800'], ['A', '{o:', '}', 'chữ cam', 'Chữ cam', 'color:#E8590C;font-weight:800'], ['A', '{g:', '}', 'chữ xanh lá', 'Chữ xanh lá', 'color:#17803D;font-weight:800'], '|', ['Xoá', 0, 0, 0, 'Xoá định dạng phần đang bôi đen', 'font-size:.8rem']];
+  const bar = document.createElement('div'); bar.className = 'fmtbar';
+  bar.innerHTML = B.map((x, i) => x === '|' ? '<i></i>' : `<button type="button" data-i="${i}" title="${x[4]}" style="${x[5]}">${x[0]}</button>`).join('') + '<span class="hint">Bôi đen chữ rồi bấm nút</span>';
+  bar.addEventListener('mousedown', e => e.preventDefault());
+  bar.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); const x = B[+b.dataset.i]; x[1] ? wrap(x[1], x[2], x[3]) : clear(); });
+  ta.parentNode.insertBefore(bar, ta); ta.parentNode.appendChild(pv);
+  ta.addEventListener('input', upd); upd();
+  ta.addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.altKey) return; const i = { b: 0, i: 1, u: 2 }[e.key.toLowerCase()]; if (i == null) return; e.preventDefault(); wrap(B[i][1], B[i][2], B[i][3]); });
+}
 function secForm(c, s) {
   const { ov, close } = modal(`<h3>${s ? 'Sửa phần' : 'Thêm chương / phần mới'}</h3>
     <label class="field"><span>Tên phần</span><input id="sf-t" maxlength="80" value="${esc(s?.title || '')}" placeholder="Ví dụ: Chương 2 – Thì quá khứ"></label>
-    <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><textarea id="sf-s" rows="3" maxlength="800" placeholder="Mục tiêu bài, việc cần chuẩn bị…">${esc(s?.summary || '')}</textarea></label>
+    <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><textarea id="sf-s" rows="5" maxlength="2000" placeholder="Mục tiêu bài, việc cần chuẩn bị…">${esc(s?.summary || '')}</textarea></label>
     <div class="row"><span class="grow"></span><button class="btn soft" id="sf-x">Huỷ</button><button class="btn" id="sf-ok">Lưu</button></div>`);
-  $('#sf-x', ov).onclick = close; $('#sf-t', ov).focus();
+  $('#sf-x', ov).onclick = close; attachFmt($('#sf-s', ov)); $('#sf-t', ov).focus();
   $('#sf-ok', ov).onclick = async () => {
     const title = $('#sf-t', ov).value.trim(), summary = $('#sf-s', ov).value.trim(); if (!title) return toast('Nhập tên phần nhé.', 'bad');
     try { await editSections(c, S2 => { if (s) { const z = S2.find(k => k.id === s.id); z.title = title; z.summary = summary; } else S2.push({ id: nid('s'), title, summary, hidden: false, items: [] }); }); close(); toast('Đã lưu.'); vClasses(); } catch (er) { toast(er.message, 'bad'); }
@@ -1250,7 +1303,7 @@ function itemForm(c, sid, it) {
   const kind = () => $('#if-k', ov).value;
   const sync = () => { const k = kind(), F = ITEM_FIELDS[k]; ['t', 'u', 'x', 'b', 'm', 'd'].forEach(w => $('#w-' + w, ov).classList.toggle('hidden', !F.includes(w)));
     $('#l-t', ov).textContent = k === 'text' ? 'Tiêu đề (không bắt buộc)' : (k === 'bank' || k === 'test') ? 'Tiêu đề hiển thị (để trống = tên đề)' : 'Tiêu đề'; $('#l-x', ov).textContent = k === 'task' ? 'Mô tả nhiệm vụ' : 'Nội dung'; };
-  $('#if-k', ov).onchange = sync; sync();
+  $('#if-k', ov).onchange = sync; sync(); attachFmt($('#if-x', ov));
   $('#if-u', ov).oninput = e => { const k = kind(); if (['link', 'drive', 'folder', 'youtube'].includes(k) && okUrl(e.target.value.trim())) { const g = guessType(e.target.value.trim()); if (g !== k) { $('#if-k', ov).value = g; sync(); } } };
   $('#if-x2', ov).onclick = close;
   $('#if-ok', ov).onclick = async () => {

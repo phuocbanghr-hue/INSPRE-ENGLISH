@@ -14,7 +14,7 @@
 :root{
   --blue:#0B5CA8; --blue-d:#084A87; --blue-l:#EAF2FB; --link:#0F6CBF;
   --orange:#F26B1D; --orange-d:#D85A10; --gold:#FDB515;
-  --ink:#2B2F33; --mute:#6B7480; --line:#DEE2E6; --line-s:#EEF1F4; --bg:#F4F6F9;
+  --ink:#0B5CA8; --mute:#6B7480; --line:#DEE2E6; --line-s:#EEF1F4; --bg:#F4F6F9;
   --ok:#1F9D63; --ok-bg:#E7F6EE; --bad:#D6293E; --bad-bg:#FDECEE; --warn:#C98200; --warn-bg:#FFF4D9;
   --red:#BE0B2E;
 }
@@ -165,7 +165,7 @@ tr:last-child td{border-bottom:0}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 /* ===== Inspire red skin v3 ===== */
-:root{--blue:#E0243A;--blue-d:#BE1A2F;--blue-l:#FFF0F1;--link:#C81E34;--orange:#E0243A;--orange-d:#BE1A2F;--gold:#FFC145;--ink:#2B2127;--mute:#7A6B72;--line:#EFDDE0;--line-s:#F7ECEE;--bg:#FBF5F5;--sh:0 1px 2px rgba(120,20,40,.06),0 8px 24px -12px rgba(190,26,47,.2)}
+:root{--blue:#E0243A;--blue-d:#BE1A2F;--blue-l:#FFF0F1;--link:#C81E34;--orange:#E0243A;--orange-d:#BE1A2F;--gold:#FFC145;--ink:#0B5CA8;--mute:#7A6B72;--line:#EFDDE0;--line-s:#F7ECEE;--bg:#FBF5F5;--sh:0 1px 2px rgba(120,20,40,.06),0 8px 24px -12px rgba(190,26,47,.2)}
 body{font-family:'Be Vietnam Pro','Inter',system-ui,sans-serif;background:var(--bg)}
 h1,h2,h3,h4{letter-spacing:-.01em}:focus-visible{outline:3px solid #FFB3BC}
 .btn{border-radius:10px;background:linear-gradient(180deg,#EE3B50,#D61F36);border:0;box-shadow:0 6px 14px -6px rgba(214,31,54,.55);transition:transform .15s}
@@ -249,6 +249,240 @@ th{background:#FFF4F5;color:var(--blue-d)}tbody tr:nth-child(even){background:no
 .cx-i .avx,#cx-h .avx{margin-right:10px}
 .bk-card{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #eee}
 td:has(>.avx){white-space:nowrap}
+/* ===== v12: giao diện quản trị làm lại ===== */
+:root{--blue:#BE0B2E;--blue-d:#9A0823;--blue-l:#FCEBEE;--link:#BE0B2E;--bg:#F5F6F8;--line:#E4E7EC;--line-s:#F0F2F5;--ink:#0B5CA8;--mute:#6B7280;--radius:12px}
+body{background:var(--bg);font-size:14px;color:var(--ink)}
+.atop{height:60px;background:linear-gradient(90deg,#8F0620,#BE0B2E);box-shadow:0 1px 0 rgba(0,0,0,.06);position:sticky;top:0;z-index:20}
+.atop .brand b{font-size:1.02rem;letter-spacing:.01em}
+.atop .brand small{font-size:.74rem;opacity:.9}
+.atop .brand img{width:36px;height:36px}
+.atop-r{gap:12px}
+.pill-ok,.pill-demo,.pill-role{border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600}
+.pill-role{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35)}
+.me-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:999px;padding:4px 12px 4px 4px;color:#fff}
+.me-chip .av{width:28px;height:28px;border-radius:50%;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:800;font-size:13px}
+.me-chip .em{color:#fff;opacity:.95;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atop .btn.soft{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.atop .btn.soft:hover{background:rgba(255,255,255,.14);border-color:#fff}
+.shell{grid-template-columns:248px minmax(0,1fr)}
+.side{top:60px;height:calc(100vh - 60px);background:#fff;border-right:1px solid var(--line);padding:14px 10px 18px;gap:0;display:flex;flex-direction:column}
+.grp{margin-bottom:12px}
+.grp-t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9AA1AC;padding:6px 10px 4px}
+.nb{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:#374151;font-weight:500;text-align:left;box-shadow:none;margin:1px 0;font-size:14px}
+.nb:hover{background:#F3F4F6;color:#0B5CA8}
+.nb.on{background:var(--blue-l);color:var(--blue);font-weight:600;box-shadow:none}
+.nb-i{width:20px;height:20px;display:grid;place-items:center;flex:none;color:inherit}
+.nb-i svg{width:18px;height:18px}
+.nb .bdg{margin-left:auto}
+.side-f{margin-top:auto;border-top:1px solid var(--line-s);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.kbd{display:flex;justify-content:space-between;align-items:center;width:100%;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;color:#4B5563;font-size:13px}
+.content{padding:26px 30px 80px;max-width:1280px}
+.content>h2:first-child{font-size:1.6rem;margin-bottom:4px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card h3{font-size:1.02rem;margin-bottom:12px;color:var(--ink)}
+.btn{border-radius:8px;padding:8px 14px;font-weight:600;font-size:13.5px;background:var(--blue);border-color:var(--blue);box-shadow:0 1px 1px rgba(16,24,40,.08)}
+.btn:hover{background:var(--blue-d);border-color:var(--blue-d)}
+.btn.soft{background:#fff;color:#374151;border-color:#D7DBE2;box-shadow:none}
+.btn.soft:hover{background:#F9FAFB;border-color:#B9C0CB;color:#0B5CA8}
+.btn.sm{padding:4px 10px;font-size:12.5px;border-radius:7px}
+.btn.danger{background:#fff;color:var(--bad);border-color:#F2C4CB;box-shadow:none}
+.btn.danger:hover{background:var(--bad-bg);color:#A3152A;border-color:#E9A3AE}
+input,select,textarea{border:1px solid #D7DBE2;border-radius:8px;padding:8px 11px;background:#fff;font-size:14px}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(190,11,46,.12)}
+.field>span{font-size:12.5px;font-weight:600;color:#374151;margin-bottom:5px}
+.hint{background:#FFF8E6;border:1px solid #F5E2AE;border-radius:10px;color:#6B4F00;font-size:13.5px}
+.empty{border:1px dashed #D7DBE2;border-radius:var(--radius);background:#FCFCFD;padding:36px 20px;color:var(--mute)}
+.tbl-wrap{border:1px solid var(--line);border-radius:10px;overflow:auto;background:#fff}
+table{border-collapse:separate;border-spacing:0;width:100%}
+thead th{background:#F9FAFB;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--line-s);vertical-align:middle}
+tbody tr:hover td{background:#FAFBFC}
+tbody tr:last-child td{border-bottom:0}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:#F1F2F4;color:#374151;line-height:1.6}
+.tag.ok{background:var(--ok-bg);color:#17784D}
+.tag.bad{background:var(--bad-bg);color:#B3212F}
+.tag.off{background:#EEF0F3;color:#6B7280}
+.hub-t{border-radius:var(--radius);padding:18px 20px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.hub-t:hover{transform:translateY(-2px);box-shadow:0 12px 24px -16px rgba(16,24,40,.35);border-color:#E9C2C9}
+.hub-t b{font-size:1.6rem;letter-spacing:-.02em}
+.tile{border-radius:var(--radius)}
+.modal{border-radius:14px;padding:24px;box-shadow:0 24px 60px -20px rgba(16,24,40,.45)}
+.modal h3{font-size:1.15rem;margin-bottom:14px}
+.thero{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(120deg,#8F0620,#BE0B2E 60%,#D92B4B);color:#fff;border-radius:14px;padding:22px 24px;margin:6px 0 20px;box-shadow:0 14px 30px -18px rgba(143,6,32,.7)}
+.thero-k{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 10px;margin-bottom:8px}
+.thero h2{color:#fff;font-size:1.45rem;margin:0 0 4px}
+.thero p{margin:0;opacity:.92;font-size:14px}
+.thero-s{display:flex;gap:10px;flex-wrap:wrap}
+.thero-s>div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:10px 16px;min-width:96px;text-align:center}
+.thero-s b{display:block;font-size:1.4rem;line-height:1.1}
+.thero-s span{font-size:12px;opacity:.9}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;top:auto;flex-direction:row;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}.grp{display:flex;gap:4px;margin:0;align-items:center}.grp-t{display:none}.nb{width:auto;white-space:nowrap}.side-f{display:none}.content{padding:18px 14px 60px}.me-chip .em{display:none}}
+/* ===== v12b: thẻ lớp và trang chi tiết lớp ===== */
+.cxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:6px}
+.cxcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:18px 18px 16px;border-radius:12px;background:#fff;border:1px solid var(--line);color:var(--ink);transition:transform .15s,box-shadow .15s,border-color .15s;cursor:pointer;font:inherit}
+.cxcard:hover{transform:translateY(-2px);box-shadow:0 14px 28px -18px rgba(16,24,40,.4);border-color:#E9C2C9}
+.cxcard>b{font-size:1.06rem;color:var(--ink)}
+.cxcard>small{font-size:12.5px}
+.cxcard .tag{margin-top:2px}
+.cxmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.cxmeta span{background:#F3F4F6;border-radius:6px;padding:2px 8px;font-size:12px;color:#4B5563}
+.cxhead{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.cxhead h2{font-size:1.4rem;margin:0}
+.cxtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:0 0 18px;overflow-x:auto}
+.cxtabs button{background:none;border:0;padding:10px 14px;color:#6B7280;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-size:13.5px}
+.cxtabs button:hover{color:var(--ink)}
+.cxtabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+.cxs{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.cxs.off{opacity:.7;background:#FAFAFB}
+.cxs-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.cxs-h h3{margin:0;font-size:1rem}
+.cxs-sum{color:#6B7280;margin:0 0 10px;font-size:13.5px}
+.cxs-b{display:flex;flex-direction:column}
+.cxi{display:flex;gap:12px;align-items:center;padding:10px 6px;border-top:1px solid var(--line-s);flex-wrap:wrap}
+.cxi:first-child{border-top:0}
+.cxi:hover{background:#FAFBFC;border-radius:8px}
+.cxi-ic{width:34px;height:34px;border-radius:9px;background:#FCEBEE;color:var(--blue);display:grid;place-items:center;flex:none}
+.cxi-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cxi .grow{min-width:0}
+.cxi small a{word-break:break-all}
+.acts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.cxs .btn.sm,.cxi .btn.sm{padding:3px 9px;font-size:12px}
+/* ===== v15: nhận diện Inspire theo phong cách DUE E-Study ===== */
+:root{--brand:#BE0B2E;--brand-d:#8F0620;--brand-l:#FCEBEE;--accent:#E8561B;--ink:#0B5CA8;--mute:#6B7280}
+/* thanh liên hệ trên cùng: đỏ đậm như thanh xanh của DUE */
+.ts{background:linear-gradient(90deg,#8F0620,#BE0B2E);color:#fff}
+.ts-in a,.ts a{color:#fff}
+/* trang đăng nhập học sinh: ảnh bên trái, form bên phải */
+.auth{grid-template-columns:1fr 1fr;gap:0;padding:0;min-height:calc(100vh - 120px);align-items:stretch;border-radius:0}
+.auth .hero-copy{border-radius:0;border-top:0;background:linear-gradient(180deg,rgba(143,6,32,.15),rgba(143,6,32,.55));display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 28px}
+.auth .hero-copy>*:not(.hc-bg):not(.sun-art){position:relative;z-index:2}
+.auth .hero-copy::before{content:'';position:absolute;inset:auto 0 0 0;height:70%;background:linear-gradient(0deg,rgba(143,6,32,.92),rgba(143,6,32,.0));z-index:1}
+.auth .hero-copy h1{font-size:2.1rem;line-height:1.15;color:#fff;margin:0 32px 10px;font-family:'Be Vietnam Pro',Inter,sans-serif}
+.auth .hero-copy p{margin:0 32px;color:rgba(255,255,255,.92);max-width:44ch}
+.auth .hc-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.auth .sun-art{display:none}
+.auth .progs,.auth .feat,.auth .collage{margin-left:32px}
+.auth .feat{color:#fff;margin-top:14px}
+.auth>.card{background:#fff;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:48px clamp(24px,6vw,96px);max-width:620px;width:100%;justify-self:center}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px;text-align:center}
+.auth-brand img{width:86px;height:86px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #F0D3D9}
+.auth-brand b{font-family:'Be Vietnam Pro',Inter,sans-serif;font-size:1.9rem;color:var(--accent);letter-spacing:-.01em;line-height:1.1}
+.auth-brand small{color:var(--mute);font-size:.92rem}
+.auth .seg{border-radius:999px;background:#F4F5F7;border:0;padding:4px;margin-bottom:22px}
+.auth .seg button{border-radius:999px;padding:9px 12px;font-weight:600}
+.auth .seg button.on{background:var(--brand);color:#fff}
+.auth .field input,.auth input{border-radius:12px;padding:12px 14px;border-color:#DDE1E6;background:#F7F8FA}
+.auth input:focus{background:#fff}
+.auth .btn{border-radius:12px;padding:13px;font-size:15px;background:linear-gradient(90deg,#BE0B2E,#D92B4B);border:0;box-shadow:0 10px 22px -12px rgba(190,11,46,.8)}
+.auth .btn:hover{filter:brightness(1.05)}
+.auth .link{color:var(--brand);font-weight:600}
+.auth-help{margin-top:22px;text-align:center;color:var(--mute);font-size:.9rem;line-height:1.6}
+.auth-help a{color:var(--brand);font-weight:600}
+@media(max-width:860px){.auth{grid-template-columns:1fr;min-height:0}.auth .hero-copy{min-height:260px;padding:20px 0}.auth .hero-copy h1{font-size:1.6rem;margin:0 20px 6px}.auth .hero-copy p{margin:0 20px}.auth .progs,.auth .feat,.auth .collage{display:none}.auth>.card{padding:28px 22px}}
+/* trang đăng nhập quản trị */
+.login{background:linear-gradient(135deg,#8F0620 0,#BE0B2E 55%,#E0243A 100%);min-height:100vh}
+.login .card{border-radius:16px;padding:34px 30px;border-top:0;box-shadow:0 30px 60px -28px rgba(0,0,0,.5)}
+.login .card img{width:84px;height:84px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #F0D3D9;margin:0 auto 10px;display:block}
+.login .card h1{text-align:center;font-family:'Be Vietnam Pro',Inter,sans-serif;color:var(--accent);font-size:1.6rem;margin:0 0 18px}
+.login .card .btn{border-radius:12px;padding:12px;background:var(--brand);border:0}
+.login .card input{border-radius:12px;background:#F7F8FA}
+/* tiêu đề lớp học kiểu DUE: màu cam, khối thông tin lớn */
+.cxl-hero{background:#fff;border:0;border-left:6px solid var(--accent);border-radius:12px;box-shadow:0 10px 26px -20px rgba(16,24,40,.35)}
+.cxl-hero h1{color:var(--accent);font-family:'Be Vietnam Pro',Inter,sans-serif;font-weight:800;font-size:1.9rem}
+.cxl-hero .eyebrow{background:var(--brand)}
+/* mục nội dung: tiêu đề in hoa, nút tròn có mũi tên như DUE */
+.cxl-sec>h2{display:flex;align-items:center;gap:12px;text-transform:uppercase;letter-spacing:.02em;font-size:1rem;font-weight:800;font-family:'Be Vietnam Pro',Inter,sans-serif}
+.cxl-sec>h2::before{content:'';width:30px;height:30px;border-radius:50%;flex:none;background:#EAF2FA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B5CA8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center/16px no-repeat}
+/* menu bên trái: mục đang chọn nổi bật như tab DUE */
+.cxl-nb.on{background:var(--brand);color:#fff}
+.cxl-nb.on .bdg-n{background:#fff;color:var(--brand)}
+.cxl-nb{border-radius:10px}
+.cxl-idx button:hover{color:var(--accent)}
+/* ===== v18: chữ xanh, viết hoa theo mẫu; thương hiệu đỏ giữ nguyên ===== */
+body{color:#0B5CA8}
+.navb{text-transform:uppercase;color:#0B5CA8;font-weight:700}
+.navb.on{color:#0B5CA8}
+h1,h2,h3,.sec,.cl-title,.gr-t,.cxl-hero h1,.cl-name,.cxl-sec>h2,.stepH b,.content>h2,.thero h2{text-transform:uppercase}
+h1,h2,h3,h4,.cl-name,.cxl-hero h1,.cl-title{color:#0B5CA8}
+.cxl-hero h1{color:#0B5CA8}
+.cxl-sec>h2{color:#0B5CA8}
+/* ===== v19: menu quản trị viết hoa, chữ xanh ===== */
+.side .nb{text-transform:uppercase;color:#0B5CA8;font-weight:600;font-size:12.5px;letter-spacing:.02em;line-height:1.35}
+.side .nb.on{color:#0B5CA8;background:#EAF2FB}
+.side .grp-t{color:#0B5CA8;text-transform:uppercase}
+.side .kbd{text-transform:uppercase;color:#0B5CA8;font-size:12px}
+/* ===== v20: hệ thống giao diện thống nhất (toàn bộ web + quản trị) ===== */
+:root{--r-sm:8px;--r-md:12px;--r-lg:16px;--sh-1:0 1px 2px rgba(16,24,40,.05);--sh-2:0 8px 22px -14px rgba(16,24,40,.28);--sh-3:0 24px 60px -24px rgba(16,24,40,.4);--ring:0 0 0 3px rgba(190,11,46,.16);--brand:#BE0B2E;--brand-d:#8F0620;--brand-l:#FCEBEE;--text-b:#0B5CA8}
+html{-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+body{font-size:15px;line-height:1.6;letter-spacing:.005em;color:#0B5CA8;-webkit-font-smoothing:antialiased}
+::selection{background:#F7D3DA;color:#0B3F73}
+h1,h2,h3,h4{font-family:'Be Vietnam Pro',Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:#0B5CA8}
+h1{font-size:1.9rem;text-transform:uppercase}
+h2{font-size:1.4rem;text-transform:uppercase}
+h3{font-size:1.08rem;text-transform:uppercase}
+p{margin:0 0 .6em}
+a{color:var(--brand);text-decoration:none;font-weight:600}
+a:hover{text-decoration:underline}
+/* ô nhập */
+input:not([type=checkbox]):not([type=radio]),select,textarea{border:1px solid #D5DAE1;border-radius:var(--r-sm);padding:9px 12px;background:#fff;color:#0B3F73;font-size:14.5px;transition:border-color .15s,box-shadow .15s}
+input:not([type=checkbox]):not([type=radio]):hover,select:hover,textarea:hover{border-color:#B9C2CE}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:var(--ring);outline:0}
+input::placeholder,textarea::placeholder{color:#9AA3AF}
+input[type=checkbox],input[type=radio]{accent-color:var(--brand);width:16px;height:16px}
+.field>span{font-size:12.5px;font-weight:700;color:#0B5CA8;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.field small,small.muted,.muted{color:#6B7280}
+/* nút */
+.btn{min-height:40px;border-radius:var(--r-sm);padding:9px 18px;font-size:14px;font-weight:700;letter-spacing:.01em;background:var(--brand);border:1px solid var(--brand);color:#fff;box-shadow:0 6px 16px -10px rgba(190,11,46,.7);transition:background .15s,transform .05s,box-shadow .15s}
+.btn:hover{background:var(--brand-d);border-color:var(--brand-d);box-shadow:0 8px 20px -10px rgba(143,6,32,.8)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:0;box-shadow:var(--ring)}
+.btn.soft{background:#fff;color:#0B5CA8;border:1px solid #CBD5E1;box-shadow:var(--sh-1)}
+.btn.soft:hover{background:#F5F8FC;border-color:#94A3B8;color:#0B3F73;box-shadow:var(--sh-1)}
+.btn.danger{background:#fff;color:#B3212F;border:1px solid #F2C4CB;box-shadow:none}
+.btn.danger:hover{background:#FDECEE;border-color:#E9A3AE;color:#8F1C26}
+.btn.sm{min-height:30px;padding:5px 11px;font-size:12.5px;border-radius:7px}
+.btn[disabled],.btn.disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+/* thẻ & khung */
+.card{border-radius:var(--r-md);border:1px solid #E4E8EE;background:#fff;box-shadow:var(--sh-1);transition:box-shadow .2s,border-color .2s}
+.card.empty,.empty{border-radius:var(--r-md)}
+.tbl-wrap{border-radius:var(--r-md);border:1px solid #E4E8EE;box-shadow:var(--sh-1);overflow:auto}
+thead th{position:sticky;top:0;background:#F8FAFC;font-size:11.5px;letter-spacing:.06em;padding:11px 14px;color:#0B5CA8;text-transform:uppercase}
+tbody td{padding:12px 14px;font-size:14.5px;color:#0B3F73}
+tbody tr{transition:background .12s}
+tbody tr:hover td{background:#F8FBFF}
+.tag{font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;padding:3px 10px}
+.tag.ok{background:#E7F6EE;color:#17784D}
+.tag.bad{background:#FDECEE;color:#B3212F}
+.tag.off{background:#EEF1F5;color:#5B6B7F}
+/* hộp thoại & thông báo */
+.ov{background:rgba(15,23,42,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.modal{border-radius:var(--r-lg);border:1px solid #E4E8EE;box-shadow:var(--sh-3);padding:26px 26px 22px}
+.modal h3{margin:0 0 14px;font-size:1.1rem}
+.toast{border-radius:var(--r-sm);box-shadow:var(--sh-2);font-size:14px;font-weight:600;padding:12px 16px;border:1px solid #E4E8EE;background:#fff;color:#0B3F73}
+.toast.ok{border-left:4px solid #17784D}
+.toast.bad{border-left:4px solid #B3212F}
+.toast.warn{border-left:4px solid #C98200}
+.hint{border-radius:var(--r-sm);font-size:14px}
+/* chữ & khoảng cách */
+.row{gap:10px}
+.sec{text-transform:uppercase;color:#0B5CA8;letter-spacing:.02em}
+/* thanh cuộn gọn */
+*{scrollbar-width:thin;scrollbar-color:#CBD5E1 transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+/* icon luôn theo màu chữ */
+.side svg,.nb svg,.navb svg,.cxl-nb svg,.kbd svg,.hub-t svg,.acard svg,.ar svg,.cxi svg,.cxl-ic svg,.cxc svg{stroke:currentColor}
+/* trạng thái focus cho bàn phím */
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* di động */
+@media (max-width:640px){
+  body{font-size:14.5px}
+  h1{font-size:1.5rem}h2{font-size:1.2rem}
+  .btn{min-height:44px}
+  .modal{padding:20px 18px}
+  .content{padding:16px 12px 70px}
+}
 </style>
 </head>
 <body>
@@ -460,7 +694,7 @@ const NAV = [['hub',IC('<path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path
    ============================================================ */
 S.classes = []; S.teachers = []; S.role = 'admin'; S.me = null; S.cx = { id: '', tab: 'content' }; S.cxChat = [];
 function TEACHER() { return S.role === 'teacher'; }
-function navList() { return TEACHER() ? NAV.filter(n => n[0] === 'cls').map(n => [n[0], n[1], 'Lớp của tôi']) : NAV; }
+function navList() { if (!TEACHER()) return NAV; const ic = k => (NAV.find(n => n[0] === k) || [])[1]; return [['cls', ic('cls'), 'Lớp của tôi'], ['tcourses', ic('courses'), 'Khoá học của tôi']]; }
 const nid = p => p + Math.random().toString(36).slice(2, 7) + Date.now().toString(36).slice(-3);
 const normN = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 const okUrl = u => /^https:\/\/\S+$/i.test(u || '');
@@ -542,13 +776,18 @@ function clsRefresh() {
 function stopCxChat() { if (S.cxUn) { S.cxUn(); S.cxUn = null; } S.cxChat = []; }
 
 /* ----- danh sách lớp ----- */
+function teacherHero() {
+  const mine = S.classes, n = mine.reduce((x, c) => x + (c.members || []).length, 0), pend = mine.reduce((x, c) => x + pending(c).length, 0);
+  return `<section class="thero"><div><span class="thero-k">Giáo viên</span><h2>Xin chào, ${esc(myName())}</h2><p>Bạn đang phụ trách ${mine.length} lớp và ${n} học sinh.${pend ? ` Có ${pend} học sinh đang chờ duyệt vào lớp.` : ''}</p></div>
+    <div class="thero-s"><div><b>${mine.length}</b><span>lớp</span></div><div><b>${n}</b><span>học sinh</span></div><div><b>${pend}</b><span>chờ duyệt</span></div></div></section>`;
+}
 function vClasses() {
   stopCxChat();
   if (S.cx.id && classById(S.cx.id)) return vClassDetail();
   S.cx.id = '';
   const L = [...S.classes].sort((a, b) => (a.archived ? 1 : 0) - (b.archived ? 1 : 0) || (a.name || '').localeCompare(b.name || '', 'vi'));
   const cnt = c => (c.sections || []).reduce((n, s) => n + (s.items || []).length, 0);
-  $('#content').innerHTML = `<div class="row" style="align-items:center"><h2 class="grow">${TEACHER() ? 'Lớp của tôi' : 'Lớp học'}</h2>${TEACHER() ? '' : '<button class="btn soft" id="c-auto">Tạo lớp từ tên lớp học sinh đang có</button><button class="btn" id="c-new">＋ Tạo lớp mới</button>'}</div>
+  $('#content').innerHTML = `${TEACHER() ? teacherHero() : ''}${dupBanner()}<div class="row" style="align-items:center"><h2 class="grow">${TEACHER() ? 'Lớp của tôi' : 'Lớp học'}</h2>${TEACHER() ? '' : '<button class="btn soft" id="c-merge">Gộp lớp</button><button class="btn soft" id="c-auto">Tạo lớp từ tên lớp học sinh đang có</button><button class="btn" id="c-new">＋ Tạo lớp mới</button>'}</div>
     <p class="muted" style="margin:0 0 16px;max-width:820px">Mỗi lớp có một trang riêng giống Moodle: chia theo chương, đăng video YouTube, file và thư mục Google Drive, ngân hàng đề, bài kiểm tra tính giờ, danh sách thành viên, bảng điểm và phòng chat của lớp.${TEACHER() ? '' : ' Tạo lớp xong, vào tab Thiết lập để gán giáo viên phụ trách.'}</p>
     ${L.length ? `<div class="cxgrid">${L.map(c => { const p = pending(c).length; return `<button class="card cxcard ${c.archived ? 'off' : ''}" data-open="${esc(c.id)}"><b>${esc(c.name)}</b>${c.archived ? ' <span class="tag off">Đã lưu trữ</span>' : ''}
       <small class="muted">${esc(Object.values(c.teacherNames || {}).join(', ') || 'Chưa có giáo viên')}</small>
@@ -558,6 +797,7 @@ function vClasses() {
     const o = e.target.closest('[data-open]'); if (o) { S.cx = { id: o.dataset.open, tab: 'content' }; return vClasses(); }
     try {
       if (e.target.closest('#c-new')) return classForm();
+      if (e.target.closest('#c-merge, #c-merge2')) return mergeForm();
       if (e.target.closest('#c-auto')) {
         const have = new Set(S.classes.map(c => normN(c.name))), names = classList().filter(n => !have.has(normN(n)));
         if (!names.length) return toast('Mọi tên lớp học sinh đang có đều đã có trang lớp.', 'warn');
@@ -938,12 +1178,117 @@ function auditHTML() {
   return `<div class="card" style="margin-bottom:16px"><h3>Nhật ký hoạt động giáo viên</h3>${L.length ? `<div class="tbl-wrap"><table><thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Hành động</th><th>Chi tiết</th></tr></thead><tbody>${L.map(a => `<tr><td>${new Date(a.atMs).toLocaleString('vi-VN')}</td><td>${esc(a.name || '')} <span class="tag">${a.role === 'admin' ? 'Admin' : 'Giáo viên'}</span></td><td>${esc(a.action || '')}</td><td>${esc(a.detail || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Chưa có hoạt động nào.</p>'}</div>`;
 }
 
+/* ===== v14: gộp lớp trùng tên + giáo viên phụ trách khoá học ===== */
+const clsKey = n => normN(n).replace(/^lớp\s*/, '').replace(/\s+/g, '');
+function dupGroups() { const g = {}; S.classes.forEach(c => { (g[clsKey(c.name)] ||= []).push(c); }); return Object.values(g).filter(x => x.length > 1); }
+function dupBanner() {
+  if (TEACHER()) return '';
+  const d = dupGroups();
+  return d.length ? `<div class="hint" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="grow">Có ${d.length} nhóm lớp trùng tên, ví dụ ${d[0].map(c => '“' + esc(c.name) + '”').join(', ')}. Gộp lại để học sinh và nội dung nằm chung một lớp.</span><button class="btn sm" id="c-merge2">Gộp ngay</button></div>` : '';
+}
+function mergeForm() {
+  const d = dupGroups();
+  const { ov, close } = modal(`<h3>Gộp lớp</h3>
+    <p class="muted" style="margin:0 0 10px">Học sinh, giáo viên, nội dung và đề của các lớp nguồn sẽ chuyển sang lớp đích, rồi các lớp nguồn bị xoá. Chat cũ của lớp nguồn không chuyển. Thao tác không hoàn tác được.</p>
+    ${d.length ? `<div class="hint">Trùng tên: ${d.map(g => g.map(c => '“' + esc(c.name) + '”').join(' + ')).join('; ')}</div>` : ''}
+    <label class="field"><span>Lớp đích (giữ lại)</span><select id="mg-t">${S.classes.map(c => `<option value="${esc(c.id)}">${esc(c.name)} · ${(c.members || []).length} học sinh</option>`).join('')}</select></label>
+    <div class="field"><span>Lớp nguồn (gộp vào đích rồi xoá)</span>${S.classes.map(c => `<label style="display:flex;gap:8px;align-items:center;padding:6px 0;font-weight:600"><input type="checkbox" class="mg-s" value="${esc(c.id)}">${esc(c.name)} <small class="muted">${(c.members || []).length} học sinh</small></label>`).join('')}</div>
+    <div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn soft" id="mg-x">Huỷ</button><button class="btn danger" id="mg-ok">Gộp lớp</button></div>`);
+  if (d[0]) {
+    const tgt = d[0].slice().sort((a, b) => (b.members || []).length - (a.members || []).length)[0];
+    $('#mg-t', ov).value = tgt.id;
+    ov.querySelectorAll('.mg-s').forEach(x => { x.checked = d[0].some(c => c.id === x.value) && x.value !== tgt.id; });
+  }
+  $('#mg-t', ov).onchange = e => ov.querySelectorAll('.mg-s').forEach(x => { if (x.value === e.target.value) x.checked = false; });
+  $('#mg-x', ov).onclick = close;
+  $('#mg-ok', ov).onclick = async () => {
+    const tId = $('#mg-t', ov).value, srcIds = [...ov.querySelectorAll('.mg-s:checked')].map(x => x.value).filter(x => x !== tId);
+    if (!srcIds.length) return toast('Chọn ít nhất một lớp nguồn.', 'warn');
+    const T = S.classes.find(c => c.id === tId), srcs = S.classes.filter(c => srcIds.includes(c.id));
+    if (!confirm('Gộp ' + srcs.length + ' lớp (' + srcs.map(s => s.name).join(', ') + ') vào “' + T.name + '”?\nKhông hoàn tác được.')) return;
+    try { await mergeClasses(T, srcs); audit('Gộp lớp', srcs.map(s => s.name).join(', ') + ' → ' + T.name); close(); toast('Đã gộp vào “' + T.name + '”.'); }
+    catch (er) { toast(er.message, 'bad'); }
+  };
+}
+async function mergeClasses(T, srcs) {
+  const members = [...(T.members || [])], names = { ...(T.names || {}) }, tUids = [...(T.teacherUids || [])], tNames = { ...(T.teacherNames || {}) };
+  const secs = JSON.parse(JSON.stringify(T.sections || [])).map(s => ({ ...s, items: s.items || [] }));
+  const titles = new Set(secs.map(s => s.title));
+  for (const s of srcs) {
+    (s.members || []).forEach(m => { if (!members.includes(m)) members.push(m); });
+    Object.entries(s.names || {}).forEach(([k, v]) => { if (!names[k]) names[k] = v; });
+    (s.teacherUids || []).forEach(u => { if (!tUids.includes(u)) tUids.push(u); });
+    Object.assign(tNames, s.teacherNames || {});
+    JSON.parse(JSON.stringify(s.sections || [])).forEach(sec => {
+      sec.id = nid('s'); sec.items = (sec.items || []).map(i => ({ ...i, id: nid('i') }));
+      if (titles.has(sec.title)) sec.title = sec.title + ' (' + s.name + ')';
+      titles.add(sec.title); secs.push(sec);
+    });
+  }
+  const srcIds = srcs.map(s => s.id);
+  await Promise.all((S.banks || []).filter(b => srcIds.includes(b.classId)).map(b => api.update('banks', b.id, { classId: T.id })));
+  await Promise.all(members.filter(m => { const u = S.users.find(x => x.id === m); return u && u.className !== T.name; }).map(m => api.update('users', m, { className: T.name }).catch(() => { })));
+  await api.update('classes', T.id, { members, names, teacherUids: tUids, teacherNames: tNames, sections: secs, updatedAtMs: Date.now() });
+  for (const s of srcs) await api.del('classes', s.id);
+}
+function teacherCoursePicker(id) {
+  const c = (S.courses || []).find(x => x.id === id); if (!c) return toast('Không tìm thấy khoá.', 'bad');
+  const cur = c.teacherUids || [], T = S.teachers.filter(t => t.active !== false);
+  const { ov, close } = modal(`<h3>Giáo viên của “${esc(c.name)}”</h3>
+    <p class="muted" style="margin:0 0 10px">Giáo viên được chọn đăng link, video, tài liệu và sửa mô tả của khoá này. Họ không đổi được mật khẩu ghi danh.</p>
+    ${T.length ? T.map(t => `<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee;font-weight:600"><input type="checkbox" class="tc-c" value="${esc(t.id)}" ${cur.includes(t.id) ? 'checked' : ''}><span>${esc(t.name || t.email)}</span></label>`).join('') : '<p class="muted">Chưa có giáo viên. Tạo giáo viên ở mục Giáo viên trước.</p>'}
+    <div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn soft" id="tc-x">Huỷ</button><button class="btn" id="tc-ok">Lưu</button></div>`);
+  $('#tc-x', ov).onclick = close;
+  $('#tc-ok', ov).onclick = async () => {
+    const ids = [...ov.querySelectorAll('.tc-c:checked')].map(x => x.value);
+    try { await api.update('courses', id, { teacherUids: ids, teacherNames: Object.fromEntries(ids.map(i => [i, (S.teachers.find(t => t.id === i) || {}).name || 'Giáo viên'])) }); audit('Gán giáo viên khoá', c.name); close(); toast('Đã lưu.'); }
+    catch (er) { toast(er.message, 'bad'); }
+  };
+}
+function vTCourses() {
+  if (!TEACHER()) { S.view = 'courses'; return draw(); }
+  const mine = (S.courses || []).filter(c => (c.teacherUids || []).includes(myUid()));
+  const TYPE = { video: 'Video', doc: 'Tài liệu', link: 'Liên kết' };
+  $('#content').innerHTML = `<h2>Khoá học của tôi</h2><p class="muted" style="max-width:760px;margin:6px 0 16px">Bạn đăng link, video, tài liệu và mô tả cho các khoá được admin gán. Học sinh thấy ngay ở trang khoá học.</p>
+    ${mine.length ? mine.map(c => `<section class="card" style="margin-bottom:16px"><div class="row" style="margin-bottom:10px"><h3 style="margin:0">${esc(c.name)}</h3><span class="grow"></span><span class="tag">${(c.resources || []).length} tài liệu</span></div>
+      <label class="field"><span>Mô tả khoá (học sinh thấy)</span><textarea id="tc-d-${esc(c.id)}" rows="2" maxlength="600">${esc(c.desc || '')}</textarea></label>
+      <div class="row"><button class="btn soft sm" data-tcsave="${esc(c.id)}">Lưu mô tả</button></div>
+      <div class="hint" style="margin:8px 0 12px">Dán link bắt đầu bằng https://. Link Drive phải để “Bất kỳ ai có đường liên kết”.</div>
+      <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:140px;margin:0"><span>Loại</span><select id="tr-t-${esc(c.id)}"><option value="doc">Tài liệu</option><option value="video">Video</option></select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Tiêu đề</span><input id="tr-n-${esc(c.id)}" maxlength="120"></label><label class="field" style="flex:3;min-width:240px;margin:0"><span>Link</span><input id="tr-u-${esc(c.id)}" placeholder="https://"></label><button class="btn" data-tradd="${esc(c.id)}">Đăng</button></div>
+      <div style="margin-top:12px">${(c.resources || []).map((r, i) => `<div class="row" style="padding:9px 0;border-top:1px solid #eee;margin:0"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${TYPE[r.type] || 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a></span><button class="btn danger sm" data-trdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('') || '<p class="muted">Chưa có tài liệu.</p>'}</div></section>`).join('')
+      : '<div class="card empty">Admin chưa gán khoá học nào cho bạn. Nhờ admin vào “Khoá học & mật khẩu”, bấm “Giáo viên” ở khoá cần phụ trách.</div>'}`;
+  $('#content').onclick = async e => {
+    const sv = e.target.closest('[data-tcsave]'), ad = e.target.closest('[data-tradd]'), dl = e.target.closest('[data-trdel]');
+    try {
+      if (sv) { const id = sv.dataset.tcsave; if (!can('content')) return toast('Bạn chưa được admin cấp quyền sửa nội dung.', 'warn'); await api.update('courses', id, { desc: $('#tc-d-' + id).value.trim(), updatedAt: NOW() }); audit('Sửa mô tả khoá', (mine.find(x => x.id === id) || {}).name || id); return toast('Đã lưu mô tả.'); }
+      if (ad) {
+        const id = ad.dataset.tradd, url = $('#tr-u-' + id).value.trim(), title = $('#tr-n-' + id).value.trim(), type = $('#tr-t-' + id).value, c = mine.find(x => x.id === id);
+        if (!okUrl(url)) return toast('Link phải bắt đầu bằng https://', 'bad'); if (!title) return toast('Nhập tiêu đề cho học sinh dễ tìm.', 'bad');
+        if (!can('content')) return toast('Bạn chưa được admin cấp quyền sửa nội dung.', 'warn');
+        await api.update('courses', id, { resources: [...(c.resources || []), { type, title, url, classes: [], at: Date.now(), by: myName() }], updatedAt: NOW() });
+        audit('Đăng tài liệu khoá', title + ' · ' + c.name); return toast('Đã đăng. Học sinh thấy ở khoá học.');
+      }
+      if (dl) {
+        if (!confirm('Xoá tài liệu này?')) return;
+        const [id, i] = dl.dataset.trdel.split('|'), c = mine.find(x => x.id === id);
+        await api.update('courses', id, { resources: (c.resources || []).filter((_, k) => k !== +i), updatedAt: NOW() });
+        audit('Xoá tài liệu khoá', c.name); return toast('Đã xoá.');
+      }
+    } catch (er) { toast(er.message, 'bad'); }
+  };
+}
+
 function shell() {
-  const env = MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
-  root.innerHTML = `<div class="app"><header class="atop"><div class="brand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>Quản trị</small></span></div>
-    <div class="atop-r">${env}<span class="em">${esc(S.user.email)}</span><button class="btn soft sm" id="out">Đăng xuất</button></div></header>
-    <div class="shell"><aside class="side">${navList().map(([k, i, n]) => `<button class="nb" data-v="${k}">${i} ${n}${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`).join('')}
-    <button class="kbd" data-pal="1"><span>Tìm nhanh</span><b>Ctrl K</b></button><a class="nb" href="index.html" target="_blank" rel="noopener"> Xem web học sinh</a></aside><main class="content" id="content"></main></div></div>`;
+  const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
+  const item = ([k, i, n]) => `<button class="nb" data-v="${k}"><span class="nb-i">${i}</span><span class="nb-n">${n}</span>${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
+  const GROUPS = [['Tổng quan', ['hub', 'dash']], ['Lớp học', ['cls', 'teachers', 'students', 'chat']], ['Nội dung', ['lessons', 'courses', 'banks', 'news', 'exam', 'notice']], ['Theo dõi', ['assign', 'hw', 'report', 'risk', 'msg']], ['Hệ thống', ['site', 'tools', 'admins']]];
+  const items = navList(), used = new Set();
+  const grp = (g, ks) => { const L = ks.map(k => items.find(n => n[0] === k)).filter(Boolean); L.forEach(n => used.add(n[0])); return L.length ? `<div class="grp"><div class="grp-t">${g}</div>${L.map(item).join('')}</div>` : ''; };
+  const navHTML = TEACHER() ? grp('Lớp của tôi', ['cls']) + grp('Khoá học', ['tcourses']) : GROUPS.map(([g, ks]) => grp(g, ks)).join('') + grp('Khác', items.map(n => n[0]).filter(k => !used.has(k)));
+  const ini = String((S.me && S.me.name) || S.user.email || '?').trim().charAt(0).toUpperCase();
+  root.innerHTML = `<div class="app"><header class="atop"><div class="brand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>${TEACHER() ? 'Cổng giáo viên' : 'Quản trị'}</small></span></div>
+    <div class="atop-r">${env}<span class="me-chip"><span class="av">${esc(ini)}</span><span class="em">${esc(S.user.email)}</span></span><button class="btn soft sm" id="out">Đăng xuất</button></div></header>
+    <div class="shell"><aside class="side">${navHTML}<div class="side-f"><button class="kbd" data-pal="1"><span>Tìm nhanh</span><b>Ctrl K</b></button><a class="nb" href="index.html" target="_blank" rel="noopener"><span class="nb-i">↗</span><span class="nb-n">Xem web học sinh</span></a></div></aside><main class="content" id="content"></main></div></div>`;
   root.querySelector('.side').onclick = e => { const b = e.target.closest('.nb[data-v]'); if (b) { S.view = b.dataset.v; draw(); } };
   $('#out').onclick = () => api.signOut();
   draw();
@@ -953,7 +1298,7 @@ function draw() {
   if (S.view !== 'chat') stopThread();
   root.querySelectorAll('.nb[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   $('#content').onclick = null; $('#content').onchange = null;
-  ({ hub: vHub, cls: vClasses, teachers: vTeachers, report: vReport, dash: () => { vDash(); dashExtra(); }, site: () => { vSite(); siteExtra(); }, tools: vTools, admins: vAdmins, hw: vHW, lessons: vLessons, courses: vCourses, news: vNews, banks: vBanks, assign: vAssign, students: vStudents, notice: vNotice, exam: vExam, msg: vMsg, chat: vChat, risk: vRisk })[S.view]();
+  ({ hub: vHub, cls: vClasses, teachers: vTeachers, tcourses: vTCourses, report: vReport, dash: () => { vDash(); dashExtra(); }, site: () => { vSite(); siteExtra(); }, tools: vTools, admins: vAdmins, hw: vHW, lessons: vLessons, courses: vCourses, news: vNews, banks: vBanks, assign: vAssign, students: vStudents, notice: vNotice, exam: vExam, msg: vMsg, chat: vChat, risk: vRisk })[S.view]();
 }
 
 /* ---------- tổng quan ---------- */
@@ -1378,7 +1723,7 @@ function vCourses() {
     <div class="row"><button class="btn" data-newc="1">Thêm chương trình</button>${S.courses && S.courses.length ? '' : '<button class="btn soft" data-seed="1">Tạo nhanh các chương trình mẫu của trung tâm</button>'}</div>`
     + classPanel(CL, en)
     + CL.map(c => { const L = en.filter(e => e.course === c.id), nl = S.lessons.filter(l => c.test(String(l.topic || '').toLowerCase())).length;
-      return `<div class="card" style="max-width:820px;margin-bottom:16px"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">${esc(c.name)} <span class="muted" style="font-weight:500">· ${esc(c.sub || '')}</span>${c.published === false ? ' <span class="pill-demo">Đang ẩn</span>' : ''}</h3><span class="grow"></span><button class="btn soft sm" data-editc="${esc(c.id)}">Sửa thông tin</button>${c.builtin ? '' : `<button class="btn soft sm" data-delc="${esc(c.id)}">Xoá</button>`}</div>
+      return `<div class="card" style="max-width:820px;margin-bottom:16px"><div class="row" style="margin-bottom:6px"><h3 style="margin:0">${esc(c.name)} <span class="muted" style="font-weight:500">· ${esc(c.sub || '')}</span>${c.published === false ? ' <span class="pill-demo">Đang ẩn</span>' : ''}</h3><span class="grow"></span><button class="btn soft sm" data-editc="${esc(c.id)}">Sửa thông tin</button>${c.builtin ? '' : `<button class="btn soft sm" data-tc="${esc(c.id)}">Giáo viên (${(c.teacherUids || []).length})</button>`}${c.builtin ? '' : `<button class="btn soft sm" data-delc="${esc(c.id)}">Xoá</button>`}</div>
         <p class="muted" style="margin-bottom:8px">${esc(c.program || '')} · ${c.ageMin || '?'} đến ${c.ageMax || '?'} tuổi · ${esc(c.level || '')} · ${nl} bài học${c.builtin ? '' : ' · từ khoá "' + esc(c.key || '') + '"'}</p>
         <div class="row" style="margin:12px 0;align-items:flex-end"><label class="field" style="flex:1;margin:0"><span>Mật khẩu ghi danh</span><input id="ck-${esc(c.id)}" maxlength="40" value="${esc(k[c.id] || '')}" placeholder="Ví dụ: inspire9 (phân biệt hoa thường)" autocomplete="off"></label><button class="btn" data-ck="${esc(c.id)}">Lưu mật khẩu</button></div>
         <p style="font-weight:700;margin:12px 0 6px">Video và tài liệu của khoá (${(c.resources || []).length})</p>
@@ -1391,6 +1736,7 @@ function vCourses() {
     const b = e.target.closest('[data-ck]'), r = e.target.closest('[data-rm]'), ed = e.target.closest('[data-editc]'), dl = e.target.closest('[data-delc]');
     try {
       if (e.target.closest('[data-newc]')) return courseForm(null);
+      const tcb = e.target.closest('[data-tc]'); if (tcb) return teacherCoursePicker(tcb.dataset.tc);
       const ra = e.target.closest('[data-radd]'), rd = e.target.closest('[data-rdel]'), ru = e.target.closest('[data-rup]');
       if (ra) { const id = ra.dataset.radd, url = $('#ru-' + id).value.trim(), title = $('#rn-' + id).value.trim(), type = $('#rt-' + id).value;
         if (!/^https:\/\/[^\s]+$/.test(url)) return toast('Link phải bắt đầu bằng https://', 'bad'); if (!title) return toast('Nhập tiêu đề cho học sinh dễ tìm.', 'bad');
@@ -1877,7 +2223,7 @@ function vRisk() {
 }
 
 /* ---------- khởi động ---------- */
-const refresh = () => { if (!$('#content') || document.querySelector('.ov')) return; if (['dash', 'lessons', 'assign', 'hw', 'risk', 'hub', 'report', 'cls', 'teachers'].includes(S.view)) draw(); else if (S.view === 'students') drawStudents(); };
+const refresh = () => { if (!$('#content') || document.querySelector('.ov')) return; if (['dash', 'lessons', 'assign', 'hw', 'risk', 'hub', 'report', 'cls', 'teachers', 'tcourses'].includes(S.view)) draw(); else if (S.view === 'students') drawStudents(); };
 function startData() {
   stopData();
   unsubs = [

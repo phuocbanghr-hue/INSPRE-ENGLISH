@@ -2746,13 +2746,15 @@ function drawClassTab(c) {
 const bankOfItem = it => (S.banks || []).find(b => b.id === it.bankId);
 function itemCard(c, it) {
   const P = S.profile || {}, best = (P.bankbest || {})[it.bankId], used = (P.bankatt || {})[it.bankId] || 0;
-  const row = (sub, act, emb) => `<div class="cxl-i"><div class="cxl-r"><span class="cxl-ic">${cxIc(it.type)}</span><div class="cxl-t"><b>${esc(it.title || '')}</b>${sub ? `<small>${sub}</small>` : ''}</div><div class="cxl-a">${act}</div></div>${emb ? '<div class="cxl-emb"></div>' : ''}</div>`;
+  const row = (sub, act, emb) => `<div class="cxl-i"><div class="cxl-r"><span class="cxl-ic">${cxIc(it.type)}</span><div class="cxl-t"><b>${esc(it.title || '')}</b>${sub ? `<small>${sub}</small>` : ''}</div><div class="cxl-a">${act}</div></div>${emb ? '<div class="cxl-emb">' + emb + '</div>' : ''}</div>`;
   const u = safeUrl(it.url);
+  const fr = (src, cls) => `<div class="vframe ${cls}"><iframe src="${esc(src)}" loading="lazy" allowfullscreen allow="fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" title="Nội dung lớp"></iframe></div>`;
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${linkM(it.text)}</div></div>`;
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
-  if (it.type === 'drive') return row('Tài liệu Google Drive', `<button class="btn sm" data-emb="${esc(u)}" data-t="Xem ngay">Xem ngay</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, true);
-  if (it.type === 'folder') return row('Thư mục Google Drive', `<button class="btn sm" data-emb="${esc(u)}" data-fold="1" data-t="Xem ngay">Xem ngay</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, true);
-  if (it.type === 'youtube') return row('Video bài giảng', `<button class="btn sm" data-emb="${esc(u)}" data-yt="1" data-t="Xem video">Xem video</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở YouTube</a>`, true);
+  const open = `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">`;
+  if (it.type === 'drive') return row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
+  if (it.type === 'folder') return row('Thư mục Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'cxl-doc'));
+  if (it.type === 'youtube') return row('Video bài giảng', `${open}Mở YouTube</a>`, fr(vidEmbed(u), 'cxl-vid'));
   if (it.type === 'task') { const od = it.due && it.due < todayStr(); return row((it.text ? linkM(it.text) + '<br>' : '') + dueTag(it.due) + `<span style="${od ? 'color:var(--bad,#c0233a);font-weight:700' : ''}">Hạn nộp: ${it.due ? it.due.split('-').reverse().join('/') : 'không có hạn'}${od ? ' (đã quá hạn)' : ''}</span>`, ''); }
   const b = bankOfItem(it);
   if (!b || b.published === false) return row('Đề này chưa sẵn sàng', '');
@@ -3972,6 +3974,17 @@ else {
 .ft-t i.ft-pin{background:var(--brand,#C8142D);color:#fff}
 .ft-d{padding:14px 18px 18px;background:#fff;border-top:1px dashed #DEE2E6}
 .ft-sec{margin:22px 0 10px!important;font-size:1.1rem}.c{text-align:center}
+</style>
+<style>
+/* v20: tài liệu/video trong lớp luôn hiển thị, khung lớn, nền trắng */
+.cxl-emb:not(:empty){margin-top:14px}
+.cxl-emb .vframe{border:0;box-shadow:none;border-radius:12px}
+.cxl-emb .vframe.cxl-doc{background:#fff}
+.cxl-emb .vframe.tall{aspect-ratio:auto;height:clamp(960px,150vh,1900px)!important;max-height:none;width:100%}
+.cxl-emb .vframe.cxl-doc:not(.tall){aspect-ratio:auto;height:640px}
+.cxl-emb .vframe.cxl-vid{background:#000}
+@media(max-width:700px){.cxl-emb .vframe.tall{height:130vh!important;min-height:720px}}
+.wrap:has(.cxl-emb){max-width:1680px}
 </style>
 </body>
 </html>

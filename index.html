@@ -1263,6 +1263,17 @@ body:has(.auth){overflow-x:hidden}
 .auth .hero-copy::before{display:none}
 .auth .hc-bg{object-fit:cover;object-position:50% 72%}
 @media(max-width:860px){.auth{grid-template-columns:1fr}.auth .hero-copy{min-height:240px}}
+
+/* v8: trang Học tập gọn, chỉ hiện khi admin cấp */
+.hm.solo{grid-template-columns:minmax(0,1fr)}
+.hm-r[hidden]{display:none}
+.dz{padding:16px 18px}.dz h3{font-size:.95rem;margin:0 0 12px}
+.kq{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kq div{text-align:center;padding:12px 4px;border-radius:12px;background:#F6F8FB}
+.kq b{display:block;font-size:1.3rem;line-height:1.2}.kq small{color:#5F7186;font-size:.76rem}
+.dz .rm{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #EEF1F5}
+.dz .rm:first-of-type{border-top:0;padding-top:0}.dz .rm p{font-weight:700;margin:2px 0 0}
+.dz .asg{margin-top:6px}
 </style>
 </head>
 <body>
@@ -2905,11 +2916,10 @@ function asgStatus(a) {
 function viewHome() {
   S._dseen = false; resetCount();
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Danh mục khoá học</b></nav>
-    <div class="hm"><div class="hm-l">${welcome()}${bannerHTML()}<h1 class="hm-t">Khoá học của em</h1><p class="muted hm-s">Chọn chương trình hợp với em hoặc bấm Enroll me để được gợi ý. Ghi danh bằng mật khẩu thầy cô cung cấp. Mỗi bài có nhiều dạng luyện tập, làm được 6 dạng là tính hoàn thành.</p><div id="ann"></div><div id="nws"></div>
-      <div id="cxstrip"></div><div id="cc"></div>
+    <div class="hm${showDash('results') || showDash('reminders') ? '' : ' solo'}" id="hm"><div class="hm-l"><h1 class="hm-t">Khoá học của em</h1><p class="muted hm-s">Các khoá học thầy cô đã cấp quyền cho em.</p><div id="cc"></div>
       <h2 class="sec" id="lsec">Bài học của em</h2>
       <div class="flt"><input id="q" type="search" placeholder="Tìm bài học tại đây…" value="${esc(S.q)}" aria-label="Tìm bài học"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${(S.flt || 'all') === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
-      <div id="courses"></div></div><aside class="hm-r" id="dash"></aside></div>`;
+      <div id="courses"></div></div><aside class="hm-r" id="dash" hidden></aside></div>`;
   const wl = $('.welcome'); if (wl) wl.onclick = e => { const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; } const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); };
   $('#q').oninput = e => { S.q = e.target.value; drawCourses(); };
   bindClassStrip();
@@ -2955,32 +2965,33 @@ function weekCard(p, goal) {
 }
 const IC = { bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', flame: '<path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/>', cal: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>', redo: '<path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10a8 8 0 0 0-14-3M4 14a8 8 0 0 0 14 3"/>', book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>' };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+const showDash = k => !!(((S.profile || {}).show) || {})[k];
 function drawDash() {
   if (S.view !== 'home') return;
-  drawCC();
-  const p = S.profile || {}, lv = levelInfo(p.xp), goal = p.goal || 50, today = (p.daily || {})[dayKey()] || 0, frac = Math.min(1, today / goal), C = 2 * Math.PI * 46;
-  const A = myAssignments(), shownA = A.slice(0, 3), totalMist = S.lessons.reduce((n, l) => n + mist(l.id).length, 0);
-  let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
-  const lastL = last && S.lessons.find(l => l.id === last[0]), ann = S.announce;
-  $('#ann').innerHTML = `${ann && ann.active && ann.text ? `<div class="note" style="display:flex;gap:10px"><span>${esc(ann.text)}</span></div>` : ''}${p.teacherNote && p.teacherNote.text ? `<div class="card tnote" style="margin-bottom:14px;display:flex;gap:14px;align-items:center;border-left:4px solid #F26B1D!important"><div style="flex:1"><small class="muted">Lời nhắn riêng từ thầy cô</small><p style="font-weight:800">${esc(p.teacherNote.text)}</p></div><button class="btn soft sm" id="tn-x">Đã đọc</button></div>` : ''}`;
-  $('#dash').innerHTML = `<section class="card ov"><h3>Tổng quan của em</h3>
-      <div class="ov-top"><div class="ring"><svg viewBox="0 0 100 100" role="img" aria-label="Hoàn thành ${Math.round(frac * 100)}% mục tiêu hôm nay"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC145"/><stop offset="1" stop-color="#E0243A"/></linearGradient></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#F3E3E6" stroke-width="9"/><circle class="ring-fg" cx="50" cy="50" r="46" fill="none" style="stroke:url(#rg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * frac} ${C}"/></svg><b data-n="${Math.round(frac * 100)}" data-s="%" data-k="ring">${Math.round(frac * 100)}%</b></div>
-      <div><b>Mục tiêu hôm nay</b><p>${today} / ${goal} XP</p><p class="muted" style="font-size:.88rem">${frac >= 1 ? 'Em đạt mục tiêu rồi, tuyệt vời!' : 'Còn ' + (goal - today) + ' XP nữa thôi.'}</p></div></div>
-      <div class="lvlrow"><b>${lv.name} · Cấp ${lv.lvl}</b><span>${lv.into}/200 XP</span></div><div class="prog"><i style="width:${lv.into / 2}%"></i></div>
-      <div class="ov-st"><div><b data-n="${p.streak || 0}" data-k="st">${p.streak || 0}</b><small>Ngày liên tiếp</small></div><div><b data-n="${p.xp || 0}" data-k="xp">${p.xp || 0}</b><small>Tổng XP</small></div><div><b data-n="${S.lessons.filter(l => doneCount(l.id) >= 6).length}" data-k="dn">${S.lessons.filter(l => doneCount(l.id) >= 6).length}</b><small>Bài hoàn thành</small></div></div>
-      ${lastL ? `<button class="btn" data-cont="1" style="width:100%;margin-top:14px">Tiếp tục: ${esc(lastL.title)}</button>` : '<p class="muted" style="margin-top:12px">Chọn một bài ở bên trái để bắt đầu nhé.</p>'}</section>
-    ${weekCard(p, goal)}${recCard()}<section class="card"><h3>Bài được giao</h3>${shownA.length ? shownA.map(({ a, done, overdue, days }) => `<button class="asg" data-asg="${a.id}"><span class="t"><b>${esc(a.title)}</b><small>${esc(ACTS[a.activity]?.n || 'Bất kỳ trò nào')}${a.due ? ' · hạn ' + a.due.split('-').reverse().join('/') : ''}</small></span><span class="chip ${done ? 'ok' : overdue ? 'bad' : ''}">${done ? 'Đã làm' : overdue ? 'Quá hạn' : days != null ? 'Còn ' + days + ' ngày' : 'Mở'}</span></button>`).join('') : '<p class="muted">Chưa có bài nào được giao. Cứ tự luyện nhé!</p>'}</section>
-    <section class="card"><h3>Lối tắt</h3><div class="sc"><button class="btn soft" data-go="daily">Thử thách hôm nay</button><button class="btn soft" data-go="pron">Luyện phát âm và trọng âm</button><button class="btn soft" data-go="review">Ôn từ khó${totalMist ? ' (' + totalMist + ')' : ''}</button><button class="btn soft" data-go="journey">Hành trình học tập</button><button class="btn soft" data-chat="1">Hỏi admin (chat)</button><button class="btn soft" data-go="plan">Kế hoạch ôn thi và lịch</button><button class="btn soft" data-go="cards">Tạo flashcard từ tài liệu</button></div></section>`;
-  const dEl = $('#dash'), first = !S._dseen; S._dseen = true;
-  if (first) { dEl.classList.add('anim'); setTimeout(() => dEl.classList.remove('anim'), 1700); }
-  countUp(dEl);
+  const R = showDash('results'), N = showDash('reminders'), any = R || N;
+  const hm = $('#hm'), el = $('#dash'); if (hm) hm.classList.toggle('solo', !any); if (!el) return;
+  el.hidden = !any; if (!any) { el.innerHTML = ''; return; }
+  const p = S.profile || {}, parts = [];
+  if (R) {
+    const L = S.lessons, done = L.filter(l => doneCount(l.id) >= 6).length;
+    const sc = Object.values(p.bankbest || {}).filter(x => typeof x === 'number'), avg = sc.length ? Math.round(sc.reduce((x, y) => x + y, 0) / sc.length) : null;
+    parts.push(`<section class="card dz"><h3>Kết quả học</h3><div class="kq"><div><b>${done}/${L.length}</b><small>Bài hoàn thành</small></div><div><b>${avg == null ? '–' : avg + '%'}</b><small>Điểm trung bình</small></div><div><b>${p.xp || 0}</b><small>Tổng XP</small></div></div></section>`);
+  }
+  if (N) {
+    const ann = S.announce, it = [];
+    if (p.teacherNote && p.teacherNote.text) it.push(`<div class="rm"><div style="flex:1"><small class="muted">Lời nhắn từ thầy cô</small><p>${esc(p.teacherNote.text)}</p></div><button class="btn soft sm" id="tn-x">Đã đọc</button></div>`);
+    if (ann && ann.active && ann.text) it.push(`<div class="rm"><div style="flex:1"><small class="muted">Thông báo</small><p>${esc(ann.text)}</p></div></div>`);
+    myAssignments().filter(x => !x.done).slice(0, 3).forEach(({ a, overdue, days }) => it.push(`<button class="asg" data-asg="${a.id}"><span class="t"><b>${esc(a.title)}</b><small>${a.due ? 'Hạn ' + a.due.split('-').reverse().join('/') : 'Bài được giao'}</small></span><span class="chip ${overdue ? 'bad' : ''}">${overdue ? 'Quá hạn' : days != null ? 'Còn ' + days + ' ngày' : 'Mở'}</span></button>`));
+    parts.push(`<section class="card dz"><h3>Lời nhắc</h3>${it.join('') || '<p class="muted">Hiện chưa có lời nhắc nào.</p>'}</section>`);
+  }
+  el.innerHTML = parts.join('');
 }
 function drawCourses() {
   if (S.view !== 'home') return;
   const q = S.q.trim().toLowerCase(), N = Object.keys(ACTS).length, flt = S.flt || 'all';
   const st = l => { const d = doneCount(l.id); return d >= 6 ? 'done' : d > 0 ? 'doing' : 'new'; };
   const list = S.lessons.filter(l => (!q || (l.title + ' ' + (l.description || '') + ' ' + (l.topic || '')).toLowerCase().includes(q)) && (flt === 'all' || st(l) === flt));
-  if (S.enrolReady && !S.enrol.length) { $('#courses').innerHTML = `<div class="grid">${empty('Em chưa ghi danh khoá nào. Bấm Enroll me ở khoá học phía trên và nhập mật khẩu thầy cô đã đưa nhé.')}</div>`; return; }
+  if (S.enrolReady && !S.enrol.length) { $('#courses').innerHTML = `<div class="grid">${empty('Em chưa được cấp quyền vào khoá học nào. Em liên hệ thầy cô để được cấp nhé.')}</div>`; return; }
   if (!list.length) { $('#courses').innerHTML = `<div class="grid">${empty(S.lessons.length ? 'Không có bài nào khớp. Thử từ khoá hoặc bộ lọc khác nhé.' : 'Chưa có bài học nào. Cô/thầy sẽ sớm thêm bài mới!')}</div>`; return; }
   const groups = {}; list.forEach(l => (groups[courseOf(l).name] ||= []).push(l));
   const TAG = { new: ['MỚI', 'tn'], doing: ['ĐANG HỌC', 'td'], done: ['HOÀN THÀNH', 'tk'] };
@@ -3686,9 +3697,7 @@ function drawCC() {
       <span class="cc-b"><small class="cc-k">${esc(c.sub || progOf(c))}</small><h3>${esc(c.name)}</h3><span class="cc-meta">${meta(c)}</span><span class="cc-d">${esc(c.desc || '')}</span>
       <span class="cc-f">${on ? `<span class="cc-p"><i style="width:${pc}%"></i></span><em>${done}/${ls.length} bài · ${pc}%</em><span class="btn sm">Vào học</span>` : `<em>${ls.length} bài học</em><span class="btn sm">Xem và Enroll me</span>`}</span></span></button>`;
   };
-  el.innerHTML = (mine.length ? `<div class="cc-grid">${mine.map(card).join('')}</div>` : '')
-    + `<div class="enr-cta"><div><b>${mine.length ? 'Muốn học thêm chương trình khác?' : 'Chưa biết nên học chương trình nào?'}</b><p>Trả lời 3 câu hỏi ngắn, Inspire gợi ý chương trình hợp độ tuổi, mục tiêu và trình độ của em.</p></div><button class="btn" data-wiz="1">Enroll me · Gợi ý cho em</button></div>`
-    + (rest.length ? `<h2 class="sec" style="margin-top:6px">Khám phá chương trình</h2><div class="chips" style="margin:0 0 14px"><button class="fchip ${pf === 'all' ? 'on' : ''}" data-prog="all">Tất cả</button>${progs.map(p => `<button class="fchip ${pf === p ? 'on' : ''}" data-prog="${esc(p)}">${esc(p)}</button>`).join('')}</div><div class="cc-grid">${rest.filter(c => pf === 'all' || progOf(c) === pf).map(card).join('')}</div>` : '');
+  el.innerHTML = mine.length ? `<div class="cc-grid">${mine.map(card).join('')}</div>` : '';
 }
 
 /* ----- lớp dữ liệu cho khoá học, bài đăng, bình luận ----- */
@@ -3736,7 +3745,7 @@ else {
         if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
       }
       checkBadges(); remindOnce();
-      if (S.view === 'auth' || S.view === 'loading') { go('home'); return; }
+      if (S.view === 'auth' || S.view === 'loading') { go('classes'); return; }
       renderTop();
       if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'lesson') { drawLessonHead(); if (!S.tab && S.wordsLoaded) drawLessonBody(); }
     }, err => toast('Không đọc được hồ sơ: ' + err.message, 'bad'));

@@ -1555,6 +1555,33 @@ body{background:radial-gradient(900px 380px at 100% -80px,rgba(232,176,75,.16),t
 .cxl-text{background:none!important;border:0!important;border-radius:0!important;padding:4px 0!important;margin:0!important}
 .cxl-text>b{color:#1D2125!important;font-size:1rem!important}
 .vframe.tall{border:1px solid #DEE2E6!important;border-radius:4px!important;box-shadow:none!important}
+
+/* khung tài liệu Drive: che hẳn viền đen của trình xem PDF, nền trắng */
+.cxl-emb .vframe,.cxl-emb .vframe.tall,.vframe.tall{background:#fff!important}
+.vframe.tall iframe{inset:0 auto 0 -28px!important;width:calc(100% + 56px)!important;max-width:none!important;background:#fff}
+.vframe.tall::before,.vframe.tall::after{content:"";position:absolute;top:0;bottom:0;width:18px;background:#fff;z-index:3;pointer-events:none}
+.vframe.tall::before{left:0}.vframe.tall::after{right:0}
+
+/* ===== tinh chỉnh trang lớp (vẫn phẳng, thoáng và dễ đọc hơn) ===== */
+.cxl-hero h1{font-size:2rem!important;line-height:1.25;margin-bottom:6px!important}
+.cxl-hero{padding-bottom:18px!important;margin-bottom:18px!important}
+.cxl-sec{padding:22px 0 24px!important}
+.cxl-sec>h2{position:relative;font-size:1.55rem!important;padding-bottom:10px;margin-bottom:14px!important}
+.cxl-sec>h2:after{display:block!important;content:""!important;position:absolute;left:0;bottom:0;width:44px;height:3px;border-radius:3px;background:linear-gradient(90deg,#B10B32,#E8B04B);flex:none;margin:0!important}
+.cxl-sum,.cxl-text>div{max-width:78ch;font-size:1.02rem!important;line-height:1.75!important;color:#212529!important}
+.cxl-i{border-radius:10px!important;padding:8px 10px!important;margin:2px -10px!important;transition:background .15s}
+.cxl-i:hover{background:#F6F8FA!important}
+.cxl-text:hover{background:none!important}
+.cxl-ic{color:#B10B32!important}
+.cxl-t b{font-weight:500!important;color:#0F6CBF!important}
+.cxl-t b:hover{text-decoration:underline}
+.cxl-a .btn,.cxl-a a.btn,.cxl-a .btn:not(.soft){border-radius:99px!important;padding:4px 14px!important;font-weight:500!important}
+.cxl-side{padding:8px!important;background:#fff!important}
+.cxl-side>*{border-radius:10px!important}
+.cl-next{border-radius:12px!important;background:linear-gradient(100deg,#FFFBF3,#FFF5F6)!important;border-color:#F0DDB8!important}
+.cl-next-t b{font-size:1.05rem}
+.crumbs{margin-bottom:10px!important}
+.vframe.tall{border-radius:10px!important}
 </style>
 </head>
 <body>
@@ -2900,8 +2927,8 @@ function itemCard(c, it) {
   const u = safeUrl(it.url);
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${richM(it.text)}</div></div>`;
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
-  if (it.type === 'drive') return row('Tài liệu Google Drive', `<button class="btn sm" data-emb="${esc(u)}" data-t="Xem ngay">Đóng</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, pre(embedUrl(u), 'tall'));
-  if (it.type === 'folder') return row('Thư mục Google Drive', `<button class="btn sm" data-emb="${esc(u)}" data-fold="1" data-t="Xem ngay">Đóng</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, pre(embedUrl(u), ''));
+  if (it.type === 'drive') return row('', `<button class="btn sm" data-emb="${esc(u)}" data-t="Xem ngay">Đóng</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, pre(embedUrl(u), 'tall'));
+  if (it.type === 'folder') return row('', `<button class="btn sm" data-emb="${esc(u)}" data-fold="1" data-t="Xem ngay">Đóng</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a>`, pre(embedUrl(u), ''));
   if (it.type === 'youtube') return row('Video bài giảng', `<button class="btn sm" data-emb="${esc(u)}" data-yt="1" data-t="Xem video">Đóng</button><a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở YouTube</a>`, pre(vidEmbed(u), ''));
   if (it.type === 'task') { const od = it.due && it.due < todayStr(); return row((it.text ? richM(it.text) + '<br>' : '') + dueTag(it.due) + `<span style="${od ? 'color:var(--bad,#c0233a);font-weight:700' : ''}">Hạn nộp: ${it.due ? it.due.split('-').reverse().join('/') : 'không có hạn'}${od ? ' (đã quá hạn)' : ''}</span>`, ''); }
   const b = bankOfItem(it);

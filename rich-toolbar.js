@@ -37,7 +37,10 @@
   function wrap(value, a, b, open, close) {
     var sel = value.slice(a, b);
     // đã được bọc ngay quanh vùng chọn -> bỏ định dạng
-    if (value.slice(a - open.length, a) === open && value.slice(b, b + close.length) === close && a - open.length >= 0) {
+    // với ký hiệu 1 ký tự (*, _, ~, =), đừng nhầm một phần của ký hiệu đôi (**, __, ~~, ==) là ký hiệu đơn
+    var solo = open.length === 1 && open === close;
+    var inBold = solo && (value.charAt(a - 2) === open || value.charAt(b + 1) === close);
+    if (!inBold && a - open.length >= 0 && value.slice(a - open.length, a) === open && value.slice(b, b + close.length) === close) {
       return { value: value.slice(0, a - open.length) + sel + value.slice(b + close.length), start: a - open.length, end: b - open.length };
     }
     // vùng chọn tự chứa ký hiệu ở hai đầu -> bỏ định dạng

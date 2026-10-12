@@ -818,6 +818,9 @@ th[data-dir=asc]::after,th[data-dir=desc]::after{color:var(--brand)}
 .lg-help{margin:34px 0 0;color:#495057;font-size:.92rem;line-height:1.6}
 @media(max-width:860px){.login.lg2{grid-template-columns:1fr}.lg-hero{min-height:220px}.lg-wel{left:16px;right:16px;bottom:16px;padding:14px 18px}.lg-wel h2{font-size:1.15rem}.lg-wel p{display:none}.lg-form{padding:36px 20px}}
 .login.lg2{background:#fff!important}
+.rt-hl{background:linear-gradient(transparent 38%,#FFE066 38%,#FFE066 92%,transparent 92%);color:inherit;padding:0 3px}
+.rt-h{background:#FFC089;padding:0 4px;border-radius:4px}.rt-k{background:#FFC2D4;padding:0 4px;border-radius:4px}
+.rt-r{color:#D61F3A;font-weight:600}.rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
 </style>
 </head>
 <body>
@@ -1254,7 +1257,7 @@ async function cxClick(e) {
 function secForm(c, s) {
   const { ov, close } = modal(`<h3>${s ? 'Sửa phần' : 'Thêm chương / phần mới'}</h3>
     <label class="field"><span>Tên phần</span><input id="sf-t" maxlength="80" value="${esc(s?.title || '')}" placeholder="Ví dụ: Chương 2 – Thì quá khứ"></label>
-    <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><textarea id="sf-s" rows="3" maxlength="800" placeholder="Mục tiêu bài, việc cần chuẩn bị…">${esc(s?.summary || '')}</textarea></label>
+    <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><textarea id="sf-s" data-rich="on" rows="3" maxlength="800" placeholder="Mục tiêu bài, việc cần chuẩn bị…">${esc(s?.summary || '')}</textarea></label>
     <div class="row"><span class="grow"></span><button class="btn soft" id="sf-x">Huỷ</button><button class="btn" id="sf-ok">Lưu</button></div>`);
   $('#sf-x', ov).onclick = close; $('#sf-t', ov).focus();
   $('#sf-ok', ov).onclick = async () => {
@@ -1271,7 +1274,7 @@ function itemForm(c, sid, it) {
     <label class="field"><span>Loại nội dung</span><select id="if-k">${Object.entries(ITYPE).map(([k, v]) => `<option value="${k}" ${(it?.type || 'drive') === k ? 'selected' : ''}>${v.n}</option>`).join('')}</select></label>
     <label class="field" id="w-t"><span id="l-t">Tiêu đề</span><input id="if-t" maxlength="120" value="${esc(it?.title || '')}"></label>
     <label class="field" id="w-u"><span>Link (https://…)</span><input id="if-u" value="${esc(it?.url || '')}" placeholder="Dán link Drive, YouTube hoặc trang web"><small>Dán link xong, hệ thống tự đoán loại (YouTube, thư mục, file Drive). Với Drive: Chia sẻ → “Bất kỳ ai có đường liên kết”.</small></label>
-    <label class="field" id="w-x"><span id="l-x">Nội dung</span><textarea id="if-x" rows="5" maxlength="4000">${esc(it?.text || '')}</textarea></label>
+    <label class="field" id="w-x"><span id="l-x">Nội dung</span><textarea id="if-x" data-rich="on" rows="5" maxlength="4000">${esc(it?.text || '')}</textarea></label>
     <label class="field" id="w-b"><span>Chọn đề</span><select id="if-b"><option value="">– Chọn đề –</option>${own.length ? `<optgroup label="Đề của lớp này">${own.map(bo).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="Đề khác của trung tâm">${others.map(bo).join('')}</optgroup>` : ''}</select>${own.length || others.length ? '' : '<small>Lớp chưa có đề. Sang tab “Đề và kiểm tra” để tạo đề trước.</small>'}</label>
     <div class="g2b" id="w-m"><label class="field"><span>Thời gian làm bài (phút)</span><input id="if-m" type="number" min="1" max="300" value="${esc(it?.minutes || 30)}"></label><label class="field"><span>Số lần được làm (0 = không giới hạn)</span><input id="if-r" type="number" min="0" max="20" value="${esc(it?.tries || 0)}"></label></div>
     <label class="field" id="w-d"><span>Hạn nộp</span><input id="if-d" type="date" value="${esc(it?.due || '')}"></label>
@@ -1401,7 +1404,7 @@ function cxSettings(c, el) {
   const T = S.teachers.filter(t => t.active !== false || (c.teacherUids || []).includes(t.id));
   el.innerHTML = `<div class="card" style="max-width:760px"><h3>Thiết lập lớp</h3>
     <label class="field"><span>Tên lớp</span><input id="st-n" maxlength="60" value="${esc(c.name)}"><small>Học sinh đăng ký mới với đúng tên lớp này sẽ xuất hiện ở “chờ duyệt”.</small></label>
-    <label class="field"><span>Mô tả (hiện ở đầu trang lớp của học sinh)</span><textarea id="st-d" rows="3" maxlength="800">${esc(c.desc || '')}</textarea></label>
+    <label class="field"><span>Mô tả (hiện ở đầu trang lớp của học sinh)</span><textarea id="st-d" data-rich="on" rows="3" maxlength="800">${esc(c.desc || '')}</textarea></label>
     <label class="field"><span>Link ảnh bìa (không bắt buộc)</span><input id="st-b" value="${esc(c.banner || '')}" placeholder="https://…"></label>
     ${TEACHER() ? `<p><b>Giáo viên phụ trách:</b> ${esc(Object.values(c.teacherNames || {}).join(', ') || '–')}</p>` : `<label class="field"><span>Giáo viên phụ trách</span><div>${T.length ? T.map(t => `<label style="display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0;font-weight:600"><input type="checkbox" class="st-t" value="${esc(t.id)}" ${(c.teacherUids || []).includes(t.id) ? 'checked' : ''}>${esc(t.name || t.email)}</label>`).join('') : '<span class="muted">Chưa có giáo viên. Vào mục Giáo viên để tạo tài khoản.</span>'}</div></label>`}
     <label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:14px"><input type="checkbox" id="st-a" ${c.archived ? 'checked' : ''}> Lưu trữ lớp (học sinh vẫn xem được nội dung cũ)</label>
@@ -1945,7 +1948,7 @@ function studentModal(u) {
 /* ---------- thông báo ---------- */
 function vNotice() {
   $('#content').innerHTML = `<h2>Thông báo</h2><div class="card" style="max-width:640px"><p style="margin-bottom:12px">Nội dung hiện ở đầu trang chủ của học sinh.</p>
-    <label class="field"><span>Nội dung</span><textarea id="n-text" maxlength="300" placeholder="VD: Tuần này ôn bài 5–7, thứ Sáu kiểm tra nhé!">${esc(S.ann.text || '')}</textarea></label>
+    <label class="field"><span>Nội dung</span><textarea id="n-text" data-rich="on" maxlength="300" placeholder="VD: Tuần này ôn bài 5–7, thứ Sáu kiểm tra nhé!">${esc(S.ann.text || '')}</textarea></label>
     <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="n-on" ${S.ann.active ? 'checked' : ''}><i></i></span> Đang hiển thị</label><span class="grow"></span><button class="btn" id="n-save">Lưu thông báo</button></div></div>`;
   $('#n-save').onclick = async () => { try { await api.setAnn({ text: $('#n-text').value.trim(), active: $('#n-on').checked, updatedAt: NOW() }); toast('Đã lưu thông báo.'); } catch (er) { toast(er.message, 'bad'); } };
 }
@@ -1957,7 +1960,7 @@ function vMsg() {
   $('#content').innerHTML = `<h2>Nhắn học sinh</h2><div class="card" style="max-width:720px"><p style="margin-bottom:12px">Lời nhắn hiện nổi bật trên trang chủ của học sinh cho tới khi các em bấm "Đã đọc". Gửi mới sẽ thay lời nhắn cũ.</p>
     <label class="field"><span>Gửi cho cả lớp (tuỳ chọn)</span><select id="m-class"><option value="">Không chọn lớp</option>${classList().map(c => `<option>${esc(c)}</option>`).join('')}</select></label>
     <label class="field"><span>Hoặc chọn từng bạn (giữ Ctrl/Cmd để chọn nhiều)</span><select id="m-stu" multiple size="7">${U.map(u => `<option value="${u.id}">${esc(u.name || 'Học sinh')}${u.className ? ' · ' + esc(u.className) : ''}${u.teacherNote && u.teacherNote.text ? ' · đang có lời nhắn' : ''}</option>`).join('')}</select></label>
-    <label class="field"><span>Nội dung</span><textarea id="m-text" maxlength="300" rows="3" placeholder="VD: Em nhớ ôn lại thì hiện tại hoàn thành trước buổi học thứ Ba nhé!"></textarea></label>
+    <label class="field"><span>Nội dung</span><textarea id="m-text" data-rich="on" maxlength="300" rows="3" placeholder="VD: Em nhớ ôn lại thì hiện tại hoàn thành trước buổi học thứ Ba nhé!"></textarea></label>
     <div class="row"><button class="btn soft" id="m-clear">Xoá lời nhắn của các bạn đã chọn</button><span class="grow"></span><button class="btn" id="m-send">Gửi lời nhắn</button></div></div>`;
   const pick = () => { const ids = new Set([...$('#m-stu').selectedOptions].map(o => o.value)), c = norm($('#m-class').value); if (c) U.filter(u => norm(u.className) === c).forEach(u => ids.add(u.id)); return [...ids]; };
   const run = async note => { const ids = pick(); if (!ids.length) return toast('Chọn lớp hoặc ít nhất một bạn nhé.', 'bad'); if (note && !note.text) return toast('Nhập nội dung nhé.', 'bad');
@@ -2003,9 +2006,9 @@ function courseForm(c) {
     <label class="field grow"><span>Trình độ</span><select id="c-lvl">${opt(CAT_LVL, d.level)}</select></label></div>
     <div class="row"><label class="field grow"><span>Tuổi từ</span><input id="c-a0" type="number" min="3" max="17" value="${d.ageMin ?? 6}"></label><label class="field grow"><span>đến</span><input id="c-a1" type="number" min="3" max="17" value="${d.ageMax ?? 12}"></label><label class="field grow"><span>Thứ tự hiển thị</span><input id="c-ord" type="number" value="${d.order ?? 50}"></label></div>
     ${d.builtin ? '<p class="muted" style="margin-bottom:10px">Khoá có sẵn: bài học tự gắn theo chủ đề cũ, không cần từ khoá.</p>' : `<label class="field"><span>Từ khoá chủ đề bài học</span><input id="c-key" maxlength="40" value="${esc(d.key || '')}" placeholder="VD: pet"><small class="muted">Bài học nào có ô "Chủ đề" chứa từ khoá này sẽ thuộc chương trình. Nên dùng từ khoá riêng, không trùng khoá khác.</small></label>`}
-    <label class="field"><span>Mô tả ngắn</span><textarea id="c-desc" rows="2" maxlength="300">${esc(d.desc || '')}</textarea></label>
-    <label class="field"><span>Em sẽ đạt được gì (mỗi dòng một ý)</span><textarea id="c-goals" rows="3">${esc(d.goals || '')}</textarea></label>
-    <label class="field"><span>Lộ trình học (mỗi dòng một chặng hoặc một tuần)</span><textarea id="c-out" rows="3" placeholder="Tuần 1-4: ...">${esc(d.outline || '')}</textarea></label>
+    <label class="field"><span>Mô tả ngắn</span><textarea id="c-desc" data-rich="on" rows="2" maxlength="300">${esc(d.desc || '')}</textarea></label>
+    <label class="field"><span>Em sẽ đạt được gì (mỗi dòng một ý)</span><textarea id="c-goals" data-rich="on" rows="3">${esc(d.goals || '')}</textarea></label>
+    <label class="field"><span>Lộ trình học (mỗi dòng một chặng hoặc một tuần)</span><textarea id="c-out" data-rich="on" rows="3" placeholder="Tuần 1-4: ...">${esc(d.outline || '')}</textarea></label>
     <div class="row"><label class="field grow"><span>Giáo viên</span><input id="c-tch" maxlength="60" value="${esc(d.teacher || '')}"></label><label class="field grow"><span>Lịch học</span><input id="c-sch" maxlength="80" value="${esc(d.schedule || '')}" placeholder="VD: T3 - T5, 18:00"></label></div>
     <label class="field"><span>Link ảnh bìa (tuỳ chọn)</span><input id="c-img" value="${esc(d.img || '')}" placeholder="https://..."></label>
     <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="c-pub" ${d.published !== false ? 'checked' : ''}><i></i></span> Hiển thị cho học sinh</label><span class="grow"></span><button class="btn soft" id="c-x">Huỷ</button><button class="btn" id="c-save">Lưu</button></div>`);
@@ -2112,7 +2115,7 @@ function postForm(p) {
     <div class="row"><label class="field grow"><span>Đăng vào</span><select id="p-c"><option value="all" ${d.courseId === 'all' ? 'selected' : ''}>Toàn trung tâm (mọi học sinh)</option>${allCourses().map(c => `<option value="${esc(c.id)}" ${d.courseId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
     <label class="field grow"><span>Loại bài</span><select id="p-t"><option value="announce" ${d.type === 'announce' ? 'selected' : ''}>Thông báo</option><option value="forum" ${d.type === 'forum' ? 'selected' : ''}>Chủ đề diễn đàn (mời học sinh thảo luận)</option></select></label></div>
     <label class="field"><span>Tiêu đề</span><input id="p-title" maxlength="120" value="${esc(d.title || '')}" placeholder="VD: Lịch kiểm tra giữa kỳ tuần sau"></label>
-    <label class="field"><span>Nội dung</span><textarea id="p-body" rows="6" maxlength="3000" placeholder="Nội dung thông báo hoặc câu hỏi thảo luận. Dán link thì học sinh bấm mở được.">${esc(d.body || '')}</textarea></label>
+    <label class="field"><span>Nội dung</span><textarea id="p-body" data-rich="on" rows="6" maxlength="3000" placeholder="Nội dung thông báo hoặc câu hỏi thảo luận. Dán link thì học sinh bấm mở được.">${esc(d.body || '')}</textarea></label>
     <div class="row"><label class="field grow"><span>Link đính kèm (tuỳ chọn)</span><input id="p-link" value="${esc(d.link || '')}" placeholder="https://..."></label><label class="field grow"><span>Chữ trên nút link</span><input id="p-lt" maxlength="40" value="${esc(d.linkText || '')}" placeholder="Mở tài liệu"></label></div>
     <label class="field"><span>Tên người đăng</span><input id="p-by" maxlength="40" value="${esc(d.authorName || 'Thầy cô Inspire')}"></label>
     <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="p-pin" ${d.pinned ? 'checked' : ''}><i></i></span> Ghim lên đầu</label><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="p-lock" ${d.locked ? 'checked' : ''}><i></i></span> Khoá bình luận</label><span class="grow"></span><button class="btn soft" id="p-x">Huỷ</button><button class="btn" id="p-save">${n ? 'Đăng bài' : 'Lưu'}</button></div>`);
@@ -2475,7 +2478,14 @@ function vAdmins() {
 
 /* ---------- chat với học sinh ---------- */
 const escM = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const linkM = s => escM(s).replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`).replace(/\n/g, '<br>');
+const fmtRich = t => t
+  .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
+  .replace(/(^|[^*])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?!\*)/g, '$1<em>$2</em>')
+  .replace(/__([^_\n]+?)__/g, '<u>$1</u>')
+  .replace(/==([^=\n]+?)==/g, '<mark class="rt-hl">$1</mark>')
+  .replace(/~~([^~\n]+?)~~/g, '<s>$1</s>')
+  .replace(/\{([robgkh]):([^{}\n]+?)\}/g, (m, c, x) => '<span class="rt-' + c + '">' + x + '</span>');
+const linkM = s => escM(s).split(/(https?:\/\/[^\s<]+)/g).map((p, i) => i % 2 ? `<a href="${p}" target="_blank" rel="noopener noreferrer">${p}</a>` : fmtRich(p)).join('').replace(/\n/g, '<br>');
 const chTime = ms => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1); };
 const chMs = m => m.atMs || (m.at && m.at.toMillis ? m.at.toMillis() : Date.now());
 let threadUnsub = null;
@@ -2709,5 +2719,6 @@ addEventListener('unhandledrejection',function(e){setTimeout(function(){show('L�
   markWide();
 })();
 </script>
+<script src="rich-toolbar.js"></script>
 </body>
 </html>

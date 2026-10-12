@@ -1300,13 +1300,35 @@ function itemForm(c, sid, it) {
     <label class="field" id="w-b"><span>Chọn đề</span><select id="if-b"><option value="">– Chọn đề –</option>${own.length ? `<optgroup label="Đề của lớp này">${own.map(bo).join('')}</optgroup>` : ''}${others.length ? `<optgroup label="Đề khác của trung tâm">${others.map(bo).join('')}</optgroup>` : ''}</select>${own.length || others.length ? '' : '<small>Lớp chưa có đề. Sang tab “Đề và kiểm tra” để tạo đề trước.</small>'}</label>
     <div class="g2b" id="w-m"><label class="field"><span>Thời gian làm bài (phút)</span><input id="if-m" type="number" min="1" max="300" value="${esc(it?.minutes || 30)}"></label><label class="field"><span>Số lần được làm (0 = không giới hạn)</span><input id="if-r" type="number" min="0" max="20" value="${esc(it?.tries || 0)}"></label></div>
     <label class="field" id="w-d"><span>Hạn nộp</span><input id="if-d" type="date" value="${esc(it?.due || '')}"></label>
+    <div id="w-q" class="field"><span>Câu hỏi trong video (dừng video theo mốc)</span><div id="iq-list" style="margin:6px 0"></div>
+      <div style="border:1px dashed #D7DBE2;border-radius:10px;padding:12px">
+        <div class="g2b"><label class="field"><span>Dừng lúc (mm:ss)</span><input id="iq-t" placeholder="02:30"></label><label class="field"><span>Đáp án đúng</span><select id="iq-a"><option>A</option><option>B</option><option>C</option><option>D</option></select></label></div>
+        <label class="field"><span>Câu hỏi</span><input id="iq-q" maxlength="300"></label>
+        <div class="g2b"><label class="field"><span>Đáp án A</span><input id="iq-o0" maxlength="200"></label><label class="field"><span>Đáp án B</span><input id="iq-o1" maxlength="200"></label><label class="field"><span>Đáp án C</span><input id="iq-o2" maxlength="200"></label><label class="field"><span>Đáp án D</span><input id="iq-o3" maxlength="200"></label></div>
+        <label class="field"><span>Giải thích (không bắt buộc)</span><input id="iq-e" maxlength="300"></label>
+        <button class="btn soft sm" type="button" id="iq-add">+ Thêm câu hỏi</button>
+      </div></div>
     <div class="row"><span class="grow"></span><button class="btn soft" id="if-x2">Huỷ</button><button class="btn" id="if-ok">${it ? 'Lưu' : 'Thêm vào lớp'}</button></div>`);
   const kind = () => $('#if-k', ov).value;
-  const sync = () => { const k = kind(), F = ITEM_FIELDS[k]; ['t', 'u', 'x', 'b', 'm', 'd'].forEach(w => $('#w-' + w, ov).classList.toggle('hidden', !F.includes(w)));
+  const sync = () => { const k = kind(), F = ITEM_FIELDS[k]; $('#w-q', ov).classList.toggle('hidden', k !== 'youtube'); ['t', 'u', 'x', 'b', 'm', 'd'].forEach(w => $('#w-' + w, ov).classList.toggle('hidden', !F.includes(w)));
     $('#l-t', ov).textContent = k === 'text' ? 'Tiêu đề (không bắt buộc)' : (k === 'bank' || k === 'test') ? 'Tiêu đề hiển thị (để trống = tên đề)' : 'Tiêu đề'; $('#l-x', ov).textContent = k === 'task' ? 'Mô tả nhiệm vụ' : 'Nội dung'; };
   $('#if-k', ov).onchange = sync; sync();
   $('#if-u', ov).oninput = e => { const k = kind(); if (['link', 'drive', 'folder', 'youtube'].includes(k) && okUrl(e.target.value.trim())) { const g = guessType(e.target.value.trim()); if (g !== k) { $('#if-k', ov).value = g; sync(); } } };
   $('#if-x2', ov).onclick = close;
+  let qs = (it?.qs || []).slice();
+  const tsec2 = v => { const x = String(v || '').trim(), p = x.split(':').map(Number); return (!x || p.some(isNaN)) ? null : p.reduce((a, y) => a * 60 + y, 0); };
+  const drawQ = () => { $('#iq-list', ov).innerHTML = qs.length ? qs.map((x, i) => `<div class="qrow"><div class="grow"><b>${Math.floor(x.t / 60)}:${String(x.t % 60).padStart(2, '0')}</b> — ${esc(x.q)}<br><small class="muted">Đáp án ${esc(x.a)} · ${(x.o || []).map((o, k) => 'ABCD'[k] + '. ' + esc(o)).join(' · ')}</small></div><button class="btn soft sm" type="button" data-iqd="${i}">Xoá</button></div>`).join('') : '<p class="muted" style="margin:4px 0">Chưa có câu hỏi nào.</p>'; };
+  drawQ();
+  $('#iq-list', ov).onclick = e => { const b = e.target.closest('[data-iqd]'); if (!b) return; qs = qs.filter((_, i) => i !== +b.dataset.iqd); drawQ(); };
+  $('#iq-add', ov).onclick = () => {
+    const t = tsec2($('#iq-t', ov).value), q = $('#iq-q', ov).value.trim(), o = [0, 1, 2, 3].map(k => $('#iq-o' + k, ov).value.trim());
+    if (t == null) return toast('Thời điểm dừng phải dạng mm:ss, ví dụ 02:30.', 'bad');
+    if (!q) return toast('Nhập nội dung câu hỏi.', 'bad');
+    if (o.some(x => !x)) return toast('Điền đủ 4 đáp án A–D.', 'bad');
+    qs = [...qs, { t, q, o, a: $('#iq-a', ov).value, e: $('#iq-e', ov).value.trim() }].sort((x, y) => x.t - y.t);
+    ['#iq-t', '#iq-q', '#iq-o0', '#iq-o1', '#iq-o2', '#iq-o3', '#iq-e'].forEach(id => { $(id, ov).value = ''; });
+    drawQ();
+  };
   $('#if-ok', ov).onclick = async () => {
     const k = kind(), F = ITEM_FIELDS[k], t = $('#if-t', ov).value.trim(), u = $('#if-u', ov).value.trim(), x = $('#if-x', ov).value.trim(), bid = $('#if-b', ov).value;
     if (F.includes('u')) { if (!okUrl(u)) return toast('Link phải bắt đầu bằng https://', 'bad'); if (!t) return toast('Nhập tiêu đề nhé.', 'bad'); }
@@ -1317,7 +1339,7 @@ function itemForm(c, sid, it) {
     if (F.includes('u')) item.url = u; if (F.includes('x')) item.text = x; if (F.includes('b')) item.bankId = bid;
     if (F.includes('m')) { item.minutes = Math.max(1, Math.min(300, +$('#if-m', ov).value || 30)); item.tries = Math.max(0, Math.min(20, +$('#if-r', ov).value || 0)); }
     if (F.includes('d')) item.due = $('#if-d', ov).value || '';
-    if (k === 'youtube' && it?.qs) item.qs = it.qs;
+    if (k === 'youtube') item.qs = qs;
     try { await editSections(c, S2 => { const s = S2.find(z => z.id === sid); if (it) { const i = s.items.findIndex(z => z.id === it.id); if (i >= 0) s.items[i] = item; else s.items.push(item); } else s.items.push(item); }); close(); toast('Đã lưu nội dung.'); vClasses(); } catch (er) { toast(er.message, 'bad'); }
   };
 }

@@ -2738,10 +2738,18 @@ function viewClass() {
 const ITYPE_N = { text: 'Ghi chú', link: 'Liên kết', drive: 'Tài liệu', folder: 'Thư mục', youtube: 'Video', bank: 'Luyện tập', test: 'Kiểm tra', task: 'Bài tập' };
 function drawClassTab(c) {
   const el = $('#cxl-main'); if (!el) return;
-  if (CX.tab === 'content') el.innerHTML = cxlContent(c);
+  if (CX.tab === 'content') { el.innerHTML = cxlContent(c); (c.sections || []).forEach(s => (s.items || []).forEach(it => { if (it.type === 'youtube' && (it.qs || []).some(q => q.t != null)) mountCYT(it); })); }
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
   else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
   else cxlChat(c, el);
+}
+async function mountCYT(it) {
+  const id = (String(it.url || '').match(YT_RE) || [])[1]; if (!id || !document.getElementById('cyt-' + it.id)) return;
+  const qs = (it.qs || []).filter(q => q.t != null), asked = new Set(); let timer, p;
+  const tick = () => { const ov = document.getElementById('cov-' + it.id); if (!ov) return clearInterval(timer); const t = p.getCurrentTime(), q = qs.find(x => !asked.has(x) && t >= x.t && t < x.t + 8); if (!q) return;
+    asked.add(q); p.pauseVideo(); ov.hidden = false; ask(ov, q, 'Câu hỏi trong video', () => { ov.hidden = true; p.playVideo(); }); };
+  await ytReady(); if (!document.getElementById('cyt-' + it.id)) return;
+  p = new YT.Player('cyt-' + it.id, { videoId: id, playerVars: { rel: 0, playsinline: 1 }, events: { onStateChange: e => { clearInterval(timer); if (e.data === 1) timer = setInterval(tick, 400); } } });
 }
 const bankOfItem = it => (S.banks || []).find(b => b.id === it.bankId);
 function itemCard(c, it) {
@@ -2752,9 +2760,12 @@ function itemCard(c, it) {
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${linkM(it.text)}</div></div>`;
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
   const open = `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">`;
-  if (it.type === 'drive') return row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
+  if (it.type === 'drive') return /drive\.google\.com\/file\//.test(u)
+    ? row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, '')
+    : row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
   if (it.type === 'folder') return row('Thư mục Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'cxl-doc'));
-  if (it.type === 'youtube') return row('Video bài giảng', `${open}Mở YouTube</a>`, fr(vidEmbed(u), 'cxl-vid'));
+  if (it.type === 'youtube') { const tq = YT_RE.test(u) && (it.qs || []).some(q => q.t != null);
+    return row('Video bài giảng', `${open}Mở YouTube</a>`, tq ? `<div class="vframe cxl-vid"><div id="cyt-${esc(it.id)}" style="position:absolute;inset:0"></div><div class="vovl" id="cov-${esc(it.id)}" hidden></div></div>` : fr(vidEmbed(u), 'cxl-vid')); }
   if (it.type === 'task') { const od = it.due && it.due < todayStr(); return row((it.text ? linkM(it.text) + '<br>' : '') + dueTag(it.due) + `<span style="${od ? 'color:var(--bad,#c0233a);font-weight:700' : ''}">Hạn nộp: ${it.due ? it.due.split('-').reverse().join('/') : 'không có hạn'}${od ? ' (đã quá hạn)' : ''}</span>`, ''); }
   const b = bankOfItem(it);
   if (!b || b.published === false) return row('Đề này chưa sẵn sàng', '');

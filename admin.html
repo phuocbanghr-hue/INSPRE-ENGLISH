@@ -1263,8 +1263,8 @@ async function cxClick(e) {
       case 'chat-send': return sendCxChat(c);
       case 'chat-del': return void await api.delClassChat(c.id, x.dataset.m);
       case 'set-save': {
-        const patch = { name: $('#st-n').value.trim(), desc: $('#st-d').value.trim(), banner: $('#st-b').value.trim(), archived: $('#st-a').checked };
-        if (!patch.name) return toast('Tên lớp không được để trống.', 'bad'); if (patch.banner && !okUrl(patch.banner)) return toast('Link ảnh bìa phải bắt đầu bằng https://', 'bad');
+        const patch = { name: $('#st-n').value.trim(), desc: $('#st-d').value.trim(), banner: $('#st-b').value.trim() || $('#st-bd').value, archived: $('#st-a').checked, theme: readTheme() };
+        if (!patch.name) return toast('Tên lớp không được để trống.', 'bad'); if (patch.banner && !okUrl(patch.banner) && !/^data:image\//.test(patch.banner)) return toast('Link ảnh bìa phải bắt đầu bằng https://', 'bad');
         if (!TEACHER() && document.querySelector('.st-t')) Object.assign(patch, teacherPatch([...document.querySelectorAll('.st-t:checked')].map(k => k.value)));
         await saveClass(c, patch); return toast('Đã lưu thiết lập.');
       }
@@ -1495,15 +1495,63 @@ async function sendCxChat(c) {
 }
 
 /* ----- thiết lập lớp ----- */
+const THEME_DEF = { accent: '#0B5CA8', heroBg: '#FFFFFF', secBg: '#FFFFFF', secBorder: '#ECECF0', nextBg: '#FFF5F6', nextBorder: '#C8142D', text: '#1F2937', radius: 14, fontScale: 100, gap: 16 };
+const THEME_PRESETS = { red: { accent: '#C8142D', nextBg: '#FDECEE', nextBorder: '#C8142D' }, blue: { accent: '#0B5CA8', nextBg: '#EAF2FB', nextBorder: '#0B5CA8' }, green: { accent: '#17803D', nextBg: '#E9F7EF', nextBorder: '#17803D' } };
+const THEME_FIELDS = [['accent', 'Màu nhấn (tiêu đề, viền)', 'color'], ['heroBg', 'Nền khung tiêu đề lớp', 'color'], ['secBg', 'Nền khung mỗi chương', 'color'], ['secBorder', 'Viền khung chương', 'color'], ['text', 'Màu chữ nội dung', 'color'], ['nextBg', 'Nền khung "Làm tiếp"', 'color'], ['nextBorder', 'Viền khung "Làm tiếp"', 'color'], ['radius', 'Bo góc (px)', 'number', 0, 30], ['fontScale', 'Cỡ chữ nội dung (%)', 'number', 80, 140], ['gap', 'Khoảng cách giữa các chương (px)', 'number', 0, 40]];
+const themeFormHTML = t => {
+  const T = { ...THEME_DEF, ...(t || {}) };
+  return `<div class="card" style="max-width:760px;margin-top:16px"><h3>Giao diện trang lớp (học sinh)</h3><p class="muted">Chỉnh màu, khung và cỡ chữ của trang lớp học sinh xem. Có hiệu lực sau khi lưu thiết lập.</p>
+    <div class="row" style="margin-bottom:12px"><button type="button" class="btn soft sm th-preset" data-th-preset="red">Đỏ Inspire</button><button type="button" class="btn soft sm th-preset" data-th-preset="blue">Xanh dương</button><button type="button" class="btn soft sm th-preset" data-th-preset="green">Xanh lá</button><button type="button" class="btn soft sm th-preset" data-th-preset="reset">Mặc định</button></div>
+    <div class="g2b">${THEME_FIELDS.map(([k, l, ty, mn, mx]) => `<label class="field"><span>${l}</span><input id="th-${k}" type="${ty}" ${ty === 'number' ? `min="${mn}" max="${mx}"` : ''} value="${esc(T[k])}"></label>`).join('')}</div></div>`;
+};
+const readTheme = () => Object.fromEntries(THEME_FIELDS.map(([k, , ty]) => { const v = $('#th-' + k).value; return [k, ty === 'number' ? (v === '' ? THEME_DEF[k] : +v) : v]; }));
+const compressImg = file => new Promise((res, rej) => {
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    const r = Math.min(1, 1280 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+    cv.width = Math.round(img.width * r); cv.height = Math.round(img.height * r);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+    let q = 0.85, d = cv.toDataURL('image/jpeg', q);
+    while (d.length > 700000 && q > 0.4) { q -= 0.1; d = cv.toDataURL('image/jpeg', q); }
+    d.length > 700000 ? rej(new Error('Ảnh vẫn quá lớn, hãy chọn ảnh khác.')) : res(d);
+  };
+  img.onerror = () => rej(new Error('Không đọc được file ảnh này.'));
+  img.src = url;
+});
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'st-bf') return; const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = await compressImg(f); $('#st-bd').value = d; $('#st-b').value = '';
+    const pv = $('#st-bpv'); pv.src = d; pv.style.display = 'block';
+    toast('Đã chọn ảnh. Bấm Lưu thiết lập để áp dụng.');
+  } catch (er) { toast(er.message, 'bad'); }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#st-bx')) return;
+  $('#st-bd').value = ''; $('#st-b').value = ''; $('#st-bf').value = '';
+  const pv = $('#st-bpv'); pv.removeAttribute('src'); pv.style.display = 'none';
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('.th-preset'); if (!b) return;
+  const k = b.dataset.thPreset, p = k === 'reset' ? THEME_DEF : { ...THEME_DEF, ...THEME_PRESETS[k] };
+  THEME_FIELDS.forEach(([f]) => { const el = document.getElementById('th-' + f); if (el) el.value = p[f]; });
+});
 function cxSettings(c, el) {
   const T = S.teachers.filter(t => t.active !== false || (c.teacherUids || []).includes(t.id));
   el.innerHTML = `<div class="card" style="max-width:760px"><h3>Thiết lập lớp</h3>
     <label class="field"><span>Tên lớp</span><input id="st-n" maxlength="60" value="${esc(c.name)}"><small>Học sinh đăng ký mới với đúng tên lớp này sẽ xuất hiện ở “chờ duyệt”.</small></label>
     <label class="field"><span>Mô tả (hiện ở đầu trang lớp của học sinh)</span><textarea id="st-d" data-rich="on" rows="3" maxlength="800">${esc(c.desc || '')}</textarea></label>
-    <label class="field"><span>Link ảnh bìa (không bắt buộc)</span><input id="st-b" value="${esc(c.banner || '')}" placeholder="https://…"></label>
+    <div class="field"><span>Ảnh bìa lớp (không bắt buộc)</span>
+      <img id="st-bpv" src="${/^data:image\//.test(c.banner || '') ? esc(c.banner) : ''}" alt="" style="${/^data:image\//.test(c.banner || '') ? '' : 'display:none;'}width:100%;max-width:360px;border-radius:10px;margin-bottom:8px">
+      <input type="file" id="st-bf" accept="image/*" style="margin-bottom:6px">
+      <div class="row" style="margin:0 0 6px"><button type="button" class="btn soft sm" id="st-bx">Xoá ảnh</button></div>
+      <small class="muted">Chọn ảnh từ máy (JPG, PNG, WEBP), ảnh sẽ tự nén nhỏ lại. Hoặc dán link ảnh https bên dưới.</small>
+      <input id="st-b" value="" placeholder="https://…" style="margin-top:6px">
+      <input type="hidden" id="st-bd" value="${/^data:image\//.test(c.banner || '') ? esc(c.banner) : ''}">
+    </div>
     ${TEACHER() ? `<p><b>Giáo viên phụ trách:</b> ${esc(Object.values(c.teacherNames || {}).join(', ') || '–')}</p>` : `<label class="field"><span>Giáo viên phụ trách</span><div>${T.length ? T.map(t => `<label style="display:inline-flex;gap:6px;align-items:center;margin:0 14px 6px 0;font-weight:600"><input type="checkbox" class="st-t" value="${esc(t.id)}" ${(c.teacherUids || []).includes(t.id) ? 'checked' : ''}>${esc(t.name || t.email)}</label>`).join('') : '<span class="muted">Chưa có giáo viên. Vào mục Giáo viên để tạo tài khoản.</span>'}</div></label>`}
     <label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:14px"><input type="checkbox" id="st-a" ${c.archived ? 'checked' : ''}> Lưu trữ lớp (học sinh vẫn xem được nội dung cũ)</label>
-    <div class="row" style="margin:0"><button class="btn" data-a="set-save">Lưu thiết lập</button>${TEACHER() ? '' : '<button class="btn soft" data-a="set-dup">Nhân bản lớp</button><button class="btn soft" data-a="set-old">Ghi danh khoá và giao bài theo lớp</button><span class="grow"></span><button class="btn danger" data-a="set-del">Xoá lớp</button>'}</div></div>`;
+    ${themeFormHTML(c.theme)}<div class="row" style="margin:0"><button class="btn" data-a="set-save">Lưu thiết lập</button>${TEACHER() ? '' : '<button class="btn soft" data-a="set-dup">Nhân bản lớp</button><button class="btn soft" data-a="set-old">Ghi danh khoá và giao bài theo lớp</button><span class="grow"></span><button class="btn danger" data-a="set-del">Xoá lớp</button>'}</div></div>`;
 }
 
 /* ----- quản lý giáo viên (admin) ----- */

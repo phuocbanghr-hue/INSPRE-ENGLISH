@@ -2846,12 +2846,15 @@ function viewClassTest() {
     const Q = shuffle([...pool]).map(q => ({ q: q.q, e: q.e || '', opts: shuffle(q.o.map((t, k) => ({ t, ok: k === q.a }))), pick: -1 })), run = ++CX.run, end = Date.now() + mins * 60000;
     api.updateMe({ ['bankatt.' + b.id]: INC(1), lastActive: NOW() }).catch(() => { });
     main.innerHTML = `<div class="cxl-timer" id="tm"><b id="tl">--:--</b><span id="tp">0/${Q.length} câu</span><button class="btn sm" id="sub">Nộp bài</button></div><section class="card" style="margin:12px 0 50px"><h3 style="margin-bottom:10px">${esc(it.title || b.title)}</h3>
-      ${Q.map((q, i) => `<div class="cxl-q" data-q="${i}"><p><b>Câu ${i + 1}.</b> ${esc(q.q)}</p><div class="opts">${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${esc(o.t)}</button>`).join('')}</div></div>`).join('')}
-      <div class="row" style="margin-top:14px"><span class="grow"></span><button class="btn" id="sub2">Nộp bài</button></div></section>`;
+      ${Q.map((q, i) => `<div class="cxl-q" data-q="${i}"${i ? ' hidden' : ''}><p><b>Câu ${i + 1}.</b> ${esc(q.q)}</p><div class="opts">${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${esc(o.t)}</button>`).join('')}</div></div>`).join('')}
+      <div class="qnav"><button class="btn soft" id="qprev" type="button">← Câu trước</button><span class="grow"></span><span class="qpos" id="qpos"></span><span class="grow"></span><button class="btn" id="qnext" type="button">Câu sau →</button><button class="btn" id="sub2" type="button" hidden>Nộp bài</button></div><div class="qdots" id="qdots">${Q.map((q, i) => `<button type="button" class="qd" data-qd="${i}">${i + 1}</button>`).join('')}</div></section>`;
+    let cur = 0;
+    const showQ = n => { cur = Math.max(0, Math.min(Q.length - 1, n)); main.querySelectorAll('.cxl-q[data-q]').forEach((el, i) => { el.hidden = i !== cur; }); $('#qpos').textContent = 'Câu ' + (cur + 1) + '/' + Q.length; $('#qprev').disabled = cur === 0; $('#qnext').hidden = cur === Q.length - 1; $('#sub2').hidden = cur !== Q.length - 1; main.querySelectorAll('.qd').forEach((b, i) => { b.classList.toggle('cur', i === cur); b.classList.toggle('done', Q[i].pick >= 0); }); };
     let done = false; const answered = () => Q.filter(q => q.pick >= 0).length;
     const tick = () => { if (done || S.view !== 'ctest' || CX.run !== run) { clearInterval(CX.timer); return; } const left = Math.max(0, end - Date.now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000); const tl = $('#tl'); if (tl) { tl.textContent = pad(m) + ':' + pad(s); tl.style.color = left < 60000 ? '#c0233a' : ''; } if (left <= 0) { toast('Hết giờ, bài đã được nộp.', 'warn'); finish(true); } };
     const finish = auto => { if (done) return; if (!auto && answered() < Q.length && !confirm('Em còn ' + (Q.length - answered()) + ' câu chưa trả lời. Vẫn nộp bài?')) return; done = true; clearInterval(CX.timer); result(Q); };
-    main.onclick = e => { const o = e.target.closest('.opt'); if (o) { const qd = o.closest('[data-q]'), q = Q[+qd.dataset.q]; q.pick = +o.dataset.k; qd.querySelectorAll('.opt').forEach((x, k) => x.classList.toggle('on', k === q.pick)); $('#tp').textContent = answered() + '/' + Q.length + ' câu'; return; } if (e.target.closest('#sub') || e.target.closest('#sub2')) finish(false); };
+    main.onclick = e => { const o = e.target.closest('.opt'); if (o) { const qd = o.closest('[data-q]'), q = Q[+qd.dataset.q]; q.pick = +o.dataset.k; qd.querySelectorAll('.opt').forEach((x, k) => x.classList.toggle('on', k === q.pick)); $('#tp').textContent = answered() + '/' + Q.length + ' câu'; showQ(cur); return; } if (e.target.closest('#qprev')) return showQ(cur - 1); if (e.target.closest('#qnext')) return showQ(cur + 1); const dq = e.target.closest('[data-qd]'); if (dq) return showQ(+dq.dataset.qd); if (e.target.closest('#sub') || e.target.closest('#sub2')) finish(false); };
+    showQ(0);
     CX.timer = setInterval(tick, 400); tick(); scrollTo(0, 0);
   }
   function result(Q) {
@@ -3671,16 +3674,34 @@ function drawThread() {
   el.innerHTML = PF.cm.length ? PF.cm.map(c => `<div class="cmt ${c.role === 'admin' ? 'ad' : ''}"><div><b>${esc(c.name || 'Học sinh')}</b>${c.role === 'admin' ? '<span class="pt pt-a">THẦY CÔ</span>' : ''}<small>${dFmt(c.atMs || 0)}</small>${c.uid === S.user.uid ? `<button class="cmt-x" data-delc="${esc(c.id)}" aria-label="Xoá bình luận">Xoá</button>` : ''}</div><p>${linkM(c.text)}</p></div>`).join('') : '<p class="muted" style="font-size:.9rem">Chưa có bình luận nào. Em là người đầu tiên nhé!</p>';
 }
 const metaCell = (m, pid) => m ? `<b>${m.n}</b>` : '<span class="muted">…</span>';
-const lastCell = (p, m) => { const who = m && m.last ? m.last.name : (p.authorName || 'Thầy cô Inspire'), at = m && m.last ? m.last.atMs : postMs(p); return `<b>${esc(who || 'Học sinh')}</b><small>${dFmt(at || 0)}</small>`; };
+const fvSet = k => { try { return new Set(JSON.parse(store.get(k + '_' + S.user.uid) || '[]')); } catch { return new Set(); } };
+const fvSave = (k, st) => store.set(k + '_' + S.user.uid, JSON.stringify([...st]));
+const fAv = n => `<span class="ft-av" aria-hidden="true">${esc((String(n || 'T').trim()[0] || 'T').toUpperCase())}</span>`;
+const lastCell = (p, m) => { const who = m && m.last ? m.last.name : (p.authorName || 'Thầy cô Inspire'), at = m && m.last ? m.last.atMs : postMs(p); return `${fAv(who)}<span class="ft-w"><b>${esc(who || 'Học sinh')}</b><small>${dFmt(at || 0)}</small></span>`; };
 function forumRows(list, showCourse) {
-  return `<div class="ftbl" role="table"><div class="ft-h" role="row"><span>Thảo luận</span><span>Người khởi tạo</span><span>Bài viết gần đây nhất</span><span class="c">Phúc đáp</span></div>` + list.map(p => {
-    const id = esc(p.id), open = PF.open === p.id, m = PF.meta[p.id];
-    return `<div class="ft-r ${open ? 'on' : ''} ${p.pinned ? 'pin' : ''}" role="row" tabindex="0" data-open="${id}" aria-expanded="${open}"><span class="ft-t"><b>${esc(p.title)}</b>${p.pinned ? '<i class="ft-pin">Ghim</i>' : ''}${showCourse ? `<i class="ft-co">${esc(cname(p.courseId))}</i>` : ''}${p.locked ? '<i class="ft-co">Đã khoá</i>' : ''}</span>
-      <span class="ft-a"><b>${esc(p.authorName || 'Thầy cô Inspire')}</b><small>${dFmt(postMs(p))}</small></span>
-      <span class="ft-l" data-cl="${id}">${lastCell(p, m)}</span><span class="ft-n c" data-cn="${id}">${metaCell(m, p.id)}</span></div>
+  const stars = fvSet('fstar'), subs = fvSet('fsub'), all = list.length && list.every(p => subs.has(p.id));
+  return `<div class="fbar"><span class="fq" aria-hidden="true">?</span><div class="fsearch"><input type="search" id="fs-q" data-fsearch placeholder="Tìm kiếm" aria-label="Tìm kiếm thảo luận"><button type="button" tabindex="-1" aria-label="Tìm"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div><span style="flex:1"></span><button type="button" class="fsuball" data-suball>${all ? 'Huỷ đăng ký diễn đàn này' : 'Đăng ký tới diễn đàn này'}</button></div>`
+  + `<div class="ftbl" role="table"><div class="ft-h" role="row"><span></span><span>Thảo luận</span><span>Người khởi tạo</span><span>Bài viết gần đây nhất ↑</span><span class="c">Phúc đáp</span><span class="c">Đăng kí</span><span></span></div>` + list.map(p => {
+    const id = esc(p.id), open = PF.open === p.id, m = PF.meta[p.id], st = stars.has(p.id), sb = subs.has(p.id);
+    return `<div class="ft-r ${open ? 'on' : ''} ${p.pinned ? 'pin' : ''}" role="row" tabindex="0" data-open="${id}" data-ttl="${esc((p.title || '').toLowerCase())}" aria-expanded="${open}"><span class="ft-x ft-s"><button type="button" class="ft-star ${st ? 'on' : ''}" data-star="${id}" aria-label="Đánh dấu sao" aria-pressed="${st}"><svg viewBox="0 0 24 24" width="20" height="20" fill="${st ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.9 6.2.8-4.6 4.3 1.2 6.3L12 17.3 6.4 20.3l1.2-6.3L3 9.7l6.2-.8z"/></svg></button></span>
+      <span class="ft-t"><b>${esc(p.title)}</b>${p.pinned ? '<i class="ft-pin">Ghim</i>' : ''}${showCourse ? `<i class="ft-co">${esc(cname(p.courseId))}</i>` : ''}${p.locked ? '<i class="ft-co">Đã khoá</i>' : ''}</span>
+      <span class="ft-a">${fAv(p.authorName || 'Thầy cô Inspire')}<span class="ft-w"><b>${esc(p.authorName || 'Thầy cô Inspire')}</b><small>${dFmt(postMs(p))}</small></span></span>
+      <span class="ft-l" data-cl="${id}">${lastCell(p, m)}</span><span class="ft-n c" data-cn="${id}">${metaCell(m, p.id)}</span>
+      <span class="ft-x c"><button type="button" class="ft-sw ${sb ? 'on' : ''}" data-sub="${id}" role="switch" aria-checked="${sb}" aria-label="Đăng ký thảo luận"><i></i></button></span>
+      <span class="ft-x c"><button type="button" class="ft-k" data-open="${id}" aria-label="Mở thảo luận">⋮</button></span></div>
     ${open ? `<div class="ft-d"><div class="post-b">${linkM(p.body || '')}</div>${/^https?:\/\//.test(p.link || '') ? `<a class="btn soft sm" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${esc(p.linkText || 'Mở tài liệu / liên kết')}</a>` : ''}<div class="thread"><div class="th-l" id="thl"></div>${p.locked ? '' : `<div class="th-f"><textarea id="thx" maxlength="1000" rows="2" placeholder="Viết bình luận của em…"></textarea><button class="btn sm" data-send="${id}">Gửi</button></div>`}</div></div>` : ''}`;
   }).join('') + '</div>';
 }
+/* sao, đăng ký, tìm kiếm trong bảng diễn đàn (chạy trước các handler khác) */
+document.addEventListener('click', e => {
+  const st = e.target.closest('[data-star]'), sb = e.target.closest('[data-sub]'), sa = e.target.closest('[data-suball]');
+  if (!st && !sb && !sa) return;
+  e.stopPropagation(); e.preventDefault();
+  if (st) { const s = fvSet('fstar'), id = st.dataset.star; s.has(id) ? s.delete(id) : s.add(id); fvSave('fstar', s); st.classList.toggle('on', s.has(id)); st.setAttribute('aria-pressed', s.has(id)); st.querySelector('svg').setAttribute('fill', s.has(id) ? 'currentColor' : 'none'); }
+  else if (sb) { const s = fvSet('fsub'), id = sb.dataset.sub; s.has(id) ? s.delete(id) : s.add(id); fvSave('fsub', s); sb.classList.toggle('on', s.has(id)); sb.setAttribute('aria-checked', s.has(id)); }
+  else { const ids = [...document.querySelectorAll('.ft-sw')].map(x => x.dataset.sub), s = fvSet('fsub'), all = ids.every(i => s.has(i)); ids.forEach(i => all ? s.delete(i) : s.add(i)); fvSave('fsub', s); document.querySelectorAll('.ft-sw').forEach(x => { x.classList.toggle('on', s.has(x.dataset.sub)); x.setAttribute('aria-checked', s.has(x.dataset.sub)); }); sa.textContent = all ? 'Đăng ký tới diễn đàn này' : 'Huỷ đăng ký diễn đàn này'; }
+}, true);
+document.addEventListener('input', e => { const q = e.target.closest && e.target.closest('[data-fsearch]'); if (!q) return; const v = q.value.trim().toLowerCase(); document.querySelectorAll('.ft-r').forEach(r => { const h = !!v && !r.dataset.ttl.includes(v); r.style.display = h ? 'none' : ''; const d = r.nextElementSibling; if (d && d.classList.contains('ft-d')) d.style.display = h ? 'none' : ''; }); });
 function loadMeta(list) {
   list.filter(p => p.type === 'forum' && !PF.meta[p.id] && !PF.busy[p.id]).forEach(p => {
     PF.busy[p.id] = 1;
@@ -3899,5 +3920,58 @@ else {
 </script>
 <script>(function(){var b=document.createElement('button');b.className='fab';b.textContent='\u2191';b.setAttribute('aria-label','Lên đầu trang');b.style.display='none';b.onclick=function(){scrollTo({top:0,behavior:'smooth'})};document.body.appendChild(b);addEventListener('scroll',function(){b.style.display=scrollY>400?'block':'none'},{passive:true})})()</script>
 <script>document.addEventListener('click',function(e){var f=e.target.closest('[data-fs]');if(f){var v=f.closest('.vid'),x=v&&(v.querySelector('.vwrap')||v.querySelector('.vframe'));if(x){(x.requestFullscreen||x.webkitRequestFullscreen||function(){}).call(x)}return}var w=e.target.closest('#wide');if(w){var l=document.querySelector('.lms');if(l){var on=l.classList.toggle('wide');w.textContent=on?'Hiện mục lục':'Mở rộng màn hình'}}});</script>
+<style>
+/* v18: khung tài liệu/bài giảng Drive lớn hơn, luôn hiển thị */
+.wrap:has(.lms),.wrap:has(.docs-frame){max-width:1680px}
+.vframe.tall{height:clamp(900px,135vh,1800px)!important;min-height:900px;width:100%}
+.vframe.tall iframe{min-height:900px}
+.vframe:not(.tall){border-radius:16px}
+@media(max-width:700px){.vframe.tall{height:120vh!important;min-height:700px}}
+</style>
+<style>
+/* v18: bảng diễn đàn kiểu Moodle */
+.fbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:6px 0 22px;padding:0 4px}
+.fq{width:18px;height:18px;border-radius:50%;background:#0B5CA8;color:#fff;font-size:.7rem;font-weight:800;display:grid;place-items:center}
+.fsearch{display:flex}.fsearch input{width:200px;border:1px solid #CED4DA;border-right:0;border-radius:6px 0 0 6px;padding:9px 12px;font:inherit;font-size:.95rem;background:#fff}
+.fsearch button{width:38px;border:0;background:#0B5CA8;color:#fff;border-radius:0 6px 6px 0;display:grid;place-items:center}
+.fsuball{background:#F26522;color:#fff;border:0;border-radius:6px;padding:10px 18px;font-weight:600;font-size:.92rem}.fsuball:hover{filter:brightness(1.07)}
+.ftbl{border:0;border-top:1px solid #DEE2E6;border-radius:0;background:#fff}
+.ft-h,.ft-r{grid-template-columns:44px minmax(0,2.4fr) minmax(0,1.3fr) minmax(0,1.3fr) 70px 70px 36px!important;gap:12px!important;padding:14px 12px!important}
+.ft-h{border-bottom:2px solid #DEE2E6!important;align-items:end}
+.ft-r{padding-top:16px!important;padding-bottom:16px!important;border-top:1px solid #E5E7EB}
+.ft-t b{font-weight:500!important}
+.ft-a,.ft-l{flex-direction:row!important;align-items:center;gap:10px}
+.ft-w{display:flex;flex-direction:column;min-width:0}.ft-w b{font-weight:500!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ft-w small{color:#0B5CA8!important;font-size:.88rem!important}.ft-a .ft-w small{color:#1F2937!important}
+.ft-av{flex:none;width:34px;height:34px;border-radius:50%;background:#E5E7EB;color:#9CA3AF;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.ft-star{border:0;background:none;color:#0B5CA8;padding:4px;display:grid;place-items:center}.ft-star.on{color:#F5A623}
+.ft-sw{width:36px;height:20px;border-radius:99px;border:1.5px solid #0B5CA8;background:#fff;position:relative;padding:0}
+.ft-sw i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#6B7280;transition:.15s}
+.ft-sw.on{background:#0B5CA8}.ft-sw.on i{left:19px;background:#fff}
+.ft-k{border:0;background:none;font-size:1.2rem;font-weight:700;color:#0B5CA8;padding:2px 6px}
+.ft-n b{font-weight:500}
+@media(max-width:760px){.ft-r{grid-template-columns:36px 1fr auto auto!important}.ft-t{grid-column:2/-1}.ft-a{display:none!important}.ft-l{display:none!important}.ft-x.c:last-child{display:none}.ft-n.c{text-align:right}.fsearch input{width:150px}}
+</style>
+<style>
+/* v19: bài kiểm tra mỗi lần 1 câu */
+.cxl-q[hidden]{display:none!important}
+.qnav{display:flex;align-items:center;gap:10px;margin:18px 0 12px}.qnav .grow{flex:1}.qpos{font-weight:700;color:#0B5CA8}
+.qnav .btn[hidden]{display:none}.qnav .btn:disabled{opacity:.45;pointer-events:none}
+.qdots{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.qd{width:36px;height:36px;border-radius:8px;border:1px solid #CED4DA;background:#fff;font-weight:600;color:#374151}
+.qd.done{background:#E8F1FB;border-color:#9CC3EA;color:#0B5CA8}.qd.cur{background:#0B5CA8;border-color:#0B5CA8;color:#fff}
+/* v19: thanh điều hướng IN HOA */
+.bar .nav .navb,.bar .nav .navb[data-go],.bar .nav .more>.navb{text-transform:uppercase!important;letter-spacing:.045em;font-size:.8rem;font-weight:700}
+/* v19: nền bảng diễn đàn (trước đây chỉ nạp trong trang chuyên đề) */
+.ftbl{background:#fff;overflow:hidden;margin-bottom:18px}
+.ft-h,.ft-r{display:grid;align-items:center}
+.ft-h{font-weight:700;color:#0B5CA8;font-size:.92rem}
+.ft-r{cursor:pointer;font-size:.92rem;color:#1F2937}
+.ft-r:nth-of-type(odd){background:#F8F9FA}.ft-r:hover,.ft-r.on{background:#EAF2FB}
+.ft-t b{color:#0B5CA8;font-size:1rem}
+.ft-t i{font-style:normal;font-size:.68rem;font-weight:700;border-radius:99px;padding:2px 8px;margin-left:8px;vertical-align:middle;background:#E8F1FB;color:#0B5CA8}
+.ft-t i.ft-pin{background:var(--brand,#C8142D);color:#fff}
+.ft-d{padding:14px 18px 18px;background:#fff;border-top:1px dashed #DEE2E6}
+.ft-sec{margin:22px 0 10px!important;font-size:1.1rem}.c{text-align:center}
+</style>
 </body>
 </html>

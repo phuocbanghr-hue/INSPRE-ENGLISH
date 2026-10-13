@@ -1218,11 +1218,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['banks', 'Đề và kiểm tra'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['settings', 'Thiết lập']];
+  const TABS0 = [['content', 'Nội dung'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['banks', 'Đề và kiểm tra'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, members: cxMembers, banks: cxBanks, grades: cxGrades, risk: cxRisk, chat: cxChat, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ content: cxContent, members: cxMembers, banks: cxBanks, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -1243,6 +1243,30 @@ function cxContent(c, el) {
     ${secs.map((s, i) => secHTML(s, i, secs.length)).join('') || '<div class="card empty">Lớp chưa có phần nào. Bấm “Thêm chương / phần”.</div>'}`;
 }
 
+
+/* ===== Trình chiếu Canva (nhúng thiết kế Canva để chiếu lên màn hình lớn) ===== */
+function canvaEmbed(raw) {
+  let u = String(raw || '').trim(); const m = u.match(/src=["']([^"']+)["']/i); if (m) u = m[1];
+  const d = u.match(/^https:\/\/(?:www\.)?canva\.com\/design\/([\w-]+)\/([\w-]+)\/(?:view|watch|edit)/i);
+  if (d) return `https://www.canva.com/design/${d[1]}/${d[2]}/view?embed`;
+  return '';
+}
+function cxCanva(c, el) {
+  const v = c.canva || {}, items = v.items || [], mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));
+  el.innerHTML = `<div class="card" style="max-width:860px"><h3>Trình chiếu Canva</h3>
+    <p class="muted" style="margin-top:0">Nhúng thiết kế Canva để học sinh trình chiếu dự án lên màn hình lớn. Trong Canva: <b>Chia sẻ → Xem liên kết (Anyone with the link can view)</b> rồi sao chép link “Xem” (dạng <code>canva.com/design/…/view</code>). Cũng có thể dán cả đoạn mã nhúng.</p>
+    ${items.length ? items.map(i => `<div class="cxi" data-cv="${esc(i.id)}"><div class="grow" style="min-width:0"><b>${esc(i.title || 'Bản trình chiếu')}</b><br><small class="muted"><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(String(i.url).slice(0, 80))}</a></small></div><div class="acts"><button class="btn soft sm" data-a="canva-view">Xem thử</button><button class="btn soft sm" data-a="canva-del">Xoá</button></div></div>`).join('') : '<div class="hint">Lớp chưa có bản trình chiếu nào.</div>'}
+    <div class="row" style="margin:12px 0 0;align-items:flex-end"><label class="field grow" style="margin:0"><span>Tên bản trình chiếu</span><input id="cv-t" maxlength="80" placeholder="Ví dụ: Dự án nhóm 1"></label><label class="field grow" style="margin:0;flex:2"><span>Link Canva (chế độ xem) hoặc mã nhúng</span><input id="cv-u" placeholder="https://www.canva.com/design/…/view"></label><button class="btn" data-a="canva-add">＋ Thêm</button></div>
+    <div id="cv-prev" style="margin-top:14px"></div></div>
+    <div class="card" style="max-width:860px;margin-top:14px"><h3>Dự án Canva của từng học sinh</h3><p class="muted" style="margin-top:0">Mỗi học sinh có trang riêng trong lớp để tạo Canva trống và dán link dự án. Bấm “Chiếu” để xem ngay và chiếu lên màn hình lớn.</p>
+    ${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Dự án</th><th></th></tr></thead><tbody>${mem.map(u => { const w = ((u.canvaWork || {})[c.id]); const ok = w && canvaEmbed(w.url); return `<tr data-cw="${esc(u.id)}"><td>${avH(u, 24)}<b>${esc(u.name || 'Học sinh')}</b></td><td>${ok ? `<a href="${esc(w.url)}" target="_blank" rel="noopener">Đã nộp link</a>` : '<span class="muted">Chưa có</span>'}</td><td>${ok ? '<button class="btn soft sm" data-a="canva-show">Chiếu</button>' : ''}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>
+    ${TEACHER() ? `<div class="card" style="max-width:860px;margin-top:14px"><h3>Tài khoản được trình chiếu</h3><p class="muted" style="margin:0">${v.all ? 'Mọi học sinh trong lớp' : (v.uids || []).length + ' tài khoản'} được admin cấp quyền xem tab này. Chỉ admin mới đổi được.</p></div>` : `<div class="card" style="max-width:860px;margin-top:14px"><h3>Tài khoản được trình chiếu</h3>
+    <p class="muted" style="margin-top:0">Các tài khoản được chọn dưới đây mới thấy phần “Trình chiếu lớp” (bản Canva admin thêm ở trên), ví dụ tài khoản nối với màn hình lớn.</p>
+    <label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:8px"><input type="checkbox" id="cv-per" ${v.personal !== false ? 'checked' : ''}> Mỗi học sinh có trang Canva riêng để làm dự án</label>
+    <label style="display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:8px"><input type="checkbox" id="cv-all" ${v.all ? 'checked' : ''}> Cho tất cả học sinh trong lớp</label>
+    <div class="ma-list" id="cv-l">${mem.map(u => `<label class="ma-i"><input type="checkbox" class="cv-ck" value="${esc(u.id)}" ${(v.uids || []).includes(u.id) ? 'checked' : ''}>${avH(u, 24)}<span>${esc(u.name || 'Học sinh')} <small class="muted">${esc(u.email || '')}</small></span></label>`).join('') || '<p class="muted">Lớp chưa có học sinh.</p>'}</div>
+    <div class="row" style="margin:10px 0 0"><button class="btn" data-a="canva-access">Lưu quyền trình chiếu</button></div></div>`}`;
+}
 /* ----- bắt sự kiện cho cả trang lớp ----- */
 async function cxClick(e) {
   const c = classById(S.cx.id); if (!c) return;
@@ -1259,6 +1283,17 @@ async function cxClick(e) {
       case 'sec-up': case 'sec-dn': return void await editSections(c, S2 => mv(S2, S2.findIndex(s => s.id === sid), A === 'sec-up' ? -1 : 1));
       case 'sec-hide': return void await editSections(c, S2 => { const s = S2.find(z => z.id === sid); s.hidden = !s.hidden; });
       case 'sec-del': if (confirm('Xoá phần “' + sec.title + '” cùng ' + (sec.items || []).length + ' nội dung bên trong?')) await editSections(c, S2 => { S2.splice(S2.findIndex(s => s.id === sid), 1); }); return;
+      case 'canva-add': {
+        const t = $('#cv-t').value.trim(), raw = $('#cv-u').value.trim(), m = raw.match(/src=["']([^"']+)["']/i), url = m ? m[1] : raw;
+        if (!canvaEmbed(url)) return toast('Link chưa đúng. Hãy dùng link “Xem” dạng canva.com/design/…/view (không dùng link rút gọn canva.link).', 'warn');
+        const items = [...((c.canva || {}).items || []), { id: 'cv' + Date.now(), title: t || 'Bản trình chiếu', url }];
+        await saveClass(c, { canva: { ...(c.canva || {}), items } }); audit('Thêm trình chiếu Canva', c.name); return toast('Đã thêm.');
+      }
+      case 'canva-del': { if (!confirm('Xoá bản trình chiếu này khỏi lớp?')) return; const id = x.closest('[data-cv]').dataset.cv; await saveClass(c, { canva: { ...(c.canva || {}), items: ((c.canva || {}).items || []).filter(i => i.id !== id) } }); return toast('Đã xoá.'); }
+      case 'canva-show': { const u = S.users.find(z => z.id === x.closest('[data-cw]').dataset.cw), w = u && (u.canvaWork || {})[c.id], src = w && canvaEmbed(w.url); if (!src) return toast('Link không hợp lệ.', 'warn'); $('#cv-prev').innerHTML = `<h4 style="margin:0 0 6px">${esc(u.name || 'Học sinh')}</h4><div id="cv-fs" style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden"><iframe src="${esc(src)}" allowfullscreen allow="fullscreen" style="position:absolute;inset:0;width:100%;height:100%;border:0" title="Dự án"></iframe></div><button class="btn" style="margin-top:8px" data-a="canva-fs">Toàn màn hình</button>`; $('#cv-prev').scrollIntoView({ behavior: 'smooth' }); return; }
+      case 'canva-fs': { const e2 = $('#cv-fs'); if (e2 && e2.requestFullscreen) e2.requestFullscreen().catch(() => { }); return; }
+      case 'canva-view': { const it = ((c.canva || {}).items || []).find(i => i.id === x.closest('[data-cv]').dataset.cv); const src = it && canvaEmbed(it.url); if (!src) return toast('Link không hợp lệ.', 'warn'); $('#cv-prev').innerHTML = `<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden"><iframe src="${esc(src)}" allowfullscreen allow="fullscreen" style="position:absolute;inset:0;width:100%;height:100%;border:0" title="Xem thử"></iframe></div>`; return; }
+      case 'canva-access': { const uids = [...document.querySelectorAll('.cv-ck:checked')].map(i => i.value); await saveClass(c, { canva: { ...(c.canva || {}), all: $('#cv-all').checked, personal: $('#cv-per').checked, uids } }); audit('Cấp quyền trình chiếu Canva', c.name); return toast('Đã lưu quyền trình chiếu.'); }
       case 'item-add': return itemForm(c, sid);
       case 'item-edit': return itemForm(c, sid, (sec.items || []).find(i => i.id === iid));
       case 'item-q': return itemQForm(c, sid, (sec.items || []).find(i => i.id === iid));
@@ -1655,13 +1690,14 @@ const PERMS = [
   ['grades', 'Bảng điểm', 'Xem và tải bảng điểm'],
   ['notes', 'Nhắc nhở học sinh', 'Gửi lời nhắn và cảnh báo lớp'],
   ['chat', 'Chat lớp', 'Nhắn và xoá tin trong chat lớp'],
+  ['canva', 'Trình chiếu Canva', 'Thêm, xoá bản trình chiếu Canva của lớp'],
   ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { content: 'content', members: 'members', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', settings: 'settings' };
+const TABMAP = { content: 'content', members: 'members', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
-const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
+const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
 const audit = (action, detail = '') => { try { return api.add('audit', { uid: myUid(), name: myName(), role: S.role, action, detail, atMs: Date.now() }).catch(() => { }); } catch { } };
 function openPerms(t) {
   const cur = t.perms ? { ...t.perms } : Object.fromEntries(PERMS.map(p => [p[0], true]));

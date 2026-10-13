@@ -843,6 +843,28 @@ th[data-dir=asc]::after,th[data-dir=desc]::after{color:var(--brand)}
 .lg-btn{background:#fff!important;color:#B10B32!important}
 .lg-btn:hover{background:#FCEBEF!important}
 .qrow{display:flex;gap:10px;align-items:center;border-bottom:1px solid #EEE;padding:8px 0}
+
+/* ---------- đăng nhập admin v3: không ảnh bìa, thẻ giữa trang ---------- */
+.login.lg3{display:flex!important;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(900px 420px at 85% -10%,rgba(255,255,255,.16),transparent 70%),radial-gradient(700px 380px at 0% 110%,rgba(0,0,0,.22),transparent 70%),linear-gradient(135deg,#8F0620 0,#B10B32 55%,#D3203A 100%)!important}
+.lg3-card{width:min(440px,100%);background:#fff;border-radius:20px;padding:38px 34px 30px;box-shadow:0 40px 80px -30px rgba(0,0,0,.55);color:#1f2937}
+.lg3-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.login .lg3-brand img{width:56px;height:56px;border-radius:50%;box-shadow:0 0 0 2px #C8102E;margin:0;display:block;flex:none}
+.lg3-brand b{display:block;font-size:1.5rem;font-style:italic;font-weight:800;color:#C8102E;line-height:1.05}
+.lg3-brand small{display:block;font-style:italic;color:#C8102E;font-size:.82rem}
+.lg3-card h1{font-size:1.55rem;font-weight:800;color:#111827!important;margin:0 0 6px;text-align:left}
+.lg3-sub{margin:0 0 22px;color:#6b7280;font-size:.93rem;line-height:1.55}
+.lg3-f{display:block;margin-bottom:14px}
+.lg3-f>span{display:block;font-size:.84rem;font-weight:700;color:#374151;margin-bottom:6px}
+.lg3-f input{width:100%;height:48px;padding:0 14px;border:1px solid #d1d5db;border-radius:10px;background:#f9fafb;font:inherit;font-size:1rem;color:#111827;outline:0;box-sizing:border-box}
+.lg3-f input:focus{border-color:#B10B32;background:#fff;box-shadow:0 0 0 3px rgba(177,11,50,.15)}
+.lg3-pw{position:relative}.lg3-pw input{padding-right:64px}
+.lg3-eye{position:absolute;right:6px;top:6px;height:36px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#B10B32;font-weight:700;cursor:pointer}
+.lg3-eye:hover{background:#FCEBEF}
+.lg3-card .msg{min-height:20px;margin:0 0 10px;color:#C8102E;font-size:.9rem}
+.lg3-btn{width:100%;height:50px;border:0!important;border-radius:10px!important;background:#B10B32!important;color:#fff!important;font-size:1.02rem;font-weight:700;cursor:pointer}
+.lg3-btn:hover{background:#8A0925!important}
+.lg3-help{margin:22px 0 0;text-align:center;color:#6b7280;font-size:.86rem}
+@media(max-width:480px){.lg3-card{padding:30px 22px 24px}}
 </style>
 </head>
 <body>
@@ -1033,16 +1055,15 @@ const classList = () => [...new Set(S.users.map(u => u.className).filter(Boolean
 
 /* ---------- đăng nhập ---------- */
 function viewLogin(note = '') {
-  if (LOAD_ERR) { root.innerHTML = `<div class="login"><div class="card"><h3>Không tải được Firebase</h3><p>Kiểm tra mạng và firebaseConfig rồi tải lại trang.</p></div></div>`; return; }
-  const U = '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5z"/></svg>', K = '<svg viewBox="0 0 24 24"><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg>', EY = '<svg viewBox="0 0 24 24"><path d="M12 5C7 5 2.7 8.1 1 12.5 2.7 16.9 7 20 12 20s9.3-3.100 11-7.500C21.300 8.100 17 5 12 5zm0 12.500a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>';
-  root.innerHTML = `<div class="login lg2"><aside class="lg-hero"><img src="${HERO_ADMIN}" alt="" onerror="this.remove()"><div class="lg-wel"><h2>Chào mừng đến với Inspire E-Study</h2><p>Khu vực dành cho giáo viên và quản trị viên. Đăng nhập để quản lý lớp học, bài tập và học liệu của trung tâm.</p></div></aside>
-    <section class="lg-form"><div class="lg-box"><div class="lg-brand"><img src="${LOGO}" alt="Inspire"><span><b>Inspire</b><small>Do it with passion</small></span></div><h1>Inspire Admin</h1>
-    ${MODE === 'demo' ? `<div class="hint"><b>Bản dùng thử.</b> Dữ liệu mẫu, thay đổi chỉ tồn tại trong lần mở trang này. Dán Firebase config để chạy thật.</div><button class="btn lg-btn" id="demo">Vào xem thử</button>` : `
-    <form id="lf" novalidate><div class="lg-in">${U}<input id="l-email" type="email" autocomplete="username" placeholder="Email quản trị" aria-label="Email quản trị"></div>
-    <div class="lg-in">${K}<input id="l-pass" type="password" autocomplete="current-password" placeholder="Mật khẩu" aria-label="Mật khẩu"><button type="button" class="lg-eye" id="l-eye" aria-label="Hiện/ẩn mật khẩu">${EY}</button></div>
-    <div class="msg" id="l-msg" role="alert">${esc(note)}</div><button class="btn lg-btn">Đăng nhập</button></form>`}
-    <p class="lg-help">Để được trợ giúp, hãy liên hệ với bộ phận hỗ trợ của trung tâm Inspire.</p></div></section></div>`;
-  if ($('#l-eye')) $('#l-eye').onclick = () => { const i = $('#l-pass'); i.type = i.type === 'password' ? 'text' : 'password'; };
+  if (LOAD_ERR) { root.innerHTML = `<div class="login lg3"><div class="lg3-card"><h1>Không tải được Firebase</h1><p class="lg3-sub">Kiểm tra mạng và firebaseConfig rồi tải lại trang.</p></div></div>`; return; }
+  root.innerHTML = `<div class="login lg3"><main class="lg3-card"><div class="lg3-brand"><img src="${LOGO}" alt="Inspire"><span><b>Inspire</b><small>Do it with passion</small></span></div>
+    <h1>Quản trị Inspire E-study</h1><p class="lg3-sub">Dành cho giáo viên và quản trị viên. Đăng nhập để quản lý lớp học, bài tập và học liệu.</p>
+    ${MODE === 'demo' ? `<div class="hint"><b>Bản dùng thử.</b> Dữ liệu mẫu, thay đổi chỉ tồn tại trong lần mở trang này. Dán Firebase config để chạy thật.</div><button class="btn lg3-btn" id="demo">Vào xem thử</button>` : `
+    <form id="lf" novalidate><label class="lg3-f"><span>Email quản trị</span><input id="l-email" type="email" autocomplete="username" placeholder="ten@email.com"></label>
+    <label class="lg3-f"><span>Mật khẩu</span><div class="lg3-pw"><input id="l-pass" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu"><button type="button" class="lg3-eye" id="l-eye" aria-label="Hiện hoặc ẩn mật khẩu">Hiện</button></div></label>
+    <div class="msg" id="l-msg" role="alert">${esc(note)}</div><button class="btn lg3-btn">Đăng nhập</button></form>`}
+    <p class="lg3-help">Cần hỗ trợ? Liên hệ bộ phận hỗ trợ của trung tâm Inspire.</p></main></div>`;
+  if ($('#l-eye')) $('#l-eye').onclick = () => { const i = $('#l-pass'), h = i.type === 'password'; i.type = h ? 'text' : 'password'; $('#l-eye').textContent = h ? 'Ẩn' : 'Hiện'; };
   if (MODE === 'demo') { $('#demo').onclick = () => api.signIn(); return; }
   $('#lf').onsubmit = async e => {
     e.preventDefault(); $('#l-msg').textContent = '';
@@ -2441,11 +2462,22 @@ function vSite() {
     <label class="field"><span>Mô tả ngắn</span><textarea id="w-sub" maxlength="240">${v('sub')}</textarea></label>
     <label class="field"><span>Hotline</span><input id="w-phone" maxlength="30" value="${v('phone')}" placeholder="090 651 55 27"></label>
     <label class="field"><span>Cơ sở (mỗi dòng một cơ sở)</span><textarea id="w-camp" rows="4">${v('campuses')}</textarea></label>
-    <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="w-mt" ${t.maintenance ? 'checked' : ''}><i></i></span> Bảo trì: khoá web với học sinh</label><span class="grow"></span><button class="btn" id="w-save">Lưu website</button></div></div>`;
+    <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="w-mt" ${t.maintenance ? 'checked' : ''}><i></i></span> Bảo trì: khoá web với học sinh</label><span class="grow"></span><button class="btn" id="w-save">Lưu website</button></div></div>
+    <div class="card" style="max-width:720px;margin-top:16px"><h3 style="margin-bottom:6px">Trò chơi luyện từ (Blooket, Kahoot, Quizlet, Gimkit, Wordwall...)</h3><p style="margin-bottom:12px">Dán link game, học sinh thấy ở tab Trò chơi và chơi bằng một cú bấm. Nhập XP thưởng nếu muốn các em bấm nhận điểm sau khi chơi.</p>
+    <div id="gm-list"></div>
+    <label class="field"><span>Tên trò chơi</span><input id="g-t" maxlength="80" placeholder="Unit 3 Vocabulary Blooket"></label>
+    <label class="field"><span>Link game (https://...)</span><input id="g-u" placeholder="https://www.blooket.com/play?id=..."></label>
+    <label class="field"><span>Ghi chú cho học sinh (tuỳ chọn)</span><input id="g-n" maxlength="160" placeholder="Chơi chế độ Gold Quest, ít nhất 10 phút"></label>
+    <div class="row"><label class="field" style="flex:1"><span>XP thưởng (0 đến 100)</span><input id="g-x" type="number" min="0" max="100" value="10"></label><label class="field" style="flex:2"><span>Chỉ cho lớp (cách nhau dấu phẩy, bỏ trống là tất cả)</span><input id="g-c" placeholder="9A1, 9A2"></label></div>
+    <div class="row"><span class="grow"></span><button class="btn" id="g-add">Thêm trò chơi</button></div></div>`;
+  const saveGames = async arr => { const d = { games: arr, updatedAt: NOW() }; try { if (MODE === 'firebase') await FB.setDoc(FB.doc(db, 'config', 'site'), d, { merge: true }); else { S.site = { ...(S.site || {}), games: arr }; localStorage.setItem('inspire_site', JSON.stringify(S.site)); } t.games = arr; drawGames(); toast('Đã lưu trò chơi.'); } catch (er) { toast(er.message, 'bad'); } };
+  const drawGames = () => { const L = t.games || []; $('#gm-list').innerHTML = L.length ? L.map((g, i) => `<div class="row" style="padding:8px 0;border-bottom:1px solid #eee;gap:10px"><div class="grow"><b>${esc(g.title)}</b><br><small>${esc(g.url)} | +${+g.xp || 0} XP${(g.classes || []).length ? ' | Lớp: ' + esc(g.classes.join(', ')) : ''}</small></div><button class="btn soft" data-gdel="${i}">Xoá</button></div>`).join('') : '<p style="margin-bottom:12px">Chưa có trò chơi nào.</p>'; document.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { if (confirm('Xoá trò chơi này?')) saveGames(L.filter((_, i) => i !== +b.dataset.gdel)); }); };
+  drawGames();
+  $('#g-add').onclick = () => { const title = $('#g-t').value.trim(), url = $('#g-u').value.trim(); if (!title || !/^https?:\/\//i.test(url)) { toast('Nhập tên và link bắt đầu bằng https://', 'bad'); return; } const g = { id: 'g' + Date.now().toString(36), title, url, note: $('#g-n').value.trim(), xp: Math.max(0, Math.min(100, +$('#g-x').value || 0)), classes: $('#g-c').value.split(',').map(x => x.trim()).filter(Boolean) }; saveGames([...(t.games || []), g]); ['#g-t', '#g-u', '#g-n', '#g-c'].forEach(q => $(q).value = ''); };
   $('#w-save').onclick = async () => {
     const d = { title: $('#w-title').value.trim(), sub: $('#w-sub').value.trim(), phone: $('#w-phone').value.trim(), campuses: $('#w-camp').value.trim(), maintenance: $('#w-mt').checked, updatedAt: NOW() };
     Object.keys(d).forEach(k => d[k] === '' && delete d[k]);
-    try { if (MODE === 'firebase') await FB.setDoc(FB.doc(db, 'config', 'site'), d, { merge: true }); else { localStorage.setItem('inspire_site', JSON.stringify(d)); S.site = d; } toast('Đã cập nhật website.'); } catch (er) { toast(er.message, 'bad'); }
+    try { if (MODE === 'firebase') await FB.setDoc(FB.doc(db, 'config', 'site'), d, { merge: true }); else { S.site = { ...(S.site || {}), ...d }; localStorage.setItem('inspire_site', JSON.stringify(S.site)); } toast('Đã cập nhật website.'); } catch (er) { toast(er.message, 'bad'); }
   };
 }
 const customCD = () => Object.entries(S.cd || {}).filter(([, m]) => m && m.custom).sort((x, y) => x[0] - y[0]);

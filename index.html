@@ -8049,10 +8049,24 @@ else {
     S.user = u; S.profile = null; S.lessons = []; S.assignments = []; S.announce = null; S.streakChecked = false;
     if (!u) { stopClasses(); go('auth'); return; }
     startChat(u.uid); startGroups(u.uid); startClasses(u.uid);
+    let contentOn = false;
+    // Nội dung học chỉ tải sau khi học sinh có ảnh đại diện (quy tắc Firestore yêu cầu),
+    // nên không báo lỗi quyền khi ảnh chưa kịp lưu lúc đăng nhập.
+    const startContent = () => {
+      if (contentOn) return; contentOn = true;
+      uL = api.watchLessons(list => { S.rawLessons = list; recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }, err => toast('Không tải được bài học: ' + err.message, 'bad'));
+      uE = api.watchEnrol(u.uid, ids => { S.enrol = [...new Set(ids || [])]; S.enrolReady = true; applyLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'classes') viewClasses(); else if (S.view === 'courses') viewCourses(); else if (S.view === 'course' && !isEnrolled(S.course)) go('home'); else if (S.view === 'lesson' && S.lesson && !(courseOf(S.lesson) && isEnrolled(courseOf(S.lesson).id))) go('home'); });
+      uB = api.watchBanks(list => { S.banks = list.filter(b => b.published !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); if (S.view === 'course') viewCourse(); });
+      uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
+      uN = api.watchPosts(list => { S.posts = list; onPosts(); });
+      uA = api.watchAssignments(list => { S.assignments = list; remindOnce(); if (S.view === 'home') drawDash(); });
+      let cdFirst = true; api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
+    };
     uP = api.watchProfile(u.uid, async p => {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
       if (p.disabled) { S.profile = null; api.signOut(); alert('Tài khoản đang bị tạm khoá. Em liên hệ trung tâm nhé.'); return; }
       S.profile = p;
+      if (p.avatar) startContent();
       if (!S.streakChecked) {
         S.streakChecked = true; const t = todayStr();
         if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
@@ -8062,13 +8076,7 @@ else {
       renderTop();
       if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'lesson') { drawLessonHead(); if (!S.tab && S.wordsLoaded) drawLessonBody(); }
     }, err => toast('Không đọc được hồ sơ: ' + err.message, 'bad'));
-    uL = api.watchLessons(list => { S.rawLessons = list; recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }, err => toast('Không tải được bài học: ' + err.message, 'bad'));
-    uE = api.watchEnrol(u.uid, ids => { S.enrol = [...new Set(ids || [])]; S.enrolReady = true; applyLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'classes') viewClasses(); else if (S.view === 'courses') viewCourses(); else if (S.view === 'course' && !isEnrolled(S.course)) go('home'); else if (S.view === 'lesson' && S.lesson && !(courseOf(S.lesson) && isEnrolled(courseOf(S.lesson).id))) go('home'); });
-    uB = api.watchBanks(list => { S.banks = list.filter(b => b.published !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); if (S.view === 'course') viewCourse(); });
-    uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
-    uN = api.watchPosts(list => { S.posts = list; onPosts(); });
-    uA = api.watchAssignments(list => { S.assignments = list; remindOnce(); if (S.view === 'home') drawDash(); });
-    let cdFirst = true; api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
+
   });
   go('loading');
 }

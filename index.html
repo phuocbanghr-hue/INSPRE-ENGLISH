@@ -2319,7 +2319,7 @@ const stopRank = () => { rankUnsub && rankUnsub(); rankUnsub = null; };
 function renderFoot() { const f = $('#foot'); if (!f) return; const t = S.site;
   f.innerHTML = `<b>Inspire Connect</b>${String(t.campuses || '').split('\n').filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}<span>Hotline: <b>${esc(t.phone || '')}</b></span><span>${/^https?:/.test(t.facebook || '') ? `<a class="soc" href="${esc(t.facebook)}" target="_blank" rel="noopener">Facebook</a>` : ''}${/^https?:/.test(t.zalo || '') ? `<a class="soc" href="${esc(t.zalo)}" target="_blank" rel="noopener">Zalo</a>` : ''}</span>`; }
 function watchSite() {
-  if (MODE === 'firebase' && FB) FB.onSnapshot(FB.doc(db, 'config', 'site'), d => { S.site = { ...SITE_DEF, ...(d.exists() ? d.data() : {}) }; renderFoot(); renderTop(); if (S.view === 'auth' || S.site.maintenance) go(S.view); }, e => console.error('site', e));
+  if (MODE === 'firebase' && FB) FB.onSnapshot(FB.doc(db, 'config', 'site'), d => { S.site = { ...SITE_DEF, ...(d.exists() ? d.data() : {}) }; renderFoot(); renderTop(); if (S.view === 'auth' || S.site.maintenance) go(S.view); else if (S.view === 'games') viewGames(); }, e => console.error('site', e));
   else { try { S.site = { ...SITE_DEF, ...JSON.parse(store.get('inspire_site') || '{}') }; } catch {} }
   renderFoot();
 }
@@ -3046,18 +3046,22 @@ function gameEmbed(u) {
     if (h === 'wordwall.net') return u.replace('/play/', '/embed/').replace('/resource/', '/embed/');
   } catch {} return u;
 }
+const GAME_NOEMBED = /(^|\.)(blooket|kahoot|quizlet|quizizz|gimkit|baamboozle)\./i;
+const popGame = u => { const w = window.open(u, 'inspire_game', 'popup=yes,left=0,top=0,width=' + screen.availWidth + ',height=' + screen.availHeight); if (w) { try { w.focus(); } catch {} } else window.open(u, '_blank', 'noopener'); return w; };
 function openGame(g, claim, already) {
+  const noEmbed = GAME_NOEMBED.test(new URL(g.url).hostname + '.'); if (noEmbed) popGame(g.url);
   const id = String(g.id || g.url), xp = Math.max(0, Math.min(100, +g.xp || 0)), o = document.createElement('div');
   o.id = 'gm-ov'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', g.title || 'Trò chơi');
   o.innerHTML = `<style>#gm-ov{position:fixed;inset:0;z-index:9999;background:#0b1b2e;display:flex;flex-direction:column}#gm-ov .gm-h{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;flex-wrap:wrap}#gm-ov .gm-h b{color:#0B5CA8;flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#gm-ov iframe{flex:1;width:100%;border:0;background:#fff}#gm-ov .gm-n{font-size:.8rem;color:#6b7280;padding:4px 12px;background:#fff;border-top:1px solid #eee}</style>
     <div class="gm-h"><b>${esc(g.title || 'Trò chơi')}</b>${xp ? `<button class="btn soft sm" id="gm-x" ${already ? 'disabled' : ''}>${already ? 'Đã nhận XP hôm nay' : 'Chơi xong, nhận +' + xp + ' XP'}</button>` : ''}<button class="btn soft sm" id="gm-f">Toàn màn hình</button><a class="btn soft sm" href="${esc(g.url)}" target="_blank" rel="noopener noreferrer">Mở tab mới</a><button class="btn sm" id="gm-c">Đóng</button></div>
-    <iframe src="${esc(gameEmbed(g.url))}" title="${esc(g.title || 'Trò chơi')}" allow="fullscreen; autoplay; clipboard-write; microphone; camera" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-    <div class="gm-n">Nếu khung trống hoặc báo lỗi, game đó không cho nhúng vào web. Bấm Mở tab mới để chơi.</div>`;
+    ${noEmbed ? `<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f3f6fa;text-align:center;padding:24px"><div><h2 style="color:#0B5CA8;margin:0 0 8px">Game đang mở ở cửa sổ riêng</h2><p class="muted" style="margin:0 0 16px">${esc(gamePlat(g.url))} không cho chơi bên trong web nên game chạy ở cửa sổ toàn màn hình. Chơi xong đóng cửa sổ game, quay lại đây nhận XP.</p><button class="btn" id="gm-re">Mở lại game</button></div></div>` : `<iframe src="${esc(gameEmbed(g.url))}" title="${esc(g.title || 'Trò chơi')}" allow="fullscreen; autoplay; clipboard-write; microphone; camera" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="gm-n">Nếu khung trống hoặc báo lỗi, game đó không cho nhúng vào web. Bấm Mở tab mới để chơi.</div>`}`;
   document.body.appendChild(o); document.body.style.overflow = 'hidden';
   const close = () => { o.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape' && !document.fullscreenElement) close(); };
   document.addEventListener('keydown', k);
   $('#gm-c', o).onclick = close;
-  $('#gm-f', o).onclick = () => { const f = $('iframe', o); (f.requestFullscreen || f.webkitRequestFullscreen || (() => {})).call(f); };
+  $('#gm-f', o).onclick = () => { const f = $('iframe', o); if (!f) { popGame(g.url); return; } (f.requestFullscreen || f.webkitRequestFullscreen || (() => {})).call(f); };
+  const re = $('#gm-re', o); if (re) re.onclick = () => popGame(g.url);
   const x = $('#gm-x', o); if (x) x.onclick = () => claim(id, xp, x).then(() => { const gb = document.querySelector('[data-gd="' + CSS.escape(id) + '"]'); if (gb) { gb.disabled = true; gb.textContent = 'Đã nhận XP hôm nay'; } });
 }
 function viewGames() {
@@ -3068,7 +3072,7 @@ function viewGames() {
       <div class="gm-b"><button class="btn" data-gp="${esc(id)}">Chơi ngay</button>${xp ? `<button class="btn soft" data-gd="${esc(id)}" data-xp="${xp}" ${done ? 'disabled' : ''}>${done ? 'Đã nhận XP hôm nay' : 'Em đã chơi xong, nhận +' + xp + ' XP'}</button>` : ''}</div></article>`; };
   main.innerHTML = `<style>.gm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0 50px}.gm-c{display:flex;flex-direction:column;gap:8px}.gm-c h3{margin:0;color:#0B5CA8}.gm-p{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#F26522}.gm-b{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px}</style>
     <h2 style="margin:26px 0 6px;font-size:2.2rem">Trò chơi luyện từ</h2><p class="muted">Chơi game do thầy cô chọn để nhớ từ nhanh hơn. Bấm Chơi ngay để chơi toàn màn hình ngay trên web, chơi xong bấm nhận XP (mỗi game nhận một lần mỗi ngày).</p>
-    <div class="gm-g">${list.length ? list.map(card).join('') : empty('Thầy cô chưa gắn trò chơi nào. Em quay lại sau nhé!')}</div>`;
+    <div class="gm-g">${list.length ? list.map(card).join('') : empty(((S.site && S.site.games) || []).length ? 'Có trò chơi nhưng chưa dành cho lớp của em. Em liên hệ thầy cô nhé.' : 'Thầy cô chưa gắn trò chơi nào. Em quay lại sau nhé!')}</div>`;
   const claim = async (id, xp, btn) => { if (store.get(doneKey(id)) === dk) return; store.set(doneKey(id), dk); if (btn) { btn.disabled = true; btn.textContent = 'Đã nhận XP hôm nay'; } await award(null, xp); toast('Đã cộng ' + xp + ' XP.'); };
   main.querySelectorAll('[data-gd]').forEach(b => b.onclick = () => claim(b.dataset.gd, +b.dataset.xp, b));
   main.querySelectorAll('[data-gp]').forEach(b => b.onclick = () => { const g = list.find(x => String(x.id || x.url) === b.dataset.gp); if (g) openGame(g, claim, doneKey(String(g.id || g.url)) && store.get(doneKey(String(g.id || g.url))) === dk); });
@@ -3080,7 +3084,7 @@ function renderTop() {
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
   if (!S.user) { topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}</div></div><div class="wrap bar">${brandHTML(false)}</div>`; return; }
   const p = S.profile || {}, v = S.view;
-  const N = [['courses', 'Khoá học', v === 'courses'], ['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
+  const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
   const MAIN = N.slice(0, 7), MORE = N.slice(7), mon = MORE.some(x => x[2]);
   const nb = ([g, n, on], c = '') => `<button class="navb ${c} ${on ? 'on' : ''}" data-go="${g}">${n}</button>`;
   topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}
@@ -3163,7 +3167,7 @@ function asgStatus(a) {
 function viewHome() {
   S._dseen = false; resetCount();
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Danh mục khoá học</b></nav>
-    <div class="hm${showDash('results') || showDash('reminders') ? '' : ' solo'}" id="hm"><div class="hm-l"><h1 class="hm-t">Khoá học của em</h1><p class="muted hm-s">Các khoá học thầy cô đã cấp quyền cho em.</p><div id="cc"></div>
+    <div class="hm${showDash('results') || showDash('reminders') ? '' : ' solo'}" id="hm"><div class="hm-l"><h1 class="hm-t">Khoá học của em</h1><p class="muted hm-s">Các khoá học thầy cô đã cấp quyền cho em. <a href="#" data-go="courses" style="color:#0B5CA8;font-weight:700">Ghi danh khoá mới bằng mật khẩu</a></p><div id="cc"></div>
       <h2 class="sec" id="lsec">Bài học của em</h2>
       <div class="flt"><input id="q" type="search" placeholder="Tìm bài học tại đây…" value="${esc(S.q)}" aria-label="Tìm bài học"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${(S.flt || 'all') === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
       <div id="courses"></div></div><aside class="hm-r" id="dash" hidden></aside></div>`;
@@ -4043,7 +4047,7 @@ else {
         if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
       }
       checkBadges(); remindOnce();
-      if (S.view === 'auth' || S.view === 'loading') { go('courses'); return; }
+      if (S.view === 'auth' || S.view === 'loading') { go('home'); return; }
       renderTop();
       if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'lesson') { drawLessonHead(); if (!S.tab && S.wordsLoaded) drawLessonBody(); }
     }, err => toast('Không đọc được hồ sơ: ' + err.message, 'bad'));

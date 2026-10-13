@@ -2749,12 +2749,13 @@ function viewClasses() {
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Lớp học</b></nav>
     <h2 class="cl-title">Lớp học</h2>
     <div class="clg-hello">Chào mừng${nm ? ', ' + esc(nm) : ''}!</div>
-    ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Em chưa được thêm vào lớp nào. Muốn học khoá nào, em vào tab <b>Khoá học</b> và nhập mật khẩu ghi danh nhé.<br><button class="btn" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}
+    <div class="cx-join"><div><b>Em có mật khẩu lớp?</b><small>Lớp học chỉ mở cho học sinh được admin ghi danh hoặc nhập đúng mật khẩu lớp do thầy cô cung cấp.</small></div><button class="btn" data-join="1">Tham gia lớp bằng mật khẩu</button></div>
+    ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Em chưa ở trong lớp nào. Hãy nhập mật khẩu lớp ở trên, hoặc nhờ admin ghi danh cho em. Muốn học một khoá, em vào tab <b>Khoá học</b> nhé.<br><button class="btn soft" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}
     ${CX.list.length ? `<section class="clg-box" style="margin-top:22px"><header class="clg-h">Lớp của em</header>
       <div class="clg-tool">${sel('clf', [['all', 'Tất cả'], ['doing', 'Đang học'], ['done', 'Hoàn thành']], CXV.f)}<input id="clq" class="clg-q" type="search" placeholder="Tìm lớp" value="${esc(CXV.q)}" aria-label="Tìm kiếm lớp">${sel('cls', [['name', 'Sắp xếp theo tên lớp'], ['prog', 'Sắp xếp theo tiến độ']], CXV.s)}${sel('clv', [['card', 'Thẻ'], ['list', 'Danh sách']], CXV.v)}</div>
       <div id="clgrid">${clGridHTML()}</div></section>` : ''}`;
   const openKc = el => { const c = courseBy(el.dataset.kc); if (!c) return; if (isEnrolled(c.id)) { S.course = c.id; S.cq = ''; S.cflt = 'all'; S.ctab = 'lessons'; go('course'); } else askKey(c); };
-  main.onclick = e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); } const k = e.target.closest('[data-kc]'); if (k) return openKc(k); const o = e.target.closest('[data-cl]'); if (o) openClass(o.dataset.cl); };
+  main.onclick = e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); } const k = e.target.closest('[data-kc]'); if (e.target.closest('[data-join]')) return askClassKey(); if (k) return openKc(k); const o = e.target.closest('[data-cl]'); if (o) openClass(o.dataset.cl); };
   main.onkeydown = e => { if (e.key !== 'Enter' && e.key !== ' ') return; const k = e.target.closest && e.target.closest('.kc[data-kc]'); if (k) { e.preventDefault(); return openKc(k); } if (e.key !== 'Enter') return; const o = e.target.closest && e.target.closest('.clg-card[data-cl]'); if (o) openClass(o.dataset.cl); };
   const redrawK = () => { const el = $('#kcgrid'); if (el) el.innerHTML = kcGridHTML(); };
   const kf = $('#kcf'); if (kf) kf.onchange = e => { KSTATE.f = e.target.value; redrawK(); };
@@ -2804,10 +2805,10 @@ function viewClass() {
     ${secs.map(s => `<div class="cxl-drw-g"><button class="cxl-drw-t" data-sec="${esc(s.id)}">${esc(s.title)}</button>${(s.items || []).filter(i => !i.hidden).map(i => `<div class="cxl-drw-i" data-sec="${esc(s.id)}"><span class="cxl-dot"></span>${esc(i.title || ITYPE_N[i.type] || 'Nội dung')}</div>`).join('')}</div>`).join('')}</div>
     <div class="cxl-drw-bg" data-drawer-close></div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="classes">Lớp học</a><span>›</span><b>${esc(c.name)}</b></nav>
-    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small></div></section>
+    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
-    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['people', 'Bạn cùng lớp'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}</button>`).join('')}</nav></aside>
+    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
     <section class="cxl-main" id="cxl-main"></section></div>`;
   main.onclick = e => {
     const dr = e.target.closest('[data-drawer]'), dc = e.target.closest('[data-drawer-close]');
@@ -2819,6 +2820,7 @@ function viewClass() {
     const em = e.target.closest('[data-emb]'); if (em) { const row = em.closest('.cxl-i'), box = row.querySelector('.cxl-emb'); if (box.dataset.on) { box.innerHTML = ''; delete box.dataset.on; em.textContent = em.dataset.t; } else { box.dataset.on = 1; const u = em.dataset.emb, src = em.dataset.yt ? vidEmbed(u) : embedUrl(u); box.innerHTML = `<div class="vframe ${em.dataset.yt || em.dataset.fold ? '' : 'tall'}"><iframe src="${esc(src)}" loading="lazy" allowfullscreen allow="fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" title="Nội dung lớp"></iframe></div>`; em.textContent = 'Đóng'; } return; }
     const bk = e.target.closest('[data-bank]'); if (bk) { S.cbank = bk.dataset.bank; go('cbank'); return; }
     const ts = e.target.closest('[data-test]'); if (ts) { S.ctest = { cid: c.id, iid: ts.dataset.test }; go('ctest'); return; }
+    const sb = e.target.closest('[data-submit]'); if (sb) { askSubmit(c, sb.dataset.submit); return; }
     const dm = e.target.closest('[data-dm]'); if (dm) { CX.tab = 'chat'; CX.thread = dm.dataset.dm; viewClass(); }
   };
   drawClassTab(c);
@@ -2827,6 +2829,9 @@ const ITYPE_N = { text: 'Ghi chú', link: 'Liên kết', drive: 'Tài liệu', f
 function drawClassTab(c) {
   const el = $('#cxl-main'); if (!el) return;
   if (CX.tab === 'content') { el.innerHTML = cxlContent(c); (c.sections || []).forEach(s => (s.items || []).forEach(it => { if (it.type === 'youtube' && (it.qs || []).some(q => q.t != null)) mountCYT(it); })); }
+  else if (CX.tab === 'tasks') el.innerHTML = cxlTasks(c);
+  else if (CX.tab === 'announce') { el.innerHTML = cxlAnn(c); markAnnSeen(c); }
+  else if (CX.tab === 'attend') el.innerHTML = cxlAttend(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
   else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
   else cxlChat(c, el);
@@ -2852,7 +2857,7 @@ function itemCard(c, it) {
   if (it.type === 'folder') return row('Thư mục Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'cxl-doc'));
   if (it.type === 'youtube') { const tq = YT_RE.test(u) && (it.qs || []).some(q => q.t != null);
     return row('Video bài giảng', `${open}Mở YouTube</a>`, tq ? `<div class="vframe cxl-vid"><div id="cyt-${esc(it.id)}" style="position:absolute;inset:0"></div><div class="vovl" id="cov-${esc(it.id)}" hidden></div></div>` : fr(vidEmbed(u), 'cxl-vid')); }
-  if (it.type === 'task') { const od = it.due && it.due < todayStr(); return row((it.text ? linkM(it.text) + '<br>' : '') + dueTag(it.due) + `<span style="${od ? 'color:var(--bad,#c0233a);font-weight:700' : ''}">Hạn nộp: ${it.due ? it.due.split('-').reverse().join('/') : 'không có hạn'}${od ? ' (đã quá hạn)' : ''}</span>`, ''); }
+  if (it.type === 'task') { const od = it.due && it.due < todayStr(); return row((it.text ? linkM(it.text) + '<br>' : '') + dueTag(it.due) + `<span style="${od ? 'color:var(--bad,#c0233a);font-weight:700' : ''}">Hạn nộp: ${it.due ? it.due.split('-').reverse().join('/') : 'không có hạn'}${od ? ' (đã quá hạn)' : ''}</span><br>${subBadge(c, it)}`, taskBtn(c, it)); }
   const b = bankOfItem(it);
   if (!b || b.published === false) return row('Đề này chưa sẵn sàng', '');
   const n = b.count || (b.qs || []).length;
@@ -2912,6 +2917,7 @@ function drawCxMsgs(force) {
 }
 async function sendCxMsg() {
   const c = cxClass(), ta = $('#cxc-t'); if (!c || !ta) return; const text = ta.value.trim(); if (!text) return;
+  { const deny = chatDeny(c); if (deny) { toast(deny, 'bad'); return; } }
   if (Date.now() - CX.last < 600) return; CX.last = Date.now(); ta.value = ''; ta.style.height = 'auto';
   try { if (CX.thread === 'all') await api.sendClassChat(c.id, text); else await api.sendDM(c, CX.thread, (c.names || {})[CX.thread] || 'Bạn cùng lớp', text); sfx.ok(); }
   catch (e) { ta.value = text; toast('Không gửi được: ' + (e.code === 'permission-denied' ? 'chưa cập nhật Firestore rules cho chat lớp.' : e.message), 'bad'); }
@@ -4028,6 +4034,181 @@ function onPosts() {
   else if (S.view === 'course') { const c = courseBy(S.course), t = S.ctab; if (!c) return; if (t === 'announce' || t === 'forum') { markSeen(c.id, t); PF.redraw && PF.redraw(); } const tb = $('.ctabs'); if (tb) tb.outerHTML = courseTabs(c); }
 }
 
+
+/* ============ v30: vào lớp bằng mật khẩu, thông báo lớp, nộp bài, điểm danh, khoá chat ============ */
+const CX2 = { subs: [], att: [], uns: [] };
+const dueMs = d => d ? new Date(d + 'T23:59:59').getTime() : 0;
+const subFor = (cid, iid) => CX2.subs.find(s => s.classId === cid && s.iid === iid);
+const annSeenK = cid => 'inspire_annseen_' + ((S.user && S.user.uid) || '') + '_' + cid;
+const annSorted = c => (c.announcements || []).filter(a => !a.hidden).slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.atMs || 0) - (a.atMs || 0));
+const annNew = c => { const seen = +store.get(annSeenK(c.id)) || 0; return (c.announcements || []).filter(a => !a.hidden && (a.atMs || 0) > seen).length; };
+const markAnnSeen = c => { store.set(annSeenK(c.id), String(Date.now())); const b = document.querySelector('[data-ct="announce"] .bdg-n'); if (b) b.remove(); };
+const ATT_N = { p: ['Có mặt', 'ok'], l: ['Muộn', 'warn'], e: ['Vắng có phép', 'warn'], a: ['Vắng', 'bad'] };
+const taskMax = it => it.max || 10;
+
+/* ----- API ----- */
+if (MODE === 'firebase' && FB) {
+  const lst2 = s => s.docs.map(d => ({ id: d.id, ...d.data() }));
+  Object.assign(api, {
+    watchMySubs: (uid, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'classSubs'), FB.where('uid', '==', uid)), s => cb(lst2(s)), e => { console.error('classSubs', e); cb([]); }),
+    watchMyAtt: (uid, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'classAtt'), FB.where('uid', '==', uid)), s => cb(lst2(s)), e => { console.error('classAtt', e); cb([]); }),
+    saveSub: (c, it, text, url) => FB.setDoc(FB.doc(db, 'classSubs', c.id + '_' + it.id + '_' + S.user.uid), { classId: c.id, iid: it.id, uid: S.user.uid, name: myName(), text, url, atMs: Date.now() }, { merge: true }),
+    async joinClass(key) {
+      const bad = () => { const e = new Error('bad'); e.code = 'bad-key'; return e; };
+      const k = String(key || '').trim(); if (!/^[\w-]{4,30}$/.test(k)) throw bad();
+      let s; try { s = await FB.getDoc(FB.doc(db, 'classjoin', k)); } catch { throw bad(); }
+      if (!s.exists()) throw bad();
+      const cid = s.data().classId, name = s.data().name || 'lớp', u = S.user.uid;
+      if (CX.list.some(c => c.id === cid)) return { id: cid, name, already: true };
+      const b = FB.writeBatch(db);
+      b.set(FB.doc(db, 'classenrol', u + '_' + cid), { uid: u, classId: cid, key: k, name: myName(), atMs: Date.now() });
+      b.update(FB.doc(db, 'classes', cid), { members: FB.arrayUnion(u), ['names.' + u]: myName() });
+      try { await b.commit(); } catch (er) { if (er.code === 'permission-denied') throw bad(); throw er; }
+      return { id: cid, name };
+    }
+  });
+} else {
+  /* chế độ dùng thử: lớp mẫu thứ hai vào bằng mật khẩu ON910 */
+  const JK = 'inspire_demo_joined', joined = () => { try { return JSON.parse(store.get(JK) || '[]'); } catch { return []; } };
+  const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return todayStr(d); };
+  const X2 = () => ({ id: 'cl2', name: 'Ôn thi 9 lên 10', desc: 'Lớp ôn thi vào 10 môn Tiếng Anh. Lớp mẫu vào bằng mật khẩu.', banner: '', teacherUids: ['t1'], teacherNames: { t1: 'Cô Lan' }, members: [S.user.uid, 'm1', 'm2'], names: { [S.user.uid]: myName(), m1: 'Kelvin', m2: 'Nick' }, schedule: 'Thứ 3 và thứ 5, 18:00 đến 19:30', meetUrl: 'https://meet.google.com/', announcements: [{ id: 'an1', title: 'Chào mừng cả lớp', text: 'Tuần này ôn thì hiện tại hoàn thành. Nhớ nộp bài viết trước hạn nhé!', atMs: Date.now() - 7200e3, by: 'Cô Lan', pinned: true }],
+    sections: [{ id: 's_x1', title: 'Tuần 1', summary: 'Ôn thì hiện tại.', hidden: false, items: [{ id: 'i_task_x1', type: 'task', title: 'Viết đoạn văn 80 từ', text: 'Viết về một ngày của em. Nộp bằng cách dán bài vào ô nộp bài.', due: day(5), hidden: false }] }] });
+  const decor = c => c.id === 'cl1' ? { ...c, schedule: 'Thứ 2 và thứ 4, 17:30 đến 19:00', meetUrl: 'https://meet.google.com/', announcements: [{ id: 'a1', title: 'Lịch kiểm tra 15 phút', text: 'Thứ Sáu tuần này cả lớp làm bài kiểm tra 15 phút Fruits. Các em ôn trước 10 từ nhé.', atMs: Date.now() - 3 * 3600e3, by: 'Cô Lan', pinned: false }] } : c;
+  const extra = () => joined().includes('cl2') ? [X2()] : [];
+  const CJ = [], _w = api.watchClasses;
+  api.watchClasses = (uid, cb) => { const o = { cb, base: [] }; CJ.push(o); const un = _w(uid, l => { o.base = l.map(decor); cb(o.base.concat(extra())); }); return () => { const i = CJ.indexOf(o); if (i >= 0) CJ.splice(i, 1); un && un(); }; };
+  api.joinClass = async key => {
+    const k = String(key || '').trim().toUpperCase(); if (k !== 'ON910') { const e = new Error('bad'); e.code = 'bad-key'; throw e; }
+    const j = joined(); if (!j.includes('cl2')) { j.push('cl2'); store.set(JK, JSON.stringify(j)); CJ.forEach(o => o.cb(o.base.concat(extra()))); }
+    return { id: 'cl2', name: 'Ôn thi 9 lên 10' };
+  };
+  const DS = [], LS = [], LA = [], cp2 = x => JSON.parse(JSON.stringify(x));
+  api.watchMySubs = (uid, cb) => { const o = { cb }; LS.push(o); setTimeout(() => cb(cp2(DS)), 0); return () => { const i = LS.indexOf(o); if (i >= 0) LS.splice(i, 1); }; };
+  api.saveSub = async (c, it, text, url) => { const id = c.id + '_' + it.id + '_' + S.user.uid, x = DS.find(s => s.id === id); if (x) Object.assign(x, { text, url, atMs: Date.now() }); else DS.push({ id, classId: c.id, iid: it.id, uid: S.user.uid, name: myName(), text, url, atMs: Date.now() }); LS.forEach(o => o.cb(cp2(DS))); };
+  api.watchMyAtt = (uid, cb) => { const o = { cb }; LA.push(o); const A = [[-21, 'p', ''], [-14, 'p', ''], [-7, 'l', 'Đến muộn 10 phút'], [-3, 'a', 'Em xin nghỉ ốm']].map(([n, s, note]) => ({ id: 'cl1_' + day(n) + '_' + uid, classId: 'cl1', date: day(n), uid, status: s, note })); setTimeout(() => cb(A), 0); return () => { const i = LA.indexOf(o); if (i >= 0) LA.splice(i, 1); }; };
+}
+
+/* ----- bắt đầu / dừng theo dõi bài nộp và điểm danh ----- */
+{
+  const _start = startClasses, _stop = stopClasses;
+  startClasses = function (uid) {
+    _start(uid);
+    CX2.uns.push(api.watchMySubs(uid, l => { CX2.subs = l; redrawClassData(); }));
+    CX2.uns.push(api.watchMyAtt(uid, l => { CX2.att = l; redrawClassData(); }));
+  };
+  stopClasses = function () { CX2.uns.forEach(u => u && u()); CX2.uns = []; CX2.subs = []; CX2.att = []; _stop(); };
+}
+function redrawClassData() { if (S.view === 'class' && ['tasks', 'attend', 'content'].includes(CX.tab) && !document.querySelector('.ovl')) { const c = cxClass(); if (c) drawClassTab(c); } }
+
+/* ----- vào lớp bằng mật khẩu ----- */
+const waitClass = async id => { for (let i = 0; i < 25 && !CX.list.some(c => c.id === id); i++) await new Promise(r => setTimeout(r, 200)); return CX.list.some(c => c.id === id); };
+function askClassKey() {
+  const o = document.createElement('div'); o.className = 'ovl';
+  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Tham gia lớp"><h3>Tham gia lớp bằng mật khẩu</h3><p class="muted" style="margin:6px 0 14px">Nhập mật khẩu lớp do thầy cô hoặc admin cung cấp. Vào một lần là lớp nằm luôn trong danh sách Lớp của em.</p><label class="field"><span>Mật khẩu lớp</span><input id="ck" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30"></label><div class="msg" id="ck-m" role="alert"></div><div class="mdl-f"><button class="btn soft" data-x="1">Huỷ</button><button class="btn" id="ck-go">Vào lớp</button></div></div>`;
+  document.body.appendChild(o);
+  const close = () => { o.remove(); document.removeEventListener('keydown', esc_); }, esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  const TK = 'inspire_ck_fail', go_ = async () => {
+    const k = o.querySelector('#ck').value.trim(), m = o.querySelector('#ck-m'), b = o.querySelector('#ck-go');
+    if (!k) { m.textContent = 'Em nhập mật khẩu lớp nhé.'; return; }
+    const fl = (() => { try { return JSON.parse(store.get(TK) || '{}'); } catch { return {}; } })();
+    if ((fl.n || 0) >= 5 && Date.now() - (fl.t || 0) < 60000) { m.textContent = 'Em nhập sai nhiều lần rồi. Đợi một phút rồi thử lại nhé.'; return; }
+    b.disabled = true; m.textContent = '';
+    try {
+      const r = await api.joinClass(k); store.set(TK, '{}'); close();
+      toast(r.already ? 'Em đã ở trong lớp ' + r.name + ' rồi.' : 'Đã vào lớp ' + r.name + '.', 'ok');
+      if (await waitClass(r.id)) openClass(r.id);
+    } catch (e) {
+      b.disabled = false; store.set(TK, JSON.stringify({ n: ((Date.now() - (fl.t || 0) < 60000 ? fl.n : 0) || 0) + 1, t: Date.now() }));
+      m.textContent = e.code === 'bad-key' ? 'Mật khẩu chưa đúng hoặc lớp đang đóng ghi danh. Em hỏi thầy cô nhé.' : 'Không vào được lớp: ' + e.message;
+    }
+  };
+  o.onclick = e => { if (e.target === o || e.target.closest('[data-x]')) close(); else if (e.target.closest('#ck-go')) go_(); };
+  o.querySelector('#ck').onkeydown = e => { if (e.key === 'Enter') go_(); };
+  o.querySelector('#ck').focus();
+}
+
+/* ----- đầu trang lớp: lịch học và nút vào học online ----- */
+function heroExtra(c) {
+  const u = safeUrl(c.meetUrl);
+  return (c.schedule ? `<small class="cxl-sch">Lịch học: ${esc(c.schedule)}</small>` : '') + (u !== '#' ? `<a class="btn sm cxl-meet" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Vào học online</a>` : '');
+}
+
+/* ----- thông báo lớp ----- */
+function cxlAnn(c) {
+  const L = annSorted(c);
+  return `<section class="cx-ann">${L.map(a => `<article class="card cx-ann-i ${a.pinned ? 'pin' : ''}"><header><b>${esc(a.title || 'Thông báo')}</b>${a.pinned ? '<span class="tg tk">Đã ghim</span>' : ''}</header><div class="cx-ann-b">${linkM(a.text || '')}</div><small class="muted">${esc(a.by || 'Giáo viên')} · ${chTime(a.atMs || Date.now())}</small></article>`).join('') || '<div class="card empty">Lớp chưa có thông báo nào.</div>'}</section>`;
+}
+
+/* ----- bài tập và nộp bài ----- */
+function subBadge(c, it) {
+  const s = subFor(c.id, it.id);
+  if (!s) return it.due && dueMs(it.due) < Date.now() ? '<span class="due-tag bad">Chưa nộp, đã quá hạn</span>' : '<span class="due-tag warn">Chưa nộp</span>';
+  if (s.score != null) return `<span class="due-tag ok">Đã chấm: ${esc(s.score)}/${taskMax(it)}</span>`;
+  return `<span class="due-tag ok">Đã nộp${it.due && s.atMs > dueMs(it.due) ? ' (nộp muộn)' : ''}</span>`;
+}
+function taskBtn(c, it) {
+  const s = subFor(c.id, it.id);
+  if (s && s.score != null) return '';
+  return `<button class="btn sm" data-submit="${esc(it.id)}">${s ? 'Sửa bài nộp' : 'Nộp bài'}</button>`;
+}
+function cxlTasks(c) {
+  const L = (c.sections || []).filter(s => !s.hidden).flatMap(s => (s.items || []).filter(i => !i.hidden && i.type === 'task').map(i => ({ it: i, sec: s.title })));
+  const done = L.filter(x => subFor(c.id, x.it.id)).length;
+  return `<section class="card"><h3>Bài tập của lớp</h3><p class="muted" style="margin-bottom:10px">Em đã nộp ${done}/${L.length} bài. Bài đã được chấm điểm thì không sửa được nữa.</p>
+    ${L.map(({ it, sec }) => { const s = subFor(c.id, it.id); return `<div class="cxl-i cx-sub"><div class="cxl-r"><span class="cxl-ic">${cxIc('task')}</span><div class="cxl-t"><b>${esc(it.title || 'Bài tập')}</b><small>${esc(sec)} · Hạn nộp: ${it.due ? dmy(it.due) : 'không có hạn'}</small></div><div class="cxl-a">${subBadge(c, it)}${taskBtn(c, it)}</div></div>
+      ${it.text ? `<div class="cx-sub-t">${linkM(it.text)}</div>` : ''}
+      ${s ? `<div class="cx-sub-r"><small>Em nộp lúc ${chTime(s.atMs)}</small>${s.text ? `<div>${linkM(s.text)}</div>` : ''}${s.url ? `<div><a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener noreferrer">${esc(String(s.url).slice(0, 70))}</a></div>` : ''}${s.score != null ? `<div class="cx-fb"><b>Điểm: ${esc(s.score)}/${taskMax(it)}</b>${s.feedback ? `<br>Nhận xét: ${linkM(s.feedback)}` : ''}</div>` : ''}</div>` : ''}</div>`; }).join('') || '<div class="empty">Lớp chưa có bài tập nào.</div>'}</section>`;
+}
+function askSubmit(c, iid) {
+  const it = (c.sections || []).flatMap(s => s.items || []).find(i => i.id === iid); if (!it) return;
+  const old = subFor(c.id, iid); if (old && old.score != null) { toast('Bài này đã được chấm điểm nên không sửa được.', 'bad'); return; }
+  const o = document.createElement('div'); o.className = 'ovl';
+  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Nộp bài"><h3>Nộp bài: ${esc(it.title || 'Bài tập')}</h3>${it.due && dueMs(it.due) < Date.now() ? '<p class="note" style="margin:8px 0">Bài này đã quá hạn, thầy cô sẽ thấy em nộp muộn.</p>' : ''}<label class="field"><span>Bài làm của em</span><textarea id="sb-t" rows="6" maxlength="3000" placeholder="Gõ hoặc dán bài làm vào đây">${esc((old && old.text) || '')}</textarea></label><label class="field"><span>Hoặc dán link bài làm (Google Drive, Docs…)</span><input id="sb-u" maxlength="400" placeholder="https://…" value="${esc((old && old.url) || '')}"></label><div class="msg" id="sb-m" role="alert"></div><div class="mdl-f"><button class="btn soft" data-x="1">Huỷ</button><button class="btn" id="sb-go">${old ? 'Cập nhật bài nộp' : 'Nộp bài'}</button></div></div>`;
+  document.body.appendChild(o);
+  const close = () => { o.remove(); document.removeEventListener('keydown', esc_); }, esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  o.onclick = async e => {
+    if (e.target === o || e.target.closest('[data-x]')) return close();
+    if (!e.target.closest('#sb-go')) return;
+    const text = o.querySelector('#sb-t').value.trim(), url = o.querySelector('#sb-u').value.trim(), m = o.querySelector('#sb-m');
+    if (!text && !url) { m.textContent = 'Em nhập bài làm hoặc dán link nhé.'; return; }
+    if (url && !/^https:\/\//i.test(url)) { m.textContent = 'Link phải bắt đầu bằng https://'; return; }
+    e.target.closest('#sb-go').disabled = true;
+    try { await api.saveSub(c, it, text, url); close(); redrawClassData(); toast('Đã nộp bài.', 'ok'); sfx.ok && sfx.ok(); }
+    catch (er) { e.target.closest('#sb-go').disabled = false; m.textContent = 'Không nộp được: ' + (er.code === 'permission-denied' ? 'chưa cập nhật Firestore rules cho bài nộp.' : er.message); }
+  };
+}
+
+/* ----- điểm danh của em ----- */
+function cxlAttend(c) {
+  const L = CX2.att.filter(a => a.classId === c.id).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const n = k => L.filter(a => a.status === k).length, tot = L.length, pct = tot ? Math.round((n('p') + n('l')) / tot * 100) : null;
+  return `<section class="card"><h3>Điểm danh của em</h3>
+    ${tot ? `<div class="att-sum"><div><b>${tot}</b><span>buổi đã điểm danh</span></div><div><b>${n('p')}</b><span>có mặt</span></div><div><b>${n('l')}</b><span>muộn</span></div><div><b>${n('e') + n('a')}</b><span>vắng</span></div><div class="${pct < 80 ? 'bad' : 'ok'}"><b>${pct}%</b><span>chuyên cần</span></div></div>
+    <div class="gr-card" style="margin-top:12px"><table class="gr-tb"><thead><tr><th>Ngày</th><th>Trạng thái</th><th>Ghi chú của thầy cô</th></tr></thead><tbody>${L.map(a => { const s = ATT_N[a.status] || ['–', '']; return `<tr><td>${dmy(a.date)}</td><td><span class="due-tag ${s[1]}">${s[0]}</span></td><td>${esc(a.note || '')}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="empty">Thầy cô chưa điểm danh buổi nào cho em.</div>'}</section>`;
+}
+
+/* ----- chat lớp: khoá chat, tắt tiếng, tin ghim ----- */
+function chatDeny(c) {
+  if (CX.thread === 'all' ? c.chatLocked : c.dmLocked) return CX.thread === 'all' ? 'Giáo viên đang tạm khoá chat chung của lớp.' : 'Giáo viên đang tắt nhắn riêng trong lớp này.';
+  if ((c.muted || {})[S.user.uid]) return 'Em đang bị tắt chat trong lớp này. Em hỏi thầy cô nhé.';
+  return '';
+}
+function chatExtras() {
+  const c = cxClass(), box = $('#cxc-m'); if (!c || !box) return;
+  let pin = $('#cxc-pin'); if (!pin) { pin = document.createElement('div'); pin.id = 'cxc-pin'; pin.className = 'cxc-pin'; box.parentNode.insertBefore(pin, box); }
+  const p = CX.thread === 'all' ? CX.msgs.filter(m => m.pinned).slice(-1)[0] : null;
+  pin.style.display = p ? '' : 'none'; pin.innerHTML = p ? `<b>Tin được ghim</b><div>${linkM(p.text)}</div>` : '';
+  const ta = $('#cxc-t'), bt = $('#cxc-s'), d = chatDeny(c);
+  if (ta) { ta.disabled = !!d; ta.placeholder = d || 'Nhập tin nhắn…'; } if (bt) bt.disabled = !!d;
+}
+{
+  const _m = drawCxMsgs, _t = drawCxThreads;
+  drawCxMsgs = function (force) { _m(force); chatExtras(); };
+  drawCxThreads = function () { _t(); chatExtras(); };
+}
+
 /* ---------- khởi động ---------- */
 if (LOAD_ERR) { go('loading'); }
 else {
@@ -4302,6 +4483,32 @@ else {
 .bar .nav .navb.sec{display:none!important}
 .bar .nav .more{display:block!important}
 @media(max-width:1180px){.bar .nav{overflow:visible!important;flex-wrap:wrap!important;-webkit-mask-image:none!important;mask-image:none!important}}
+</style>
+<style>
+/* v30: lớp học có mật khẩu, thông báo, nộp bài, điểm danh */
+.cx-join{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:14px 0;padding:16px 20px;border:1px solid #CFE0F3;border-left:5px solid #0B5CA8;border-radius:12px;background:#F2F8FE}
+.cx-join b{display:block;color:#0B5CA8;font-size:1.02rem}
+.cx-join small{display:block;color:#51606F;margin-top:2px;max-width:560px}
+.cxl-sch{display:block;margin-top:6px;color:#334155;font-weight:600}
+.cxl-meet{margin-top:10px}
+.cx-ann-i{margin-bottom:12px;padding:16px 18px}
+.cx-ann-i.pin{border-left:5px solid #F58220;background:#FFFAF3}
+.cx-ann-i header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.cx-ann-i header b{font-size:1.05rem;color:#0B5CA8}
+.cx-ann-b{margin:6px 0 10px;line-height:1.55}
+.cx-sub{border-bottom:1px solid #ECECF0;padding-bottom:8px}
+.cx-sub .cxl-a{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cx-sub-t{margin:4px 0 6px 46px;color:#334155}
+.cx-sub-r{margin:6px 0 4px 46px;padding:10px 12px;background:#F7F9FB;border-radius:10px;display:grid;gap:4px;overflow-wrap:anywhere}
+.cx-fb{margin-top:4px;padding:8px 10px;border-radius:8px;background:#E9F7EF;color:#14532D}
+.att-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:8px}
+.att-sum>div{padding:12px;border:1px solid #ECECF0;border-radius:12px;text-align:center}
+.att-sum b{display:block;font-size:1.5rem}
+.att-sum span{font-size:.82rem;color:#64748B}
+.att-sum .ok b{color:#17803D}.att-sum .bad b{color:#C8142D}
+.cxc-pin{padding:8px 14px;background:#FFF8E6;border-bottom:1px solid #F2DA9B;font-size:.9rem}
+.cxc-pin b{display:block;color:#8A5A00;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+.cxc-in textarea:disabled,.cxc-in button:disabled{opacity:.55;cursor:not-allowed}
 </style>
 </body>
 </html>

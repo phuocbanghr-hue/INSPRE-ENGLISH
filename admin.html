@@ -999,7 +999,7 @@ if (MODE === 'firebase' && FB) {
       { id: 'demo2', order: 2, icon: '', topic: 'Unlock 7', title: 'Animals – Động vật', description: 'Các con vật quen thuộc', published: true, sheetUrl: '', materials: [], words: [W('dog', 'con chó', ''), W('cat', 'con mèo', ''), W('rabbit', 'con thỏ', ''), W('elephant', 'con voi', ''), W('monkey', 'con khỉ', '')] },
       { id: 'demo3', order: 3, icon: '', topic: 'Unlock 7', title: 'School – Trường học', description: 'Đồ dùng học tập', published: false, sheetUrl: '', materials: [], words: [W('teacher', 'giáo viên', ''), W('student', 'học sinh', ''), W('pencil', 'bút chì', ''), W('ruler', 'thước kẻ', '')] }
     ].map(l => ({ ...l, wordCount: l.words.length })),
-    users: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
+    users: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], classAtt: [], classSubs: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
   };
   const names = Object.entries(ROSTER).flatMap(([c, l]) => l.map(n => [n, c]));
   const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -1218,11 +1218,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['banks', 'Đề và kiểm tra'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, members: cxMembers, banks: cxBanks, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -1592,6 +1592,74 @@ document.addEventListener('click', e => {
   const k = b.dataset.thPreset, p = k === 'reset' ? THEME_DEF : { ...THEME_DEF, ...THEME_PRESETS[k] };
   THEME_FIELDS.forEach(([f]) => { const el = document.getElementById('th-' + f); if (el) el.value = p[f]; });
 });
+/* ===== Điểm danh, bài nộp, thông báo lớp (học sinh xem ở trang lớp) ===== */
+const ATT_OPTS = [['', '— Chưa điểm danh'], ['p', 'Có mặt'], ['l', 'Muộn'], ['e', 'Vắng có phép'], ['a', 'Vắng']];
+const dtShort = ms => { if (!ms) return ''; const d = new Date(ms); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+function attOf(c, date) { const m = {}; (S.classAtt || []).forEach(a => { if (a.classId === c.id && a.date === date) m[a.uid] = a; }); return m; }
+function attSummary(c, mem) {
+  const L = (S.classAtt || []).filter(a => a.classId === c.id);
+  if (!L.length) return '';
+  const rows = mem.map(u => { const A = L.filter(a => a.uid === u.id), n = s => A.filter(a => a.status === s).length, tot = A.length; const pct = tot ? Math.round((n('p') + n('l')) / tot * 100) : null; return `<tr><td>${esc(u.name || 'Học sinh')}</td><td>${tot}</td><td>${n('p')}</td><td>${n('l')}</td><td>${n('e')}</td><td>${n('a')}</td><td>${pct == null ? '–' : pct + '%'}</td></tr>`; }).join('');
+  return `<div class="card" style="max-width:860px;margin-top:14px"><h3>Tổng hợp chuyên cần</h3><div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Số buổi</th><th>Có mặt</th><th>Muộn</th><th>Vắng có phép</th><th>Vắng</th><th>Chuyên cần</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function cxAtt(c, el) {
+  const date = S.attDate || todayStr(), mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));
+  const cur = attOf(c, date);
+  el.innerHTML = `<div class="card" style="max-width:860px"><h3>Điểm danh</h3>
+    <div class="row" style="align-items:flex-end;gap:10px"><label class="field" style="margin:0"><span>Ngày học</span><input type="date" id="at-d" value="${date}"></label><span class="grow"></span><button class="btn soft" id="at-all">Đặt tất cả là có mặt</button><button class="btn" id="at-save">Lưu điểm danh</button></div>
+    <p class="muted" style="margin:10px 0">Học sinh xem được kết quả này ở trang lớp của các em. Để trống là chưa điểm danh.</p>
+    ${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>${mem.map(u => { const a = cur[u.id] || {}; return `<tr data-at="${esc(u.id)}"><td>${avH(u, 24)}<b>${esc(u.name || 'Học sinh')}</b></td><td><select class="at-s">${ATT_OPTS.map(([v, n]) => `<option value="${v}" ${(a.status || '') === v ? 'selected' : ''}>${n}</option>`).join('')}</select></td><td><input class="at-n" maxlength="120" value="${esc(a.note || '')}" placeholder="Ví dụ: xin nghỉ ốm"></td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh.</p>'}
+  </div>` + attSummary(c, mem);
+  el.querySelector('#at-d').onchange = e => { S.attDate = e.target.value || todayStr(); cxAtt(c, el); };
+  el.querySelector('#at-all').onclick = () => el.querySelectorAll('.at-s').forEach(s => { s.value = 'p'; });
+  el.querySelector('#at-save').onclick = async () => {
+    const btn = el.querySelector('#at-save'); btn.disabled = true;
+    try {
+      const jobs = [...el.querySelectorAll('tr[data-at]')].map(tr => {
+        const uid = tr.dataset.at, status = tr.querySelector('.at-s').value, note = tr.querySelector('.at-n').value.trim(), id = c.id + '_' + date + '_' + uid;
+        if (!status) return cur[uid] ? api.del('classAtt', id) : null;
+        return api.set('classAtt', id, { classId: c.id, date, uid, status, note, by: S.user.email || '', atMs: Date.now() });
+      }).filter(Boolean);
+      await Promise.all(jobs);
+      toast('Đã lưu điểm danh ngày ' + fmtDue(date) + '.');
+      cxAtt(c, el);
+    } catch (er) { toast(er.message, 'bad'); } finally { btn.disabled = false; }
+  };
+}
+function cxSubs(c, el) {
+  const tasks = (c.sections || []).flatMap(s => (s.items || []).filter(it => it.type === 'task').map(it => ({ it, sec: s })));
+  const mem = (c.members || []).map(id => stuOf(c, id));
+  const subs = (S.classSubs || []).filter(x => x.classId === c.id);
+  if (!tasks.length) { el.innerHTML = '<div class="card empty" style="max-width:860px">Lớp chưa có bài tập nào. Thêm ở tab Nội dung (loại “Bài tập và nộp bài”).</div>'; return; }
+  el.innerHTML = tasks.map(({ it, sec }) => {
+    const ss = subs.filter(x => x.iid === it.id).sort((a, b) => (b.atMs || 0) - (a.atMs || 0)), done = new Set(ss.map(x => x.uid));
+    const rows = ss.map(x => `<tr><td>${esc(x.name || stuOf(c, x.uid).name || 'Học sinh')}</td><td>${dtShort(x.atMs)}</td><td>${x.text ? `<div style="white-space:pre-wrap;margin-bottom:4px">${esc(x.text)}</div>` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">Mở link bài nộp</a>` : ''}</td></tr>`).join('');
+    const miss = mem.filter(u => !done.has(u.id)).map(u => esc(u.name || 'Học sinh')).join(', ');
+    return `<div class="card" style="max-width:860px;margin-bottom:14px"><h3>${esc(it.title || 'Bài tập')}</h3><p class="muted" style="margin:4px 0 10px">${esc(sec.title || '')} · Hạn: ${fmtDue(it.due)} · Đã nộp ${done.size}/${mem.length}</p>
+      ${ss.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Nộp lúc</th><th>Bài nộp</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="muted">Chưa có ai nộp.</p>'}
+      ${miss ? `<p style="margin-top:10px"><b>Chưa nộp:</b> ${miss}</p>` : ''}</div>`;
+  }).join('');
+}
+function cxAnn(c, el) {
+  const A = [...(c.announcements || [])].sort((a, b) => (!!b.pinned - !!a.pinned) || (b.atMs || 0) - (a.atMs || 0));
+  el.innerHTML = `<div class="card" style="max-width:860px"><h3>Thông báo của lớp</h3>
+    <p class="muted" style="margin-top:0">Thông báo hiện ở đầu trang lớp của học sinh. Ghim để luôn ở trên cùng; ẩn để tạm giấu.</p>
+    <label class="field"><span>Tiêu đề</span><input id="an-t" maxlength="120" placeholder="Ví dụ: Lịch kiểm tra 15 phút"></label>
+    <label class="field"><span>Nội dung</span><textarea id="an-x" rows="3" maxlength="2000"></textarea></label>
+    <div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="an-p"><i></i></span> Ghim lên đầu</label><span class="grow"></span><button class="btn" id="an-add">Đăng thông báo</button></div></div>
+    <div class="card" style="max-width:860px;margin-top:14px">${A.length ? A.map(a => `<div class="cxi" data-an="${esc(a.id)}"><div class="grow" style="min-width:0"><b>${esc(a.title || 'Thông báo')}</b> ${a.pinned ? '<span class="tag">Ghim</span>' : ''} ${a.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<br><small class="muted">${dtShort(a.atMs)}</small><div style="white-space:pre-wrap;margin-top:4px">${esc(a.text || '')}</div></div><div class="acts"><button class="btn soft sm" data-anact="pin">${a.pinned ? 'Bỏ ghim' : 'Ghim'}</button><button class="btn soft sm" data-anact="hide">${a.hidden ? 'Hiện' : 'Ẩn'}</button><button class="btn soft sm" data-anact="del">Xoá</button></div></div>`).join('') : '<div class="hint">Lớp chưa có thông báo nào.</div>'}</div>`;
+  const save = arr => saveClass(c, { announcements: arr }).then(() => toast('Đã lưu thông báo.')).catch(er => toast(er.message, 'bad'));
+  el.querySelector('#an-add').onclick = () => {
+    const title = el.querySelector('#an-t').value.trim(), text = el.querySelector('#an-x').value.trim();
+    if (!title && !text) return toast('Nhập tiêu đề hoặc nội dung.', 'bad');
+    save([{ id: 'an' + Date.now().toString(36), title, text, pinned: el.querySelector('#an-p').checked, hidden: false, atMs: Date.now() }, ...(c.announcements || [])]);
+  };
+  el.querySelectorAll('[data-anact]').forEach(b => b.onclick = () => {
+    const id = b.closest('[data-an]').dataset.an, act = b.dataset.anact, list = c.announcements || [];
+    if (act === 'del') { if (!confirm('Xoá thông báo này?')) return; return save(list.filter(a => a.id !== id)); }
+    save(list.map(a => a.id !== id ? a : act === 'pin' ? { ...a, pinned: !a.pinned } : { ...a, hidden: !a.hidden }));
+  });
+}
 function cxSettings(c, el) {
   const T = S.teachers.filter(t => t.active !== false || (c.teacherUids || []).includes(t.id));
   el.innerHTML = `<div class="card" style="max-width:760px"><h3>Thiết lập lớp</h3>
@@ -1694,7 +1762,7 @@ const PERMS = [
   ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { content: 'content', members: 'members', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
@@ -2884,6 +2952,8 @@ function startData() {
     api.watch('lessons', l => { S.lessons = l; refresh(); }, e => toast('Không đọc được bài học: ' + e.message, 'bad')),
     api.watch('users', u => { S.users = u; refresh(); }, e => toast('Không đọc được học sinh: ' + e.message, 'bad')),
     api.watch('assignments', a => { S.assignments = a; refresh(); }, e => toast('Không đọc được bài tập đã giao: ' + e.message, 'bad')),
+    api.watch('classAtt', l => { S.classAtt = l; if (!(S.view === 'cls' && S.cx && S.cx.tab === 'att')) refresh(); }, e => toast('Không đọc được điểm danh (cập nhật Firestore rules): ' + e.message, 'bad')),
+    api.watch('classSubs', l => { S.classSubs = l; if (!(S.view === 'cls' && S.cx && S.cx.tab === 'att')) refresh(); }, e => toast('Không đọc được bài nộp (cập nhật Firestore rules): ' + e.message, 'bad')),
     api.watch('hwchecks', h => { S.hwx = Object.fromEntries(h.map(x => [x.id, x.s || {}])); if (S.view === 'hw') vHW(); }, e => toast('Không đọc được hwchecks: ' + e.message, 'bad')),
     api.watch('banks', b => { S.banks = b; if (S.view === 'banks') vBanks(); else refresh(); }, e => toast('Không đọc được ngân hàng đề (cập nhật Firestore rules): ' + e.message, 'bad')),
     api.watch('enrolments', e => { S.enr = e; if (S.view === 'courses') vCourses(); else refresh(); }, e => toast('Không đọc được danh sách ghi danh (cập nhật Firestore rules): ' + e.message, 'bad')),

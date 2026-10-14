@@ -2845,7 +2845,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--a-brand)!important;bo
 /* Chọn hàng, nút nhỏ trên điện thoại */
 @media(max-width:700px){.acts .btn{min-height:40px}.cxi .acts{margin-left:0}}
 </style>
-<style data-theme="inspire-admin-v4">
+<style data-theme="inspire-admin-v5">
 .art-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .art-card{margin:0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.05)}
 .art-stage{position:relative;line-height:0;background:#fff}
@@ -2854,6 +2854,35 @@ input:focus,select:focus,textarea:focus{border-color:var(--a-brand)!important;bo
 .art-card figcaption{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
 .art-card small{color:var(--mute)}
 </style>
+<style data-theme="inspire-admin-v6">
+/* ===== Quản trị v5: đồng bộ phông chữ và bố cục với trang học sinh ===== */
+h1,h2,h3,h4,h5,.brand b,.stat b,.login h1,.cxhead h2{font-family:'Be Vietnam Pro','Inter',system-ui,sans-serif!important;color:var(--a-text,#1F2A37)}
+body,p,span,div,td,th,li,a,label,small,b,strong,em,input,select,textarea,button,.card,.tag,.nb,.cxtabs,.field,.hint,.muted{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif!important}
+h2{font-size:1.65rem!important;font-weight:800!important;letter-spacing:-.02em}
+h3{font-size:1.05rem!important;font-weight:800!important}
+p{line-height:1.6}
+.cxhead h2{font-size:1.45rem!important}
+</style>
+<style data-theme="inspire-admin-v7">
+/* ===== Quản trị v7: đẹp hơn và gọn hơn ===== */
+.content>h2{position:relative;padding-bottom:4px}
+.content>h2:after{content:"";display:block;width:56px;height:3px;border-radius:99px;background:linear-gradient(90deg,#B10B32,#F04A5E);margin-top:8px}
+.card{transition:box-shadow .2s,transform .2s,border-color .2s}
+@media (hover:hover){.card:hover{border-color:#DDE2E9}}
+.tbl-wrap tbody tr:nth-child(even) td{background:#FBFCFD}
+.tbl-wrap tbody tr:hover td{background:#F5F8FC!important}
+.btn:focus-visible,.nb:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #B10B32;outline-offset:2px}
+.nb.on .nb-i svg{color:#fff}
+#dens{white-space:nowrap}
+.compact .card{padding:12px 14px!important}
+.compact .tbl-wrap td,.compact .tbl-wrap th{padding:7px 10px!important;font-size:.86rem!important}
+.compact .content{padding-top:18px!important}
+.compact .stat{padding:14px 16px!important}
+.compact .stat b{font-size:1.6rem!important}
+.compact .cxi{padding:9px 12px!important}
+.compact p{margin:6px 0}
+</style>
+<style data-theme="inspire-admin-v8">.pv-k{margin:6px 0}.pv-l{font-size:.86rem;margin:6px 0 0 18px;line-height:1.7}.pv-l li{margin-bottom:2px}</style>
 </head>
 <body>
 <div id="root"></div>
@@ -3090,7 +3119,10 @@ const myUid = () => (S.user && S.user.uid) || 'admin';
 const myName = () => (S.me && S.me.name) || (S.user && (S.user.displayName || S.user.email)) || 'Admin';
 const stuOf = (c, id) => S.users.find(u => u.id === id) || { id, name: (c.names || {})[id] || 'Học sinh' };
 function pending(c) { return S.users.filter(u => !u.disabled && u.className && normN(u.className) === normN(c.name) && !(c.members || []).includes(u.id)); }
-const saveClass = (c, patch) => api.update('classes', c.id, { ...patch, updatedAtMs: Date.now() });
+const saveClass = (c, patch) => {
+  try { api.add('audit', { at: Date.now(), by: (S.user && S.user.email) || '', action: 'Sửa lớp', target: c.name || c.id, keys: Object.keys(patch || {}).join(', ') }).catch(() => {}); } catch {}
+  return api.update('classes', c.id, { ...patch, updatedAtMs: Date.now() });
+};
 function editSections(c, fn) {
   const secs = JSON.parse(JSON.stringify(c.sections || [])); secs.forEach(s => { s.items = s.items || []; });
   fn(secs); audit('Sửa nội dung lớp', c.name); return saveClass(c, { sections: secs });
@@ -3206,11 +3238,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -3469,8 +3501,8 @@ async function addMembers(c, us) {
 function cxMembers(c, el) {
   const mem = (c.members || []).map(id => stuOf(c, id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi')), pend = pending(c);
   const avail = S.users.filter(u => !u.disabled && !(c.members || []).includes(u.id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
-  el.innerHTML = `${pend.length ? `<div class="card" style="margin-bottom:14px;background:var(--warn-bg);border-color:#F2DA9B"><div class="row" style="margin:0 0 6px"><b class="grow">${pend.length} học sinh đăng ký với tên lớp “${esc(c.name)}” đang chờ duyệt</b><button class="btn" data-a="mem-okall">Duyệt tất cả</button></div>${pend.map(u => `<div class="row" style="margin:0;padding:6px 0;border-top:1px solid #F2DA9B">${avH(u, 28)}<span class="grow">${esc(u.name)} <small class="muted">${esc(u.email || '')}</small></span><button class="btn soft sm" data-a="mem-ok" data-u="${esc(u.id)}">Duyệt</button></div>`).join('')}</div>` : ''}
-    <div class="card"><h3>Thành viên lớp (${mem.length})</h3>${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Email</th><th>XP</th><th>Hoạt động gần nhất</th><th></th></tr></thead><tbody>${mem.map(u => `<tr><td>${avH(u, 28)}<b>${esc(u.name || 'Học sinh')}</b></td><td>${esc(u.email || '')}</td><td>${u.xp || 0}</td><td>${fmtTime(u.lastActive)}</td><td><button class="btn soft sm" data-a="mem-rm" data-u="${esc(u.id)}">Bỏ khỏi lớp</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh. Duyệt học sinh chờ duyệt hoặc thêm bên dưới.</p>'}</div>
+  el.innerHTML = `${pend.length ? `<div class="card" style="margin-bottom:14px;background:var(--warn-bg);border-color:#F2DA9B"><div class="row" style="margin:0 0 6px"><b class="grow">${pend.length} học sinh đăng ký với tên lớp “${esc(c.name)}” đang chờ<br><small class="muted" style="font-weight:500">${c.joinKey ? `Lớp đã có mật khẩu “${esc(c.joinKey)}”: học sinh nhập mật khẩu là vào ngay, không cần duyệt. Nút Duyệt tất cả chỉ để cho chắc.` : 'Lớp chưa có mật khẩu. Đặt mật khẩu ở tab Thiết lập để học sinh tự vào, khỏi duyệt từng em.'}</small></b><button class="btn" data-a="mem-okall">Duyệt tất cả</button></div>${pend.map(u => `<div class="row" style="margin:0;padding:6px 0;border-top:1px solid #F2DA9B">${avH(u, 28)}<span class="grow">${esc(u.name)} <small class="muted">${esc(u.email || '')}</small></span><button class="btn soft sm" data-a="mem-ok" data-u="${esc(u.id)}">Duyệt</button></div>`).join('')}</div>` : ''}
+    <div class="card"><div class="row" style="margin-bottom:10px"><h3 class="grow" style="margin:0">Thành viên lớp (${mem.length})</h3><input id="mem-q" placeholder="Tìm học sinh…" style="max-width:220px"><button class="btn soft sm" id="mem-csv">Xuất điểm CSV</button><button class="btn soft sm" id="mem-link">Sao chép thông tin vào lớp</button></div>${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Email</th><th>XP</th><th>Hoạt động gần nhất</th><th></th></tr></thead><tbody>${mem.map(u => `<tr><td>${avH(u, 28)}<b>${esc(u.name || 'Học sinh')}</b></td><td>${esc(u.email || '')}</td><td>${u.xp || 0}</td><td>${fmtTime(u.lastActive)}</td><td><button class="btn soft sm" data-a="mem-rm" data-u="${esc(u.id)}">Bỏ khỏi lớp</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh. Duyệt học sinh chờ duyệt hoặc thêm bên dưới.</p>'}</div>
     <div class="card" style="margin-top:14px"><h3>Thêm học sinh vào lớp</h3><input id="ma-q" placeholder="Tìm theo tên hoặc email…" style="margin-bottom:8px"><div class="ma-list" id="ma-l">${avail.map(u => `<label class="ma-i" data-q="${esc(normN((u.name || '') + ' ' + (u.email || '') + ' ' + (u.className || '')))}"><input type="checkbox" class="ma-ck" value="${esc(u.id)}">${avH(u, 24)}<span>${esc(u.name || 'Học sinh')} <small class="muted">${esc(u.className || 'chưa có lớp')} · ${esc(u.email || '')}</small></span></label>`).join('') || '<p class="muted">Mọi học sinh đã ở trong lớp.</p>'}</div>
     <div class="row" style="margin:10px 0 0"><button class="btn" data-a="mem-add">Thêm những bạn đã chọn</button></div></div>`;
   const q = $('#ma-q'); if (q) q.oninput = () => { const v = normN(q.value); document.querySelectorAll('#ma-l .ma-i').forEach(r => { r.style.display = !v || r.dataset.q.includes(v) ? '' : 'none'; }); };
@@ -3488,10 +3520,10 @@ function cbankForm(b, c) {
     <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><input id="b-d" maxlength="120" value="${esc(b?.desc || '')}"></label>
     <div class="row" style="align-items:center"><button class="btn soft sm" id="b-up" type="button">Tải file câu hỏi lên (.txt, .csv, .json)</button><input type="file" id="b-file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" hidden><small class="muted">CSV gồm cột: Câu hỏi, A, B, C, D, Đáp án, Giải thích</small></div>
     <label class="field"><span>Câu hỏi (cách nhau một dòng trống)</span><textarea id="b-s" rows="12" style="font-family:monospace;font-size:.85rem" placeholder="Câu hỏi&#10;A. ...&#10;B. ...&#10;C. ...&#10;D. ...&#10;Đáp án: B&#10;Giải thích: ...">${esc(b?.src || '')}</textarea></label>
-    <small class="muted" style="display:block;margin:-4px 0 10px">Loại câu: trắc nghiệm (A. B. C. D. và "Đáp án: B"); điền từ ("Đáp án: go|goes"); nối cặp (mỗi dòng "Mục trái | Mục phải", bắt đầu bằng "Nối: đề bài"); nghe ("Nghe: https://...", dòng riêng cách bằng dòng trống thì các câu sau dùng chung file); hình ảnh (đáp án hoặc mục nối ghi "img: https://..."); tô màu ("Tô màu: https://..." là link ảnh, học sinh tô bằng bút màu).</small>
+    <small class="muted" style="display:block;margin:-4px 0 10px">Loại câu: trắc nghiệm (A. B. C. D. và "Đáp án: B"); điền từ ("Đáp án: go|goes"); nối cặp (mỗi dòng "Mục trái | Mục phải", bắt đầu bằng "Nối: đề bài"); nghe ("Nghe: https://...", dòng riêng cách bằng dòng trống thì các câu sau dùng chung file); hình ảnh (đáp án hoặc mục nối ghi "img: https://..."); tô màu ("Tô màu: https://..." là link ảnh, học sinh tô bằng bút màu); sắp xếp ("Sắp xếp: I like music.", học sinh bấm các từ để xếp thành câu đúng); đọc hiểu (dòng "Đọc: đoạn văn" đứng riêng, các câu sau dùng chung đoạn văn); tìm lỗi ("Tìm lỗi: câu có lỗi" và "Đáp án: từ sai", học sinh bấm đúng từ sai).</small>
     <p id="b-info" class="muted" style="margin:-4px 0 10px"></p>
     <div class="row" style="align-items:center"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" id="b-p" ${b && b.published === false ? '' : 'checked'}> Hiện cho học sinh</label><button class="btn soft sm" id="b-demo" type="button">Chèn câu mẫu</button><span class="grow"></span><button class="btn soft" id="b-x" type="button">Huỷ</button><button class="btn" id="b-ok" type="button">${b ? 'Lưu thay đổi' : 'Tạo đề'}</button></div>`);
-  const info = () => { const r = parseBank($('#b-s', ov).value); $('#b-info', ov).textContent = r.qs.length ? `Đọc được ${r.qs.length} câu${r.bad.length ? '. Câu số ' + r.bad.join(', ') + ' thiếu đáp án hoặc lựa chọn nên bị bỏ qua.' : '.'}` : ($('#b-s', ov).value.trim() ? 'Chưa đọc được câu nào. Mỗi câu cần câu hỏi, các dòng A. B. C. D. và dòng “Đáp án: X”.' : ''); };
+  const info = () => { const r = parseBank($('#b-s', ov).value), el = $('#b-info', ov), src = $('#b-s', ov).value.trim(); if (!src) { el.textContent = ''; return; } if (!r.qs.length) { el.textContent = 'Chưa đọc được câu nào. Mỗi câu cần câu hỏi, các dòng A. B. C. D. và dòng “Đáp án: X”.'; return; } const kinds = {}; r.qs.forEach(q => { const k = qType(q); kinds[k] = (kinds[k] || 0) + 1; }); el.innerHTML = `<b>Đọc được ${r.qs.length} câu</b>${r.bad.length ? ` · <span style="color:#B10B32">Câu số ${r.bad.join(', ')} thiếu đáp án hoặc lựa chọn, bị bỏ qua</span>` : ''}<div class="pv-k">${Object.entries(kinds).map(([k, n]) => `<span class="tag">${esc(k)}: ${n}</span>`).join(' ')}</div><ol class="pv-l">${r.qs.slice(0, 6).map(q => `<li><span class="tag">${esc(qType(q))}</span> ${esc((q.q || '').slice(0, 90))}</li>`).join('')}${r.qs.length > 6 ? `<li class="muted">… và ${r.qs.length - 6} câu nữa</li>` : ''}</ol>`; };
   $('#b-s', ov).oninput = info; info();
   $('#b-up', ov).onclick = () => $('#b-file', ov).click();
   $('#b-file', ov).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const t = fileToBankText(f.name, await f.text()); $('#b-s', ov).value = ($('#b-s', ov).value.trim() ? $('#b-s', ov).value.trim() + '\n\n' : '') + t; if (!$('#b-t', ov).value) $('#b-t', ov).value = f.name.replace(/\.[^.]+$/, ''); info(); toast('Đã đọc file.'); } catch (er) { toast('File không đọc được: ' + er.message, 'bad'); } e.target.value = ''; };
@@ -3657,6 +3689,18 @@ function cxAnn(c, el) {
     save(list.map(a => a.id !== id ? a : act === 'pin' ? { ...a, pinned: !a.pinned } : { ...a, hidden: !a.hidden }));
   });
 }
+/* ----- Nghe: các bài có âm thanh của lớp ----- */
+function cxListen(c, el) {
+  const L = cBanks(c).filter(b => (b.qs || []).some(q => q.audio));
+  const na = L.reduce((t, b) => t + (b.qs || []).filter(q => q.audio).length, 0);
+  el.innerHTML = `<div class="card"><h3>Bài nghe của lớp</h3>
+    <p class="muted" style="margin-top:0">Học sinh thấy các bài này ở tab Nghe trong trang lớp. Để thêm bài nghe, vào tab Đề và kiểm tra, dán đề có dòng <b>Nghe: https://...</b> (link mp3 công khai). Đặt một dòng <b>Nghe:</b> riêng ở đầu sẽ dùng chung cho các câu sau.</p>
+    <div class="stats" style="margin:12px 0 0"><div class="card stat a"><b>${L.length}</b>Bài nghe</div><div class="card stat b"><b>${na}</b>Câu có âm thanh</div></div></div>
+    ${L.length ? L.map(b => `<div class="card" style="margin-top:12px"><div class="row"><div class="grow"><b>${esc(b.title)}</b><div class="muted" style="font-size:.86rem">${(b.qs || []).length} câu · ${(b.qs || []).filter(q => q.audio).length} câu có âm thanh</div></div><button class="btn soft sm" data-lsbank="${esc(b.id)}">Sửa trong Đề và kiểm tra</button></div>
+      <div style="margin-top:8px;font-size:.84rem">${[...new Set((b.qs || []).map(q => q.audio).filter(Boolean))].map(u => `<div class="muted" style="word-break:break-all">${esc(u)}</div>`).join('')}</div></div>`).join('') : '<div class="empty">Chưa có bài nghe nào.</div>'}`;
+  el.querySelectorAll('[data-lsbank]').forEach(btn => btn.onclick = () => { S.cxTab = 'banks'; S.cx = { id: c.id, tab: 'banks' }; draw(); });
+}
+
 /* ----- Câu hay sai: tỷ lệ sai của từng câu trong đề, tính trên học sinh của lớp ----- */
 const hashStr = s => { let h = 5381; for (const ch of String(s)) h = ((h << 5) + h + ch.charCodeAt(0)) >>> 0; return h.toString(36); };
 function cxQstat(c, el) {
@@ -3776,7 +3820,7 @@ const PERMS = [
   ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
@@ -4103,6 +4147,48 @@ function hubTodo() {
   add(S.users.filter(u => u.disabled).length, 'tài khoản đang bị khoá', 'students', '');
   return T;
 }
+/* ----- Công cụ quản trị: tìm học sinh, xuất điểm, sao chép thông tin lớp, nháp đề, chế độ gọn ----- */
+const curClassOf = () => (S.classes || []).find(x => x.id === ((S.cx || {}).id));
+document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'mem-q') {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('#content tbody tr').forEach(tr => { tr.style.display = !q || tr.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  }
+  if (e.target && e.target.id === 'bk-t') localStorage.setItem('inspire_bank_draft', e.target.value);
+});
+document.addEventListener('focusin', e => {
+  if (e.target && e.target.id === 'bk-t' && !e.target.value) {
+    const d = localStorage.getItem('inspire_bank_draft');
+    if (d && confirm('Có bản nháp đề chưa đăng. Khôi phục nội dung này?')) e.target.value = d;
+  }
+});
+document.addEventListener('click', e => {
+  if (e.target.closest('#bk-ok')) setTimeout(() => localStorage.removeItem('inspire_bank_draft'), 1500);
+  if (e.target.closest('#mem-csv')) {
+    const c = curClassOf(); if (!c) return;
+    const rows = (c.members || []).map(id => stuOf(c, id)).map(u => {
+      const best = Object.values(u.bankbest || {}), avg = best.length ? Math.round(best.reduce((p, q) => p + q, 0) / best.length) : '';
+      const subs = (S.classSubs || []).filter(x => x.classId === c.id && x.uid === u.id).length;
+      return [u.name || '', u.email || '', u.xp || 0, u.streak || 0, avg, subs].map(csvQ).join(',');
+    });
+    dlFile('diem-' + (c.name || 'lop').replace(/\s+/g, '-') + '.csv', '\uFEFF' + ['Học sinh,Email,XP,Chuỗi học,Điểm kiểm tra TB,Bài đã nộp', ...rows].join('\n'), 'text/csv;charset=utf-8');
+  }
+  if (e.target.closest('#mem-link')) {
+    const c = curClassOf(); if (!c) return;
+    const txt = `Lớp ${c.name} trên Inspire E-Study. Vào web, bấm "Tham gia lớp" và nhập mật khẩu: ${c.joinKey || '(chưa đặt, hỏi cô)'}`;
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Đã sao chép thông tin vào lớp.')).catch(() => toast(txt, 'warn'));
+  }
+});
+
+/* ----- Chế độ gọn: thu nhỏ khoảng cách để xem được nhiều dòng hơn ----- */
+setInterval(() => {
+  const bar = document.querySelector('.atop-r'); if (!bar || document.getElementById('dens')) return;
+  const b = document.createElement('button'); b.id = 'dens'; b.className = 'btn soft sm'; b.type = 'button';
+  const on = localStorage.getItem('inspire_compact') === '1';
+  document.body.classList.toggle('compact', on); b.textContent = on ? 'Chế độ thường' : 'Chế độ gọn';
+  b.onclick = () => { const v = !document.body.classList.contains('compact'); document.body.classList.toggle('compact', v); localStorage.setItem('inspire_compact', v ? '1' : '0'); b.textContent = v ? 'Chế độ thường' : 'Chế độ gọn'; };
+  bar.prepend(b);
+}, 1000);
 /* ----- Lịch bài tập toàn trường: hạn, số bài đã nộp, bài trễ ----- */
 const addDaysStr = (str, n) => { const d = new Date(str + 'T00:00:00'); d.setDate(d.getDate() + n); return todayStr(d); };
 function calRows() {
@@ -4553,30 +4639,50 @@ if (MODE === 'firebase' && FB) {
   });
 }
 
+function qType(q) {
+  if (q.err) return 'Tìm lỗi';
+  if (q.order) return 'Sắp xếp';
+  if (q.color) return 'Tô màu';
+  if (q.match) return 'Nối cặp';
+  if (q.typed) return 'Điền từ';
+  if (q.audio) return 'Nghe';
+  if (q.passage) return 'Đọc hiểu';
+  return 'Trắc nghiệm';
+}
 function parseBank(text) {
   const blocks = String(text || '').replace(/\r/g, '').split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean), qs = [], bad = [];
-  const META = /^(đáp án|dap an|answer|ans|đ\/a|nghe|audio|giải thích|giai thich|explain|gt|tô màu|to mau|color)\s*[:：]/i;
-  let curAudio = '';
+  const META = /^(đáp án|dap an|answer|ans|đ\/a|nghe|audio|giải thích|giai thich|explain|gt|tô màu|to mau|color|sắp xếp|sap xep|order|tìm lỗi|tim loi|error|đọc|doc|reading)\s*[:：]/i;
+  let curAudio = '', curPassage = '';
   blocks.forEach((b, n) => {
     const lines = b.split('\n').map(x => x.trim()).filter(Boolean);
+    const pm = lines[0] && lines[0].match(/^(?:đọc|doc|reading)\s*[:：]\s*(.*)$/i);
+    if (pm) { curPassage = [pm[1], ...lines.slice(1)].filter(Boolean).join(' ').trim(); return; }
     const solo = lines.length === 1 && lines[0].match(/^(?:nghe|audio)\s*[:：]\s*(\S+)/i);
     if (solo) { curAudio = /^https:\/\//i.test(solo[1]) ? solo[1] : ''; return; }
-    const q = [], o = {}, pairs = []; let ans = '', ex = '', typed = '', audio = '', head = '', colorUrl = '';
+    const before = qs.length;
+    const q = [], o = {}, pairs = []; let ans = '', ex = '', typed = '', audio = '', head = '', colorUrl = '', orderAns = '', errSent = '';
     lines.forEach((l, li) => { let m;
       if (li === 0 && (m = l.match(/^(nối|noi|match)\b\s*[:：]?\s*(.*)$/i))) { head = m[2].trim(); return; }
       if ((m = l.match(/^([A-F])[\.\)]\s*(.+)$/i))) o[m[1].toUpperCase()] = m[2].trim();
       else if ((m = l.match(/^(?:đáp án|dap an|answer|ans|đ\/a)\s*[:：]\s*(.+)$/i))) { const v = m[1].trim(); if (/^[A-F]$/i.test(v)) ans = v.toUpperCase(); else typed = v; }
       else if ((m = l.match(/^(?:nghe|audio)\s*[:：]\s*(\S+)/i))) audio = m[1];
+      else if ((m = l.match(/^(?:tìm lỗi|tim loi|error)\s*[:：]\s*(.+)$/i))) errSent = m[1].trim();
+      else if ((m = l.match(/^(?:sắp xếp|sap xep|order)\s*[:：]\s*(.+)$/i))) orderAns = m[1].trim();
       else if ((m = l.match(/^(?:tô màu|to mau|color)\s*[:：]\s*(\S+)/i))) colorUrl = m[1];
       else if ((m = l.match(/^(?:giải thích|giai thich|explain|gt)\s*[:：]\s*(.+)$/i))) ex = m[1];
       else if (!META.test(l) && /^[^|]+\|[^|]+$/.test(l) && !Object.keys(o).length) { const k = l.indexOf('|'); pairs.push([l.slice(0, k).trim(), l.slice(k + 1).trim()]); }
       else if (!Object.keys(o).length) q.push(l.replace(/^(câu\s*)?\d+\s*[\.\):]\s*/i, ''));
-      else if (ex) ex += ' ' + l; });
+      else if (ex) ex += ' ' + l;
+    });
     const au = (/^https:\/\//i.test(audio) ? audio : curAudio);
     const extra = au ? { audio: au } : {};
     const keys = 'ABCDEF'.split('').filter(k => o[k]);
     const prompt = q.join(' ') || head;
-    if (colorUrl && /^https:\/\//i.test(colorUrl) && !keys.length && !typed && !pairs.length) {
+    if (errSent && typed && !keys.length) {
+      qs.push({ q: prompt || 'Tìm từ sai trong câu.', o: [], a: -1, err: true, words: errSent.split(/\s+/).filter(Boolean), acc: [typed], e: ex, ...extra });
+    } else if (orderAns && !keys.length && !typed && !pairs.length && !colorUrl) {
+      qs.push({ q: prompt || 'Sắp xếp các từ thành câu đúng.', o: [], a: -1, order: true, ans: orderAns, e: ex, ...extra });
+    } else if (colorUrl && /^https:\/\//i.test(colorUrl) && !keys.length && !typed && !pairs.length) {
       qs.push({ q: prompt || 'Nghe và tô màu bức tranh.', o: [], a: -1, color: colorUrl, e: ex, ...extra });
     } else if (pairs.length >= 2 && !keys.length && !typed) {
       qs.push({ q: head || prompt || 'Nối mỗi mục bên trái với đáp án đúng bên phải.', o: [], a: -1, match: true, pairs, e: ex, ...extra });
@@ -4585,6 +4691,7 @@ function parseBank(text) {
     } else if (q.length && !keys.length && typed) {
       qs.push({ q: prompt, o: [], a: -1, typed: true, acc: typed.split('|').map(x => x.trim()).filter(Boolean), e: ex, ...extra });
     } else bad.push(n + 1);
+    for (let k = before; k < qs.length; k++) if (curPassage) qs[k].passage = curPassage;
   });
   return { qs, bad };
 }
@@ -4665,10 +4772,10 @@ function bankForm(b, preCls) {
     <label class="field"><span>Mô tả ngắn (không bắt buộc)</span><input id="b-d" maxlength="120" value="${esc(b?.desc || '')}"></label>
     <div class="row" style="align-items:center"><button class="btn soft sm" id="b-up" type="button">Tải file câu hỏi lên (.txt, .csv, .json)</button><input type="file" id="b-file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" hidden><small class="muted">CSV gồm cột: Câu hỏi, A, B, C, D, Đáp án, Giải thích</small></div>
     <label class="field"><span>Câu hỏi (cách nhau một dòng trống)</span><textarea id="b-s" rows="12" style="font-family:monospace;font-size:.85rem" placeholder="Câu hỏi&#10;A. ...&#10;B. ...&#10;C. ...&#10;D. ...&#10;Đáp án: B&#10;Giải thích: ...">${esc(b?.src || '')}</textarea></label>
-    <small class="muted" style="display:block;margin:-4px 0 10px">Loại câu: trắc nghiệm (A. B. C. D. và "Đáp án: B"); điền từ ("Đáp án: go|goes"); nối cặp (mỗi dòng "Mục trái | Mục phải", bắt đầu bằng "Nối: đề bài"); nghe ("Nghe: https://...", dòng riêng cách bằng dòng trống thì các câu sau dùng chung file); hình ảnh (đáp án hoặc mục nối ghi "img: https://..."); tô màu ("Tô màu: https://..." là link ảnh, học sinh tô bằng bút màu).</small>
+    <small class="muted" style="display:block;margin:-4px 0 10px">Loại câu: trắc nghiệm (A. B. C. D. và "Đáp án: B"); điền từ ("Đáp án: go|goes"); nối cặp (mỗi dòng "Mục trái | Mục phải", bắt đầu bằng "Nối: đề bài"); nghe ("Nghe: https://...", dòng riêng cách bằng dòng trống thì các câu sau dùng chung file); hình ảnh (đáp án hoặc mục nối ghi "img: https://..."); tô màu ("Tô màu: https://..." là link ảnh, học sinh tô bằng bút màu); sắp xếp ("Sắp xếp: I like music.", học sinh bấm các từ để xếp thành câu đúng); đọc hiểu (dòng "Đọc: đoạn văn" đứng riêng, các câu sau dùng chung đoạn văn); tìm lỗi ("Tìm lỗi: câu có lỗi" và "Đáp án: từ sai", học sinh bấm đúng từ sai).</small>
     <p id="b-info" class="muted" style="margin:-4px 0 10px"></p>
     <div class="row" style="align-items:center"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" id="b-p" ${b && b.published === false ? '' : 'checked'}> Hiện cho học sinh</label><button class="btn soft sm" id="b-demo" type="button">Chèn câu mẫu</button><span class="grow"></span><button class="btn soft" id="b-x" type="button">Huỷ</button><button class="btn" id="b-ok" type="button">${b ? 'Lưu thay đổi' : 'Thêm đề'}</button></div>`);
-  const info = () => { const r = parseBank($('#b-s', ov).value); $('#b-info', ov).textContent = r.qs.length ? `Đọc được ${r.qs.length} câu${r.bad.length ? '. Câu số ' + r.bad.join(', ') + ' thiếu đáp án hoặc lựa chọn nên bị bỏ qua.' : '.'}` : ($('#b-s', ov).value.trim() ? 'Chưa đọc được câu nào. Mỗi câu cần câu hỏi, các dòng A. B. C. D. và dòng "Đáp án: X".' : ''); };
+  const info = () => { const r = parseBank($('#b-s', ov).value), el = $('#b-info', ov), src = $('#b-s', ov).value.trim(); if (!src) { el.textContent = ''; return; } if (!r.qs.length) { el.textContent = 'Chưa đọc được câu nào. Mỗi câu cần câu hỏi, các dòng A. B. C. D. và dòng “Đáp án: X”.'; return; } const kinds = {}; r.qs.forEach(q => { const k = qType(q); kinds[k] = (kinds[k] || 0) + 1; }); el.innerHTML = `<b>Đọc được ${r.qs.length} câu</b>${r.bad.length ? ` · <span style="color:#B10B32">Câu số ${r.bad.join(', ')} thiếu đáp án hoặc lựa chọn, bị bỏ qua</span>` : ''}<div class="pv-k">${Object.entries(kinds).map(([k, n]) => `<span class="tag">${esc(k)}: ${n}</span>`).join(' ')}</div><ol class="pv-l">${r.qs.slice(0, 6).map(q => `<li><span class="tag">${esc(qType(q))}</span> ${esc((q.q || '').slice(0, 90))}</li>`).join('')}${r.qs.length > 6 ? `<li class="muted">… và ${r.qs.length - 6} câu nữa</li>` : ''}</ol>`; };
   $('#b-s', ov).oninput = info; info();
   $('#b-up', ov).onclick = () => $('#b-file', ov).click();
   $('#b-file', ov).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const t = fileToBankText(f.name, await f.text()); $('#b-s', ov).value = ($('#b-s', ov).value.trim() ? $('#b-s', ov).value.trim() + '\n\n' : '') + t; if (!$('#b-t', ov).value) $('#b-t', ov).value = f.name.replace(/\.[^.]+$/, ''); info(); toast('Đã đọc file.'); } catch (er) { toast('File không đọc được: ' + er.message, 'bad'); } e.target.value = ''; };

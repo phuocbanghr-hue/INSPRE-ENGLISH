@@ -6394,7 +6394,7 @@ function viewClass() {
     ${secs.map(s => `<div class="cxl-drw-g"><button class="cxl-drw-t" data-sec="${esc(s.id)}">${esc(s.title)}</button>${(s.items || []).filter(i => !i.hidden).map(i => `<div class="cxl-drw-i" data-sec="${esc(s.id)}"><span class="cxl-dot"></span>${esc(i.title || ITYPE_N[i.type] || 'Nội dung')}</div>`).join('')}</div>`).join('')}</div>
     <div class="cxl-drw-bg" data-drawer-close></div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="classes">Lớp học</a><span>›</span><b>${esc(c.name)}</b></nav>
-    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}</div></section>
+    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}${avNudge()}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
     <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
@@ -6936,6 +6936,15 @@ const AUTH_ERR = {
   'auth/email-already-in-use': 'Email này đã có tài khoản. Hãy đăng nhập.', 'auth/weak-password': 'Mật khẩu cần ít nhất 6 ký tự.', 'auth/invalid-email': 'Email chưa đúng định dạng.',
   'auth/too-many-requests': 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.', 'auth/network-request-failed': 'Mất kết nối mạng.', 'auth/operation-not-allowed': 'Chưa bật đăng nhập Email/Password trong Firebase.'
 };
+function avNudge() {
+  if (S.profile && S.profile.avatar) return '';
+  return `<div class="avnudge" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#FFF8E6;border:1px solid #F2DA9B;border-radius:14px;padding:12px 14px;margin:12px 0"><span class="avf f1" style="width:44px;height:44px;border-radius:50%;background:#E9ECEF;display:inline-block"></span><span style="flex:1;min-width:180px"><b>Đổi ảnh đại diện để bạn bè nhận ra em!</b><br><small class="muted">Chụp một tấm ảnh rõ mặt, mất vài giây thôi.</small></span><button class="btn sm" data-avnudge="1">Chụp ảnh ngay</button></div>`;
+}
+document.addEventListener('click', async e => {
+  if (!e.target.closest('[data-avnudge]')) return;
+  const d = await capturePhoto();
+  if (d) { try { await api.updateMe({ avatar: d }); toast('Đã cập nhật ảnh đại diện.', 'ok'); } catch (er) { toast('Không lưu được ảnh: ' + er.message, 'bad'); } }
+});
 function capturePhoto() {
   return new Promise(done => {
     const fallback = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.setAttribute('capture', 'user'); i.onchange = async () => { const f = i.files[0]; if (!f) return done(null); try { done(await resizeImg(f, 240)); } catch (er) { toast(er.message, 'bad'); done(null); } }; i.click(); };
@@ -6969,7 +6978,7 @@ function viewAuth() {
       <div class="seg"><button data-mode="login" class="${reg ? '' : 'on'}">Đăng nhập</button><button data-mode="register" class="${reg ? 'on' : ''}">Tạo tài khoản</button></div>
       <form id="af" novalidate>
         <div class="ap" id="ap"><div class="ap-prev" id="ap-prev">${S.authAv ? `<img src="${S.authAv}" alt="Ảnh đại diện">` : '<span>👤</span>'}</div>
-          <div class="ap-r"><b>Ảnh đại diện <i>*</i></b><small id="ap-hint">${S.authAv ? 'Đã có ảnh. Bấm để đổi nếu muốn.' : 'Bắt buộc: chụp hoặc tải ảnh lên mới vào học được.'}</small>
+          <div class="ap-r"><b>Ảnh đại diện</b><small id="ap-hint">${S.authAv ? 'Đã có ảnh. Bấm để đổi nếu muốn.' : 'Không bắt buộc: có thể chụp hoặc tải ảnh lên sau.'}</small>
           <div class="ap-b"><button type="button" class="btn soft sm" id="ap-cam">📷 Chụp ảnh</button><label class="btn soft sm" for="ap-file">🖼️ Tải ảnh lên</label><input id="ap-file" type="file" accept="image/*" hidden></div></div></div>
         ${reg ? `<label class="field"><span>Tên của em</span><input id="a-name" autocomplete="name" maxlength="40" required></label>
         <label class="field"><span>Lớp của em</span><select id="a-class"><option value="">Chọn lớp</option><option>Ôn thi 9 lên 10</option><option>Unlock 7</option></select></label>` : ''}
@@ -6988,7 +6997,7 @@ function viewAuth() {
   $('#ap-file').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { setAv(await resizeImg(f, 240)); } catch (er) { msg(er.message); } };
   $('#af').onsubmit = async e => {
     e.preventDefault(); msg('');
-    if (!S.authAv) { const a = $('#ap'); a.classList.add('bad'); a.scrollIntoView({ block: 'center', behavior: 'smooth' }); return msg('Em cần chụp hoặc tải ảnh đại diện lên mới vào học được nhé.'); }
+    if (false) { const a = $('#ap'); a.classList.add('bad'); a.scrollIntoView({ block: 'center', behavior: 'smooth' }); return msg('Em cần chụp hoặc tải ảnh đại diện lên mới vào học được nhé.'); }
     const email = $('#a-email').value.trim(), pass = $('#a-pass').value;
     if (!email || !pass) return msg('Em nhập đủ email và mật khẩu nhé.');
     const btn = $('#a-go'); btn.disabled = true;
@@ -8092,7 +8101,7 @@ else {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
       if (p.disabled) { S.profile = null; api.signOut(); alert('Tài khoản đang bị tạm khoá. Em liên hệ trung tâm nhé.'); return; }
       S.profile = p;
-      if (p.avatar) startContent();
+      startContent();
       if (!S.streakChecked) {
         S.streakChecked = true; const t = todayStr();
         if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
@@ -8986,5 +8995,41 @@ else {
   .ft-av{width:30px!important;height:30px!important}
 }
 </style>
+<script>
+/* Linh vật Bông nổi ngoài web: bấm để xem gợi ý, mở Công cụ học, hoặc ẩn trong ngày */
+(function () {
+  const KEY = 'bong_off_' + new Date().toDateString();
+  if (localStorage.getItem(KEY) === '1') return;
+  const TIPS = ['Bật nhạc lên đi, mình nhảy theo cho vui nè!', 'Hôm nay học một bài nhé. Mình đợi bạn đó!', 'Ôn lỗi sai để nhớ lâu hơn nha.', 'Thử nói một câu tiếng Anh đi, mình nghe thử!', 'Làm xong lộ trình hôm nay là được thưởng XP đó!'];
+  const css = document.createElement('style');
+  css.textContent = `
+  .bong{position:fixed;right:18px;bottom:18px;z-index:60;width:96px;text-align:center;font-family:inherit;user-select:none}
+  .bong-fig{width:78px;height:78px;margin-left:auto;cursor:pointer;animation:bongBob 2.4s ease-in-out infinite;filter:drop-shadow(0 10px 14px rgba(177,11,50,.35))}
+  .bong-fig svg{width:100%;height:100%;display:block}
+  @keyframes bongBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+  .bong-bub{position:absolute;right:0;bottom:92px;width:250px;background:#fff;border-radius:16px;box-shadow:0 18px 36px -18px rgba(16,24,40,.45);padding:12px 14px;text-align:left;font-size:.9rem;color:#1F2A37;display:none;line-height:1.45}
+  .bong-bub.open{display:block;animation:bongPop .25s ease-out}
+  @keyframes bongPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .bong-bub:after{content:"";position:absolute;right:38px;bottom:-8px;width:14px;height:14px;background:#fff;transform:rotate(45deg)}
+  .bong-b{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .bong-b button{border:0;border-radius:999px;padding:7px 13px;font:inherit;font-weight:700;cursor:pointer}
+  .bong-go{background:#B10B32;color:#fff}
+  .bong-x{background:transparent;color:#6B7480;text-decoration:underline;font-weight:500!important}
+  @media (max-width:600px){.bong{width:80px;right:10px;bottom:70px}.bong-fig{width:62px;height:62px}.bong-bub{width:210px}}`;
+  document.head.appendChild(css);
+  const w = document.createElement('div'); w.className = 'bong';
+  w.innerHTML = `<div class="bong-bub" id="bong-bub"><div id="bong-tip"></div><div class="bong-b"><button class="bong-go" id="bong-go">Mở công cụ</button><button class="bong-x" id="bong-x">Ẩn Bông hôm nay</button></div></div>
+    <div class="bong-fig" id="bong-fig" title="Bông"><svg viewBox="0 0 64 64"><ellipse cx="32" cy="36" rx="22" ry="22" fill="#B10B32"/><ellipse cx="32" cy="39" rx="13" ry="12" fill="#FFF4D6"/><circle cx="24" cy="26" r="9" fill="#fff"/><circle cx="40" cy="26" r="9" fill="#fff"/><circle cx="25" cy="27" r="4" fill="#0B5CA8"/><circle cx="39" cy="27" r="4" fill="#0B5CA8"/><path d="M29 33 L35 33 L32 39 Z" fill="#FDB515"/><path d="M14 14 L21 21 M50 14 L43 21" stroke="#8A0925" stroke-width="4" stroke-linecap="round"/></svg></div>`;
+  document.body.appendChild(w);
+  const bub = w.querySelector('#bong-bub'), tip = w.querySelector('#bong-tip');
+  let i = 0; const say = () => { tip.textContent = TIPS[i++ % TIPS.length]; };
+  const open = () => { say(); bub.classList.add('open'); clearTimeout(open._t); open._t = setTimeout(() => bub.classList.remove('open'), 9000); };
+  w.querySelector('#bong-fig').onclick = () => (bub.classList.contains('open') ? bub.classList.remove('open') : open());
+  w.querySelector('#bong-go').onclick = () => { bub.classList.remove('open'); const t = document.querySelector('.tl-go'); if (t) t.click(); };
+  w.querySelector('#bong-x').onclick = () => { localStorage.setItem(KEY, '1'); w.remove(); };
+  setTimeout(open, 2500);
+  setInterval(() => { if (!bub.classList.contains('open')) open(); }, 45000);
+})();
+</script>
 </body>
 </html>

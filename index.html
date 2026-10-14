@@ -5069,7 +5069,7 @@ if (MODE === 'firebase' && FB) {
     watchProfile: (uid, cb, err) => FB.onSnapshot(FB.doc(db, 'users', uid), s => cb(s.exists() ? s.data() : null), err),
     watchLessons: (cb, err) => FB.onSnapshot(FB.collection(db, 'lessons'), s => cb(list(s)), err),
     watchAssignments: cb => FB.onSnapshot(FB.collection(db, 'assignments'), s => cb(list(s)), e => { console.error('assignments', e); toast('Không đọc được bài được giao: ' + e.message, 'bad'); }),
-    watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), e => { console.error('chuyende', e); toast('Không đọc được chuyên đề (kiểm tra Firestore rules): ' + e.message, 'bad'); }),
+    watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), e => { console.error('chuyende', e); if (S.user) toast('Không đọc được chuyên đề (kiểm tra Firestore rules): ' + e.message, 'bad'); }),
     watchAnnounce: cb => FB.onSnapshot(FB.doc(db, 'config', 'announcement'), s => cb(s.exists() ? s.data() : null), e => console.error('announcement', e)),
     watchTop: (n, cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n)), s => cb(list(s)), err),
     updateMe: f => FB.updateDoc(FB.doc(db, 'users', S.user.uid), f),
@@ -6313,7 +6313,7 @@ function viewClasses() {
     <h2 class="cl-title">Lớp học</h2>
     <div class="clg-hello">Chào mừng${nm ? ', ' + esc(nm) : ''}!</div>
     <section class="cx-hi"><div class="cx-hi-av">${avHTML(S.profile || { name: nm })}</div><div class="cx-hi-t"><b>Chào ${esc(nm || 'em')}!</b><small>${CX.list.length ? 'Em đang ở ' + CX.list.length + ' lớp' + (() => { const a = CX.list.map(clPct).filter(x => x != null); return a.length ? ' · tiến độ trung bình ' + Math.round(a.reduce((x, y) => x + y, 0) / a.length) + '%' : ''; })() : 'Các lớp sẽ hiện ở đây ngay khi thầy cô tạo lớp.'}</small></div><button class="btn soft" data-go="courses">Xem khoá học</button></section>
-    ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Chưa có lớp nào được tạo. Khi có mật khẩu lớp do thầy cô cung cấp, em bấm “Tham gia lớp” để vào. Trong lúc chờ, em vào tab <b>Khoá học</b> để học trước nhé.<br><button class="btn soft" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}
+    ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Chưa có lớp nào được tạo. ' + (S.profile && S.profile.className ? 'Lớp em đăng ký là “' + esc(S.profile.className) + '”. Nhập mật khẩu lớp do cô cung cấp để vào ngay, không cần chờ duyệt.' : 'Khi có mật khẩu lớp do thầy cô cung cấp, em bấm “Tham gia lớp” để vào.') + ' Trong lúc chờ, em vào tab <b>Khoá học</b> để học trước nhé.<br><button class="btn soft" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}
     ${CX.list.length ? `<section class="clg-box" style="margin-top:22px"><header class="clg-h">Lớp của em</header>
       <div class="clg-tool">${sel('clf', [['all', 'Tất cả'], ['doing', 'Đang học'], ['done', 'Hoàn thành']], CXV.f)}<input id="clq" class="clg-q" type="search" placeholder="Tìm lớp" value="${esc(CXV.q)}" aria-label="Tìm kiếm lớp">${sel('cls', [['name', 'Sắp xếp theo tên lớp'], ['prog', 'Sắp xếp theo tiến độ']], CXV.s)}${sel('clv', [['card', 'Thẻ'], ['list', 'Danh sách']], CXV.v)}</div>
       <div id="clgrid">${clGridHTML()}</div></section>` : ''}`;
@@ -6397,7 +6397,7 @@ function viewClass() {
     ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
-    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
+    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
     <section class="cxl-main" id="cxl-main"></section></div>`;
   main.onclick = e => {
     const dr = e.target.closest('[data-drawer]'), dc = e.target.closest('[data-drawer-close]');
@@ -6442,6 +6442,7 @@ function drawClassTab(c) {
   else if (CX.tab === 'attend') el.innerHTML = cxlAttend(c);
   else if (CX.tab === 'art') { el.innerHTML = cxlArt(c); mountArt(c); }
   else if (CX.tab === 'board') { el.innerHTML = cxlBoard(c); mountBoard(c); const bb = $('#bd-body'); if (bb) bb.onclick = boardClick; }
+  else if (CX.tab === 'listen') el.innerHTML = cxlListen(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
   else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
   else cxlChat(c, el);
@@ -6545,6 +6546,16 @@ function openPollMaker() {
     try { await api.sendPoll(c.id, q, opts); close(); sfx.ok(); } catch (er) { m.textContent = 'Không đăng được: ' + er.message; }
   };
   o.onclick = e => { if (e.target === o || e.target.closest('[data-x]')) close(); else if (e.target.closest('#pl-go')) go_(); };
+}
+function cxlListen(c) {
+  const best = (S.profile && S.profile.bankbest) || {};
+  const L = (S.banks || []).filter(b => b.classId === c.id && b.published !== false && (b.qs || []).some(q => q.audio));
+  if (!L.length) return '<div class="card empty" style="padding:28px">Lớp chưa có bài nghe. Khi thầy cô thêm bài nghe, bài sẽ hiện ở đây.</div>';
+  return `<div class="card" style="padding:18px 20px"><h3 style="margin:0 0 4px">Bài nghe</h3><p class="muted" style="margin:0 0 14px">Nghe kỹ rồi làm bài. Nghe nhiều lần cũng được nhé.</p></div>` +
+    L.map(b => {
+      const n = (b.qs || []).length, na = (b.qs || []).filter(q => q.audio).length, bs = best[b.id];
+      return `<div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;padding:16px 18px"><div style="flex:1 1 240px;min-width:0"><b>${esc(b.title)}</b>${b.desc ? `<div class="muted" style="font-size:.9rem">${esc(b.desc)}</div>` : ''}<div style="margin-top:6px;font-size:.84rem;color:#6B7480">${n} câu · ${na} câu có âm thanh · ${bs != null ? 'Điểm cao nhất ' + bs + '%' : 'Chưa làm'}</div></div><button class="btn" data-bank="${esc(b.id)}">Làm bài nghe</button></div>`;
+    }).join('');
 }
 function cxlPeople(c) {
   const me = S.user.uid, ids = (c.members || []).slice().sort((a, b) => ((c.names || {})[a] || '').localeCompare((c.names || {})[b] || '', 'vi'));
@@ -6653,12 +6664,35 @@ async function sendCxMsg() {
 const optImg = t => { const m = /^img:\s*(https:\/\/\S+)/i.exec(String(t || '')); return m ? m[1] : ''; };
 const optHTML = t => { const u = optImg(t); return u ? `<img class="oimg" src="${esc(u)}" alt="">` : esc(t); };
 const lbl = t => optImg(t) ? '[hình]' : esc(t || '');
-const qValid = q => !!(q && q.q && ((Array.isArray(q.o) && q.o.length >= 2) || (q.typed && (q.acc || []).length) || (q.match && (q.pairs || []).length >= 2) || q.color));
+const qValid = q => !!(q && q.q && ((Array.isArray(q.o) && q.o.length >= 2) || (q.typed && (q.acc || []).length) || (q.match && (q.pairs || []).length >= 2) || q.color || (q.order && q.ans)));
+const levD = (a, b) => { const m = a.length, n = b.length; let p = Array.from({ length: n + 1 }, (_, j) => j); for (let i = 1; i <= m; i++) { const c = [i]; for (let j = 1; j <= n; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; } return p[n]; };
+const fuzzyEq = (a, b) => a === b || (a.length >= 5 && Math.abs(a.length - b.length) <= 1 && levD(a, b) <= 1);
 const normAns = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-const qOk = q => q.color ? true : q.match ? (q.pairs || []).length > 0 && q.pairs.every((p, i) => q.sel && q.sel[i] >= 0 && q.rights[q.sel[i]] === p[1]) : q.typed ? normAns(q.txt).length > 0 && (q.acc || []).some(a => normAns(a) === normAns(q.txt)) : (q.pick >= 0 && !!q.opts[q.pick].ok);
-const qShow = q => q.pick < 0 ? 'chưa trả lời' : q.match ? q.pairs.map((p, i) => lbl(p[0]) + ' → ' + (q.sel[i] >= 0 ? lbl(q.rights[q.sel[i]]) : '—')).join('; ') : q.typed ? esc(q.txt) : String.fromCharCode(65 + q.pick) + '. ' + lbl(q.opts[q.pick].t);
-const qRight = q => q.color ? '' : q.match ? q.pairs.map(p => lbl(p[0]) + ' → ' + lbl(p[1])).join('; ') : q.typed ? esc((q.acc || []).join(' hoặc ')) : String.fromCharCode(65 + q.opts.findIndex(o => o.ok)) + '. ' + lbl((q.opts[q.opts.findIndex(o => o.ok)] || {}).t);
+const qOk = q => q.err ? (q.picked >= 0 && normAns(String(q.ewords[q.picked] || '').replace(/[^A-Za-z'’-]/g, '')) === normAns((q.acc || [])[0] || '')) : q.order ? q.built.length === q.words.length && normSent(q.built.map(i => q.words[i]).join(' ')) === normSent(q.ans) : q.color ? true : q.match ? (q.pairs || []).length > 0 && q.pairs.every((p, i) => q.sel && q.sel[i] >= 0 && q.rights[q.sel[i]] === p[1]) : q.typed ? normAns(q.txt).length > 0 && (q.acc || []).some(a => fuzzyEq(normAns(a), normAns(q.txt))) : (q.pick >= 0 && !!q.opts[q.pick].ok);
+const qShow = q => q.err ? (q.picked >= 0 ? esc(q.ewords[q.picked]) : 'chưa trả lời') : q.order ? (q.built.length ? esc(q.built.map(i => q.words[i]).join(' ')) : 'chưa trả lời') : q.pick < 0 ? 'chưa trả lời' : q.match ? q.pairs.map((p, i) => lbl(p[0]) + ' → ' + (q.sel[i] >= 0 ? lbl(q.rights[q.sel[i]]) : '—')).join('; ') : q.typed ? esc(q.txt) : String.fromCharCode(65 + q.pick) + '. ' + lbl(q.opts[q.pick].t);
+const qRight = q => q.err ? esc((q.acc || []).join(' hoặc ')) : q.order ? esc(q.ans) : q.color ? '' : q.match ? q.pairs.map(p => lbl(p[0]) + ' → ' + lbl(p[1])).join('; ') : q.typed ? esc((q.acc || []).join(' hoặc ')) : String.fromCharCode(65 + q.opts.findIndex(o => o.ok)) + '. ' + lbl((q.opts[q.opts.findIndex(o => o.ok)] || {}).t);
 const audioHTML = u => /^https:\/\//i.test(u || '') ? `<audio controls preload="none" class="qaudio" src="${esc(u)}"></audio>` : '';
+const errBox = (qi, q) => `<div class="errbox">${q.ewords.map((w, k) => `<button type="button" class="ew ${q.picked === k ? 'on' : ''}" data-ew="${k}" data-eq="${qi}" ${q.locked ? 'disabled' : ''}>${esc(w)}</button>`).join(' ')}</div>`;
+const handleErr = (e, Qa) => {
+  const b = e.target.closest('[data-ew]'); if (!b) return false;
+  const qi = +b.dataset.eq, q = Qa[qi]; if (!q || q.locked) return true;
+  q.picked = +b.dataset.ew; q.pick = 1;
+  const box = b.closest('.errbox'); if (box) box.outerHTML = errBox(qi, q);
+  return true;
+};
+const normSent = String(s || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
+const orderHTML = (qi, q) => `<div class="ordbox" data-oq="${qi}"><div class="ord-ans">${q.built.length ? q.built.map((wi, p) => `<button type="button" class="owb" data-owb="${p}" data-oq="${qi}" ${q.locked ? 'disabled' : ''}>${esc(q.words[wi])}</button>`).join('') : '<span class="muted">Bấm các từ bên dưới để xếp thành câu đúng</span>'}</div><div class="ord-pool">${q.words.map((w, wi) => `<button type="button" class="ow" data-ow="${wi}" data-oq="${qi}" ${q.built.includes(wi) || q.locked ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div></div>`;
+const handleOrder = (e, Qa) => {
+  const ow = e.target.closest('[data-ow]'), owb = e.target.closest('[data-owb]');
+  if (!ow && !owb) return false;
+  const src = ow || owb, box = src.closest('.ordbox'), qi = +src.dataset.oq, q = Qa[qi];
+  if (!q || q.locked) return true;
+  if (ow) { const wi = +ow.dataset.ow; if (!q.built.includes(wi)) q.built.push(wi); }
+  else q.built.splice(+owb.dataset.owb, 1);
+  q.pick = q.built.length === q.words.length ? 1 : -1;
+  if (box) box.outerHTML = orderHTML(qi, q);
+  return true;
+};
 const typedHTML = (i, q) => `<div class="fillbox"><input class="fillin" data-fill="${i}" value="${esc(q.txt || '')}" placeholder="Nhập đáp án của em" autocomplete="off" maxlength="120" ${q.locked ? 'disabled' : ''}></div>`;
 const matchHTML = (i, q) => {
   const strip = q.rights.some(optImg) ? `<div class="mstrip">${q.rights.map((r, j) => `<div class="mimg"><b>${String.fromCharCode(65 + j)}</b>${optHTML(r)}</div>`).join('')}</div>` : '';
@@ -6738,10 +6772,10 @@ function viewClassTest() {
     $('#back').onclick = () => go('class'); $('#go').onclick = start;
   }
   function start() {
-    const Q = shuffle([...pool]).map(q => ({ q: q.q, e: q.e || '', audio: q.audio || '', color: q.color || '', typed: !!q.typed, acc: q.acc || [], txt: '', match: !!q.match, pairs: q.pairs || [], rights: q.match ? shuffle((q.pairs || []).map(p => p[1])) : [], sel: (q.pairs || []).map(() => -1), opts: q.typed || q.match ? [] : shuffle(q.o.map((t, k) => ({ t, ok: k === q.a }))), pick: -1 })), run = ++CX.run, end = Date.now() + mins * 60000;
+    const Q = shuffle([...pool]).map(q => ({ q: q.q, e: q.e || '', audio: q.audio || '', passage: q.passage || '', err: !!q.err, ewords: q.words || [], picked: -1, color: q.color || '', typed: !!q.typed, acc: q.acc || [], txt: '', order: !!q.order, ans: q.ans || '', words: q.order ? shuffle((q.ans || '').split(/\s+/).filter(Boolean)) : [], built: [], match: !!q.match, pairs: q.pairs || [], rights: q.match ? shuffle((q.pairs || []).map(p => p[1])) : [], sel: (q.pairs || []).map(() => -1), opts: q.typed || q.match || q.order ? [] : shuffle(q.o.map((t, k) => ({ t, ok: k === q.a }))), pick: -1 })), run = ++CX.run, end = Date.now() + mins * 60000;
     api.updateMe({ ['bankatt.' + b.id]: INC(1), lastActive: NOW() }).catch(() => { });
     main.innerHTML = `<div class="cxl-timer" id="tm"><b id="tl">--:--</b><span id="tp">0/${Q.length} câu</span><button class="btn sm" id="sub">Nộp bài</button></div><section class="card" style="margin:12px 0 50px"><h3 style="margin-bottom:10px">${esc(it.title || b.title)}</h3>
-      ${Q.map((q, i) => `<div class="cxl-q" data-q="${i}"${i ? ' hidden' : ''}><p><b>Câu ${i + 1}.</b> ${esc(q.q)}</p>${audioHTML(q.audio)}${q.typed ? typedHTML(i, q) : ''}${q.match ? matchHTML(i, q) : ''}<div class="opts" ${q.typed || q.match ? 'hidden' : ''}>${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${optHTML(o.t)}</button>`).join('')}</div></div>`).join('')}
+      ${Q.map((q, i) => `<div class="cxl-q" data-q="${i}"${i ? ' hidden' : ''}>${q.passage ? `<div class="rd-pass">${esc(q.passage)}</div>` : ''}<p><b>Câu ${i + 1}.</b> ${esc(q.q)}</p>${audioHTML(q.audio)}${q.err ? errBox(i, q) : ''}${q.typed ? typedHTML(i, q) : ''}${q.match ? matchHTML(i, q) : ''}${q.order ? orderHTML(i, q) : ''}<div class="opts" ${q.typed || q.match || q.order || q.err ? 'hidden' : ''}>${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${optHTML(o.t)}</button>`).join('')}</div></div>`).join('')}
       <div class="qnav"><button class="btn soft" id="qprev" type="button">← Câu trước</button><span class="grow"></span><span class="qpos" id="qpos"></span><span class="grow"></span><button class="btn" id="qnext" type="button">Câu sau →</button><button class="btn" id="sub2" type="button" hidden>Nộp bài</button></div><div class="qdots" id="qdots">${Q.map((q, i) => `<button type="button" class="qd" data-qd="${i}">${i + 1}</button>`).join('')}</div></section>`;
     let cur = 0;
     const firstOpen = () => Q.findIndex(q => q.pick < 0), maxOk = () => (firstOpen() < 0 ? Q.length - 1 : firstOpen());
@@ -6751,7 +6785,7 @@ function viewClassTest() {
     const finish = auto => { if (done) return; if (!auto && answered() < Q.length && !confirm('Em còn ' + (Q.length - answered()) + ' câu chưa trả lời. Vẫn nộp bài?')) return; done = true; clearInterval(CX.timer); result(Q); };
     main.onchange = e => { const s = e.target.closest('.mselect'); if (!s) return; const q = Q[+s.dataset.mi]; q.sel[+s.dataset.m] = +s.value; q.pick = q.sel.every(v => v >= 0) ? 1 : -1; $('#tp').textContent = answered() + '/' + Q.length + ' câu'; };
     main.oninput = e => { const f = e.target.closest('[data-fill]'); if (!f) return; const q = Q[+f.dataset.fill]; q.txt = f.value; q.pick = q.txt.trim() ? 0 : -1; $('#tp').textContent = answered() + '/' + Q.length + ' câu'; };
-    main.onclick = e => { const o = e.target.closest('.opt'); if (o) { const qd = o.closest('[data-q]'), q = Q[+qd.dataset.q]; if (q.pick >= 0) return toast('Em đã chọn đáp án câu này rồi.', 'warn'); q.pick = +o.dataset.k; qd.querySelectorAll('.opt').forEach((x, k) => x.classList.toggle('on', k === q.pick)); $('#tp').textContent = answered() + '/' + Q.length + ' câu'; showQ(cur); return; } if (e.target.closest('#qprev')) return showQ(cur - 1); if (e.target.closest('#qnext')) return showQ(cur + 1); const dq = e.target.closest('[data-qd]'); if (dq) return showQ(+dq.dataset.qd); if (e.target.closest('#sub') || e.target.closest('#sub2')) finish(false); };
+    main.onclick = e => { if (handleErr(e, Q)) { $('#tp').textContent = answered() + '/' + Q.length + ' câu'; return; } if (handleOrder(e, Q)) { $('#tp').textContent = answered() + '/' + Q.length + ' câu'; return; } const o = e.target.closest('.opt'); if (o) { const qd = o.closest('[data-q]'), q = Q[+qd.dataset.q]; if (q.pick >= 0) return toast('Em đã chọn đáp án câu này rồi.', 'warn'); q.pick = +o.dataset.k; qd.querySelectorAll('.opt').forEach((x, k) => x.classList.toggle('on', k === q.pick)); $('#tp').textContent = answered() + '/' + Q.length + ' câu'; showQ(cur); return; } if (e.target.closest('#qprev')) return showQ(cur - 1); if (e.target.closest('#qnext')) return showQ(cur + 1); const dq = e.target.closest('[data-qd]'); if (dq) return showQ(+dq.dataset.qd); if (e.target.closest('#sub') || e.target.closest('#sub2')) finish(false); };
     showQ(0);
     CX.timer = setInterval(tick, 400); tick(); scrollTo(0, 0);
   }
@@ -7106,16 +7140,18 @@ function runBank(el, b) {
     el.innerHTML = `<div class="bk-intro"><h3>Chọn số câu muốn làm</h3><p class="muted" style="margin:6px 0 14px">Đề có ${total} câu. Mỗi lần làm, câu hỏi và thứ tự đáp án được xáo ngẫu nhiên. Đúng một câu được 10 XP.</p><div class="row">${sizes.map(n => `<button class="btn ${n === total ? '' : 'soft'}" data-n="${n}">${n === total ? 'Tất cả ' + n + ' câu' : n + ' câu'}</button>`).join('')}</div></div>`;
     el.onclick = e => { const x = e.target.closest('[data-n]'); if (x) start(+x.dataset.n); };
   }
-  function start(n) { Q = shuffle([...pool]).slice(0, n).map(q => ({ q: q.q, e: q.e || '', audio: q.audio || '', color: q.color || '', typed: !!q.typed, acc: q.acc || [], txt: '', match: !!q.match, pairs: q.pairs || [], rights: q.match ? shuffle((q.pairs || []).map(p => p[1])) : [], sel: (q.pairs || []).map(() => -1), opts: q.typed || q.match ? [] : shuffle(q.o.map((t, k) => ({ t, ok: k === q.a }))) })); i = 0; score = 0; xp = 0; wrong = []; show(); }
+  function start(n) { Q = shuffle([...pool]).slice(0, n).map(q => ({ q: q.q, e: q.e || '', audio: q.audio || '', passage: q.passage || '', err: !!q.err, ewords: q.words || [], picked: -1, color: q.color || '', typed: !!q.typed, acc: q.acc || [], txt: '', order: !!q.order, ans: q.ans || '', words: q.order ? shuffle((q.ans || '').split(/\s+/).filter(Boolean)) : [], built: [], match: !!q.match, pairs: q.pairs || [], rights: q.match ? shuffle((q.pairs || []).map(p => p[1])) : [], sel: (q.pairs || []).map(() => -1), opts: q.typed || q.match || q.order ? [] : shuffle(q.o.map((t, k) => ({ t, ok: k === q.a }))) })); i = 0; score = 0; xp = 0; wrong = []; show(); }
   function show() {
     if (i >= Q.length) return fin();
     const q = Q[i];
-    el.innerHTML = `<div class="q-head"><span>Câu ${i + 1}/${Q.length}</span><div class="prog"><i style="width:${i / Q.length * 100}%"></i></div><span>${xp} XP</span></div><div class="q-prompt sent"><span>${esc(q.q)}</span></div>${audioHTML(q.audio)}${q.typed ? `<div class="fillbox"><input class="fillin" id="fillin" value="" placeholder="Nhập đáp án của em" autocomplete="off" maxlength="120"></div><div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>` : ''}${q.color ? colorHTML(q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Xong</button></div>' : ''}${q.match ? matchHTML(0, q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>' : ''}<div class="opts" id="opts"${q.typed || q.match || q.color ? ' hidden' : ''}>${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${optHTML(o.t)}</button>`).join('')}</div><div id="bx"></div>`;
+    el.innerHTML = `<div class="q-head"><span>Câu ${i + 1}/${Q.length}</span><div class="prog"><i style="width:${i / Q.length * 100}%"></i></div><span>${xp} XP</span></div>${q.passage ? `<div class="rd-pass">${esc(q.passage)}</div>` : ''}<div class="q-prompt sent"><span>${esc(q.q)}</span></div>${audioHTML(q.audio)}${q.err ? errBox(i, q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>' : ''}${q.typed ? `<div class="fillbox"><input class="fillin" id="fillin" value="" placeholder="Nhập đáp án của em" autocomplete="off" maxlength="120"></div><div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>` : ''}${q.color ? colorHTML(q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Xong</button></div>' : ''}${q.order ? orderHTML(i, q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>' : ''}${q.match ? matchHTML(0, q) + '<div class="row" style="margin:8px 0"><button class="btn sm" id="chk" type="button">Kiểm tra</button></div>' : ''}<div class="opts" id="opts"${q.typed || q.match || q.color || q.order || q.err ? ' hidden' : ''}>${q.opts.map((o, k) => `<button class="opt" data-k="${k}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${optHTML(o.t)}</button>`).join('')}</div><div id="bx"></div>`;
     if (q.color) initColor(el, png => submitArt(b, q, png));
     el.onchange = e => { const s = e.target.closest('.mselect'); if (s && !q.locked) q.sel[+s.dataset.m] = +s.value; };
     el.onclick = e => {
+      if (handleErr(e, Q)) return;
+      if (handleOrder(e, Q)) return;
       if (e.target.closest('#chk') && q.color && !q.locked) { q.locked = true; score++; xp += 10; sfx.ok(); $('#bx', el).innerHTML = `<div class="expl ok"><b>Đã tô màu xong</b><p>Em làm tốt lắm!</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
-      if (e.target.closest('#chk') && (q.typed || q.match) && !q.locked) { const inp = $('#fillin', el); if (q.typed) q.txt = inp ? inp.value : ''; if (q.match ? q.sel.some(v => v < 0) : !normAns(q.txt)) return toast(q.match ? 'Em nối hết các cặp trước khi kiểm tra nhé.' : 'Nhập đáp án trước khi kiểm tra nhé.', 'warn'); q.locked = true; const ok = qOk(q); if (inp) inp.disabled = true; el.querySelectorAll('.mselect').forEach(s => { s.disabled = true; }); const ck = $('#chk', el); if (ck) ck.disabled = true; if (ok) { score++; xp += 10; sfx.ok(); } else { wrong.push({ q, right: -1 }); sfx.no(); } $('#bx', el).innerHTML = `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Chính xác' : 'Chưa đúng'}</b><p>Đáp án đúng: <b>${qRight(q)}</b>${q.e ? '<br>' + esc(q.e) : ''}</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
+      if (e.target.closest('#chk') && (q.typed || q.match || q.order || q.err) && !q.locked) { const inp = $('#fillin', el); if (q.typed) q.txt = inp ? inp.value : ''; if (q.err ? q.picked < 0 : q.order ? q.built.length < q.words.length : q.match ? q.sel.some(v => v < 0) : !normAns(q.txt)) return toast(q.order ? 'Em xếp hết các từ trước khi kiểm tra nhé.' : q.match ? 'Em nối hết các cặp trước khi kiểm tra nhé.' : 'Nhập đáp án trước khi kiểm tra nhé.', 'warn'); q.locked = true; const ok = qOk(q); if (inp) inp.disabled = true; el.querySelectorAll('.mselect').forEach(s => { s.disabled = true; }); const ck = $('#chk', el); if (ck) ck.disabled = true; if (ok) { score++; xp += 10; sfx.ok(); } else { wrong.push({ q, right: -1 }); sfx.no(); } $('#bx', el).innerHTML = `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Chính xác' : 'Chưa đúng'}</b><p>Đáp án đúng: <b>${qRight(q)}</b>${q.e ? '<br>' + esc(q.e) : ''}</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
       const ob = e.target.closest('.opt'), box = $('#opts', el);
       if (ob && box && !box.classList.contains('lock')) {
         box.classList.add('lock'); const ok = q.opts[+ob.dataset.k].ok, right = q.opts.findIndex(o => o.ok);
@@ -7656,8 +7692,9 @@ function drawThread() {
 const metaCell = (m, pid) => m ? `<b>${m.n}</b>` : '<span class="muted">…</span>';
 const fvSet = k => { try { return new Set(JSON.parse(store.get(k + '_' + S.user.uid) || '[]')); } catch { return new Set(); } };
 const fvSave = (k, st) => store.set(k + '_' + S.user.uid, JSON.stringify([...st]));
+const dFmtM = ms => { const d = new Date(ms); return d.getDate() + ' thg ' + (d.getMonth() + 1) + ' ' + d.getFullYear(); };
 const fAv = n => `<span class="ft-av" aria-hidden="true">${esc((String(n || 'T').trim()[0] || 'T').toUpperCase())}</span>`;
-const lastCell = (p, m) => { const who = m && m.last ? m.last.name : (p.authorName || 'Thầy cô Inspire'), at = m && m.last ? m.last.atMs : postMs(p); return `${fAv(who)}<span class="ft-w"><b>${esc(who || 'Học sinh')}</b><small>${dFmt(at || 0)}</small></span>`; };
+const lastCell = (p, m) => { const who = m && m.last ? m.last.name : (p.authorName || 'Thầy cô Inspire'), at = m && m.last ? m.last.atMs : postMs(p); return `${fAv(who)}<span class="ft-w"><b>${esc(who || 'Học sinh')}</b><small>${dFmtM(at || 0)}</small></span>`; };
 function forumRows(list, showCourse) {
   const stars = fvSet('fstar'), subs = fvSet('fsub'), all = list.length && list.every(p => subs.has(p.id));
   return `<div class="fbar"><span class="fq" aria-hidden="true">?</span><div class="fsearch"><input type="search" id="fs-q" data-fsearch placeholder="Tìm kiếm" aria-label="Tìm kiếm thảo luận"><button type="button" tabindex="-1" aria-label="Tìm"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div><span style="flex:1"></span><button type="button" class="fsuball" data-suball>${all ? 'Huỷ đăng ký diễn đàn này' : 'Đăng ký tới diễn đàn này'}</button></div>`
@@ -7665,7 +7702,7 @@ function forumRows(list, showCourse) {
     const id = esc(p.id), open = PF.open === p.id, m = PF.meta[p.id], st = stars.has(p.id), sb = subs.has(p.id);
     return `<div class="ft-r ${open ? 'on' : ''} ${p.pinned ? 'pin' : ''}" role="row" tabindex="0" data-open="${id}" data-ttl="${esc((p.title || '').toLowerCase())}" aria-expanded="${open}"><span class="ft-x ft-s"><button type="button" class="ft-star ${st ? 'on' : ''}" data-star="${id}" aria-label="Đánh dấu sao" aria-pressed="${st}"><svg viewBox="0 0 24 24" width="20" height="20" fill="${st ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.9 6.2.8-4.6 4.3 1.2 6.3L12 17.3 6.4 20.3l1.2-6.3L3 9.7l6.2-.8z"/></svg></button></span>
       <span class="ft-t"><b>${esc(p.title)}</b>${p.pinned ? '<i class="ft-pin">Ghim</i>' : ''}${showCourse ? `<i class="ft-co">${esc(cname(p.courseId))}</i>` : ''}${p.locked ? '<i class="ft-co">Đã khoá</i>' : ''}</span>
-      <span class="ft-a">${fAv(p.authorName || 'Thầy cô Inspire')}<span class="ft-w"><b>${esc(p.authorName || 'Thầy cô Inspire')}</b><small>${dFmt(postMs(p))}</small></span></span>
+      <span class="ft-a">${fAv(p.authorName || 'Thầy cô Inspire')}<span class="ft-w"><b>${esc(p.authorName || 'Thầy cô Inspire')}</b><small>${dFmtM(postMs(p))}</small></span></span>
       <span class="ft-l" data-cl="${id}">${lastCell(p, m)}</span><span class="ft-n c" data-cn="${id}">${metaCell(m, p.id)}</span>
       <span class="ft-x c"><button type="button" class="ft-sw ${sb ? 'on' : ''}" data-sub="${id}" role="switch" aria-checked="${sb}" aria-label="Đăng ký thảo luận"><i></i></button></span>
       <span class="ft-x c"><button type="button" class="ft-k" data-open="${id}" aria-label="Mở thảo luận">⋮</button></span></div>
@@ -8045,7 +8082,7 @@ else {
   let uP, uL, uA, uS, uE, uB, uC, uN;
   watchSite();
   api.onAuth(u => {
-    uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); closeThread(); S.posts = []; S.banks = []; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
+    uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
     S.user = u; S.profile = null; S.lessons = []; S.assignments = []; S.announce = null; S.streakChecked = false;
     if (!u) { stopClasses(); go('auth'); return; }
     startChat(u.uid); startGroups(u.uid); startClasses(u.uid);
@@ -8060,7 +8097,7 @@ else {
       uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
       uN = api.watchPosts(list => { S.posts = list; onPosts(); });
       uA = api.watchAssignments(list => { S.assignments = list; remindOnce(); if (S.view === 'home') drawDash(); });
-      let cdFirst = true; api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
+      let cdFirst = true; window.__uCD = api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
     };
     uP = api.watchProfile(u.uid, async p => {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
@@ -8518,6 +8555,11 @@ else {
   .tl-pass{font-size:1rem;line-height:1.8;background:#FAFBFC;border:1px solid #EEF1F4;border-radius:12px;padding:12px 14px}
   .tl-gl{min-height:2.4em;margin-top:8px;font-size:.92rem;color:#0B5CA8;font-weight:600}
   .tl-score{font-size:1.6rem;font-weight:800;text-align:center;color:#0B5CA8}
+  .tl-set{margin-top:14px;border-top:1px solid #EEF1F4;padding-top:12px;font-size:.88rem;display:flex;flex-direction:column;gap:9px}
+  .tl-set input[type=time]{border:1px solid #CED4DA;border-radius:8px;padding:4px 6px}
+  .tl-cols{display:inline-flex;gap:8px;vertical-align:middle}
+  .tl-sw{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #CED4DA;cursor:pointer}
+  html.tl-big{font-size:17.5px}
   @media(max-width:600px){.tl-go{bottom:12px;left:12px}.tl-p{left:12px;bottom:64px}}`;
   document.head.appendChild(css);
 
@@ -8525,7 +8567,7 @@ else {
   const go = document.createElement('button'); go.className = 'tl-go'; go.textContent = 'Công cụ học'; go.setAttribute('aria-label', 'Mở công cụ học');
   const panel = document.createElement('div'); panel.className = 'tl-p'; panel.setAttribute('role', 'dialog');
   panel.innerHTML = `<div class="tl-h"><div class="tl-mas" aria-hidden="true">${OWL}</div><div class="tl-bub" id="tl-bub"></div><button class="tl-x" aria-label="Đóng">×</button></div>
-    <div class="tl-tabs"><button data-t="plan" class="on">Hôm nay</button><button data-t="focus">Tập trung</button><button data-t="sprint">Đua từ 60 giây</button><button data-t="due">Hạn sắp tới</button><button data-t="write">Luyện viết</button><button data-t="speak">Nói</button><button data-t="read">Đọc</button><button data-t="listen">Nghe</button></div><div id="tl-body"></div>`;
+    <div class="tl-tabs"><button data-t="plan" class="on">Hôm nay</button><button data-t="focus">Tập trung</button><button data-t="sprint">Đua từ 60 giây</button><button data-t="due">Hạn sắp tới</button><button data-t="write">Luyện viết</button><button data-t="note">Ghi chú</button><button data-t="rq">Đọc hiểu</button><button data-t="speak">Nói</button><button data-t="read">Đọc</button><button data-t="listen">Nghe</button></div><div id="tl-body"></div>`;
   document.body.append(go, panel);
 
   let tab = 'plan';
@@ -8715,6 +8757,8 @@ else {
     body().innerHTML = `<div class="tl-sub">Lộ trình hôm nay: <b>${done}/3</b> việc đã xong${done === 3 ? ' · Hoàn thành hôm nay!' : ''}</div>
       <div class="tl-meter"><i style="width:${done / 3 * 100}%"></i></div>
       ${steps.map(s => `<div class="tl-d"><span><b>${esc(s.t)}</b><small>${esc(s.d)}</small></span><span class="tl-row" style="margin:0">${!st[s.id] ? `<button class="tl-btn soft" data-go="${s.id}">${s.btn}</button>` : ''}<button class="tl-btn ${st[s.id] ? '' : 'soft'}" data-done="${s.id}" ${st[s.id] ? 'disabled' : ''}>${st[s.id] ? 'Xong' : 'Đánh dấu xong'}</button></span></div>`).join('')}`;
+    body().insertAdjacentHTML('beforeend', settingsHTML());
+    bindSettings();
     body().querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const s = steps.find(x => x.id === b.dataset.go); if (s) s.go(); });
     body().querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
       const id = b.dataset.done; if (st[id]) return;
@@ -8724,12 +8768,99 @@ else {
       drawPlan();
     });
   }
+  /* --- Cài đặt nhanh: nhắc giờ học, màu Bông, chữ to --- */
+  const remCfg = () => { try { return JSON.parse(store.get('tl_rem') || '{}'); } catch { return {}; } };
+  const OWL_COLORS = ['#B10B32', '#0B5CA8', '#1F9D63', '#8A5A00'];
+  function settingsHTML() {
+    const rc = remCfg(), big = store.get('tl_big') === '1';
+    return `<div class="tl-set"><b>Cài đặt nhanh</b>
+      <label>Nhắc em học lúc <input type="time" id="rm-t" value="${esc(rc.time || '19:00')}"></label>
+      <label><input type="checkbox" id="rm-on" ${rc.on ? 'checked' : ''}> Bật nhắc học</label>
+      <div>Màu Bông: <span class="tl-cols">${OWL_COLORS.map(c => `<button type="button" class="tl-sw" data-oc="${c}" style="background:${c}" aria-label="Màu ${c}"></button>`).join('')}</span></div>
+      <label><input type="checkbox" id="big" ${big ? 'checked' : ''}> Chữ to hơn</label></div>`;
+  }
+  function bindSettings() {
+    const t = body().querySelector('#rm-t'), on = body().querySelector('#rm-on');
+    const saveRem = () => store.set('tl_rem', JSON.stringify({ time: t.value, on: on.checked }));
+    if (t) t.onchange = saveRem;
+    if (on) on.onchange = () => { saveRem(); if (on.checked && window.Notification && Notification.permission === 'default') Notification.requestPermission(); };
+    body().querySelectorAll('[data-oc]').forEach(b => b.onclick = () => { const m = panel.querySelector('.tl-mas'); if (m && m._owlColor) m._owlColor(b.dataset.oc); });
+    const big = body().querySelector('#big');
+    if (big) big.onchange = () => { document.documentElement.classList.toggle('tl-big', big.checked); store.set('tl_big', big.checked ? '1' : '0'); };
+  }
+  /* nhắc học: kiểm tra mỗi 30 giây, mỗi ngày nhắc một lần */
+  setInterval(() => {
+    const rc = remCfg(); if (!rc.on || !rc.time) return;
+    const now = new Date(), hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    const doneKey = 'tl_rem_done_' + day();
+    if (hm !== rc.time || store.get(doneKey) === '1') return;
+    store.set(doneKey, '1');
+    const msg = 'Đến giờ học rồi! Mở Công cụ học, tab Hôm nay để làm lộ trình.';
+    if (I().toast) I().toast(msg, 'ok');
+    try { if (window.Notification && Notification.permission === 'granted') new Notification('Inspire E-Study', { body: msg }); } catch {}
+  }, 30000);
+  if (store.get('tl_big') === '1') document.documentElement.classList.add('tl-big');
+
+  /* --- Đọc hiểu theo chủ đề: đoạn văn và câu hỏi trắc nghiệm, chấm ngay --- */
+  const RQ = [{"topic": "Sức khỏe", "title": "Chất béo trong bữa ăn", "text": "While fats have lately acquired a bad image, one should not forget how essential they are. Fats provide the body's best means of storing energy, far more efficient energy sources than either carbohydrates or protein. They act as insulation against cold, as cushioning for the internal organs, and as lubricants. Without fats, energy would be no way to utilize fat soluble vitamins. Furthermore, some fats contain fatty acids that contain necessary growth factors and help with the digestion of other foods.\n\nAn important consideration of fat intake is the ratio of saturated fats to unsaturated fats. Saturated fats, which are derived from dairy products, animal fats, and tropical oils, increase the amount of cholesterol in the blood. Cholesterol may lead to coronary heart disease by building up in the arteries of the heart. However, unsaturated fats, derived from vegetable oils, tend to lower serum cholesterol if taken in proportion twice that of saturated fats.\n\nThe consumption of a variety of fats is necessary, but the intake of too much fat may lead to a variety of health problems. Excessive intake of fats, like all nutritional excesses, is to be avoided.", "qs": [{"q": "The main idea of the first paragraph is that", "o": ["fats have a bad image", "fats serve important functions in the body", "fats store food more efficiently than proteins or carbohydrates"], "a": 1, "e": "Đoạn 1 nêu các lợi ích của chất béo đối với cơ thể."}, {"q": "What is the main idea of the second paragraph?", "o": ["unsaturated fats may reduce cholesterol levels", "the consumption of any type of fat leads to heart disease", "fats taken in the proper proportion may reduce serum cholesterol"], "a": 0, "e": "Chất béo không bão hoà giúp giảm cholesterol khi ăn đúng tỉ lệ."}, {"q": "The main idea of the third paragraph is that", "o": ["people are eating less and less fat today", "fats should be gradually eliminated from the diet", "excessive consumption of fats may be dangerous to one's health"], "a": 2, "e": "Ăn quá nhiều chất béo có thể gây hại cho sức khoẻ."}, {"q": "With which of the following is the whole passage primarily concerned?", "o": ["the role of fats in human health", "the dangers of cholesterol", "the benefits of fats in the diet"], "a": 0, "e": "Cả bài bàn về vai trò của chất béo với sức khoẻ con người."}]}, {"topic": "Thể thao & du lịch", "title": "Lặn biển", "text": "Ambient divers are, unlike divers who go underwater in submersible vehicles or pressure resistant suits, exposed to the pressure and temperature of the surrounding (ambient) water. Of all types of diving, the oldest and simplest is free diving. Free divers may use no equipment at all, but most use a face mask, foot fins, and a snorkel. Under the surface, free divers must hold their breath. Most free divers can only descend 30 to 40 feet, but some skilled divers can go as deep as 100 feet.\n\nScuba diving provides greater range than free diving. The word scuba stands for self-contained underwater breathing apparatus. Scuba divers wear metal tanks with compressed air or other breathing gases. When using open-circuit equipment, a scuba diver simply breathes air from the tank through a hose and releases the exhaled air into the water. A closed-circuit breathing device, also called a rebreather, filters out carbon dioxide and other harmful gases and automatically adds oxygen. This enables the diver to breathe the same air over and over.", "qs": [{"q": "Ambient divers are ones who", "o": ["can descend to extreme depths", "use submersible vehicles", "use no equipment", "are exposed to the surrounding water"], "a": 3, "e": "Thợ lặn ambient chịu áp suất và nhiệt độ của nước xung quanh."}, {"q": "According to the passage, a free diver may use any of the following EXCEPT", "o": ["a rebreather", "a snorkel", "foot fins", "a mask"], "a": 0, "e": "Thợ lặn tự do không dùng thiết bị tái hô hấp (rebreather)."}, {"q": "According to the passage, the maximum depth for free divers is around", "o": ["40 feet", "100 feet", "200 feet", "1,000 feet"], "a": 1, "e": "Một số thợ lặn giỏi lặn sâu tới 100 feet."}, {"q": "The word \"this\" in the reading passage refers to", "o": ["carbon dioxide", "oxygen", "scuba diving", "closed-circuit breathing device"], "a": 3, "e": "\"This enables...\" nói về thiết bị tuần hoàn kín."}, {"q": "When using closed-circuit devices, divers", "o": ["exhale air into the water", "hold their breath", "breathe the same air over and over", "receive air from the surface"], "a": 2, "e": "Thiết bị tuần hoàn kín giúp thở lại cùng một không khí."}]}, {"topic": "Văn học", "title": "Herman Melville", "text": "Herman Melville, an American author best known today for his novel Moby Dick, was actually more popular during his lifetime for some of his other works. He traveled extensively and used the knowledge gained during his travels as the basis for his early novels. In 1837, at the age of eighteen, Melville signed as a cabin boy on a merchant ship that was to sail from his Massachusetts home to Liverpool, England. His experiences on this trip served as a basis for the novel Redburn (1849). In 1841, Melville set out on a whaling ship headed for the South Seas. After jumping ship in Tahiti, he wandered around the islands of Tahiti and Moorea. This South Sea island sojourn was a backdrop to the novel Omoo (1847). After three years away from home, Melville joined up with a U.S. naval frigate that was returning to the eastern United States around Cape Horn. The novel White Jacket (1850) describes this lengthy voyage as a navy seaman.\n\nWith the publication of these early adventure novels, Melville developed a strong and loyal following among readers eager for his tales of exotic places and situations. However, in 1851, with the publication of Moby Dick, Melville's popularity started to diminish. Moby Dick, on one level the saga of the hunt for the great white whale, was also a heavily symbolic allegory of the heroic struggle of humanity against the universe. The public was not ready for Melville's literary metamorphosis from romantic adventure to philosophical symbolism. It is ironic that the novel that served to diminish Melville's popularity during his lifetime is the one for which he is best known today.", "qs": [{"q": "The main subject of the passage is", "o": ["Melville's travels", "the popularity of Melville's novels", "Melville's personal background", "Moby Dick"], "a": 1, "e": "Bài nói về mức độ nổi tiếng của các tiểu thuyết của Melville."}, {"q": "According to the passage, Melville's early novels were", "o": ["published while he was traveling", "completely fictional", "all about his work on whaling ships", "based on his travel experience"], "a": 3, "e": "Các tiểu thuyết đầu dựa trên kinh nghiệm đi lại của ông."}, {"q": "In what year did Melville's book about his experiences as a cabin boy appear?", "o": ["1837", "1841", "1847", "1849"], "a": 3, "e": "Redburn (1849) dựa trên chuyến đi làm cabin boy."}, {"q": "The word \"basis\" in paragraph 1 is closest in meaning to", "o": ["background", "message", "bottom", "dissertation"], "a": 0, "e": "basis = background (nền tảng)."}, {"q": "The passage implies that Melville stayed in Tahiti because", "o": ["he had unofficially left his ship", "he was on leave while his ship was in port", "he had finished his term of duty", "he had received permission to take a vacation in Tahiti"], "a": 0, "e": "Ông nhảy khỏi tàu ở Tahiti."}, {"q": "A \"frigate\" in paragraph 1 is probably", "o": ["an office", "a ship", "a troop", "a fishing boat"], "a": 1, "e": "Frigate là một loại tàu chiến."}, {"q": "How did the publication of Moby Dick affect Melville's popularity?", "o": ["His popularity increased immediately.", "It had no effect on his popularity.", "It caused his popularity to decrease.", "His popularity remained as strong as ever."], "a": 2, "e": "Sau Moby Dick, độ nổi tiếng của ông giảm dần."}, {"q": "According to the passage, Moby Dick is", "o": ["a romantic adventure", "a single-faceted work", "a short story about a whale", "symbolic of humanity fighting the universe"], "a": 3, "e": "Moby Dick mang tính biểu tượng về cuộc chiến của nhân loại."}, {"q": "The word \"metamorphosis\" in paragraph 2 is closest in meaning to", "o": ["circle", "change", "mysticism", "descent"], "a": 1, "e": "metamorphosis = change (sự biến đổi)."}, {"q": "The passage would most likely be assigned reading in a course on", "o": ["nineteenth-century novels", "American history", "oceanography", "modern American literature"], "a": 0, "e": "Bài phù hợp với môn tiểu thuyết thế kỷ 19."}]}, {"topic": "Công nghệ", "title": "Học tiếng Anh để dùng Internet", "text": "For many people the language of the Internet is English. \"World, Wide, Web: Three English Words\" was the name of an article by Michael Specter in the New York Times a few years ago. The article went on to say: \"If you want to take full advantage of the Internet, there is only one real way to do it: learn English.\"\n\nIn general, it is not difficult to learn to use Internet services. But although Internet services are rather easy to use, you will have considerable difficulties if you are not familiar with English. In fact, a good knowledge of English is one of the most important aspects that help you use the Internet.\n\nLearning to use a new Internet service may take a few hours, a few days or some weeks, but it takes years to learn a language so that you can use it fluently and confidently. Of course, when you know some English, you can learn more just by using it on the Internet. But at least your English should be good enough to understand commonly used words and to know what to do on the Internet.", "qs": [{"q": "It ___ to learn to use Internet services.", "o": ["is easy", "is difficult", "takes a few minutes", "takes a very long time"], "a": 0, "e": "Dùng dịch vụ Internet khá dễ."}, {"q": "According to the article by Michael Specter, you should ___ to take full advantage of the Internet.", "o": ["learn to type fast", "learn to use the Internet services", "learn English", "learn the names of some websites"], "a": 2, "e": "Bài báo khuyên học tiếng Anh."}, {"q": "Learning to use a language fluently and confidently may take ___.", "o": ["a few days", "a few hours", "a few weeks", "a few years"], "a": 3, "e": "Dùng thành thạo một ngôn ngữ mất nhiều năm."}, {"q": "If you do not know English very well, you will ___ when using the Internet.", "o": ["be laughed at", "have many difficulties", "feel more comfortable", "spend a few days"], "a": 1, "e": "Không giỏi tiếng Anh sẽ gặp nhiều khó khăn."}, {"q": "Which of the following could be the best title for the passage?", "o": ["English and the Internet", "Ways to take full advantage of the Internet", "Practising your English on the Internet", "How to use Internet services"], "a": 0, "e": "Bài nói về mối liên hệ giữa tiếng Anh và Internet."}]}, {"topic": "Cuộc sống", "title": "Cuộc sống ở nông thôn", "text": "The thing I like most about living on a farm when I was small was the change of seasons. Spring, summer, autumn and winter - I could see them all come and go and each one was completely different. If I hadn't been born and raised in the country, I would have never been able to tell the difference - now in the city, you can buy summer flowers in winter and eat the same vegetables all the year round! Whereas, in the country, I could only eat things at certain times of the year - for example strawberries in June and turnips in winter. I lived my childhood with the seasons.\n\nAlso we made most of our food and would never eat frozen or tinned food. Everything was fresh - so it must be better than the type of food I am taking now in the city. City people may think people in the country miss a lot of good things about modern life, but in my opinion they miss a lot more than them - they miss real life.", "qs": [{"q": "What is the main idea of the passage?", "o": ["Comparison between life on a farm and that in the city.", "Food in the country in comparison to that in the city.", "Seasons in the country.", "The author's childhood."], "a": 0, "e": "Bài so sánh cuộc sống ở nông trại và ở thành phố."}, {"q": "What does the word \"them\" in line 2 refer to?", "o": ["four seasons", "winter and autumn", "countryside people", "plants"], "a": 0, "e": "Them chỉ bốn mùa."}, {"q": "What can be inferred from the passage about the experience of seasons in a year for the city people?", "o": ["Seasons are similar", "It may be difficult for them to tell seasonal difference", "They see different seasons come and go", "Food is similar in all four seasons"], "a": 1, "e": "Người thành phố khó nhận ra sự khác biệt giữa các mùa."}, {"q": "The word \"them\" in line 9 refers to", "o": ["city people", "four seasons", "good things about modern life", "people in the country"], "a": 3, "e": "Them chỉ người ở nông thôn."}, {"q": "According to the passage, all the following are true EXCEPT that", "o": ["there are four seasons in the country where the author used to live", "the author was born and raised on a farm", "people in the country eat the same type of food all the year round", "the author takes frozen and tinned food now"], "a": 2, "e": "Người nông thôn ăn theo mùa, không ăn cùng một loại thức ăn quanh năm."}]}, {"topic": "Công nghệ", "title": "Ô tô tương lai", "text": "Today's cars are smaller, safer, cleaner and more economical than their predecessors, but the car of the future will be far more pollution-free than those on the road today. Several new types of automobile engines have already been developed that run on alternative sources of power, such as electricity, compressed natural gas, methanol, steam, hydrogen, propane. Electricity, however, is the only zero-emission option presently available.\n\nAlthough electric vehicles will not be truly practical until a powerful, compact battery or another dependable source of current is available, transportation experts foresee a new assortment of electric vehicles entering everyday life: shorter-range commuter electric cars, three-wheeled neighborhood cars, electric delivery vans, bikes, and trolleys.\n\nAs automakers work to develop practical electric vehicles, urban planners and utility engineers are focusing on infrastructure systems to support and make the best use of the new cars. Public charging facilities will need to be as common as today's gas stations. Public parking spots on the street or in commercial lots will need to be equipped with devices that allow drivers to charge their batteries while they stop, dine, or attend a concert. To encourage the use of electric vehicles, the most convenient parking in transportation centers might be reserved for electric cars.\n\nPlanners foresee electric shuttle buses, trains and neighborhood vehicles all meeting at transit centers that would have facilities for charging and renting. Commuters will be able to rent a variety of electric cars to suit their needs: light trucks, one-person three-wheelers, small cars, or electric/gasoline hybrid cars for longer trips, which take place on automated freeways capable of handling five times the number of vehicles that can be carried by a freeway today.", "qs": [{"q": "The word \"charging\" in this passage refers to", "o": ["parking", "lightening", "electricity", "credit cards"], "a": 2, "e": "Charging = nạp điện."}, {"q": "The following electric vehicles are all mentioned in the passage EXCEPT", "o": ["trains", "trolleys", "planes", "vans"], "a": 2, "e": "Bài không nhắc đến máy bay điện."}, {"q": "The word \"compact\" in the second paragraph is closest in meaning to", "o": ["long-range", "expensive", "squared", "concentrated"], "a": 3, "e": "compact = gọn nhỏ, cô đọng (concentrated)."}, {"q": "According to the passage, public parking lots in the future will be", "o": ["more convenient than they are today", "as common as today's gas stations", "much larger than they are today", "equipped with charging devices"], "a": 3, "e": "Bãi đỗ xe sẽ được lắp thiết bị sạc."}, {"q": "In the second paragraph the author implies that", "o": ["a dependable source of electric energy will eventually be developed", "everyday life will stay the same in the future", "electric vehicles are not practical for the future", "a single electric vehicle will eventually replace some modern transportation"], "a": 0, "e": "Tác giả ngụ ý sẽ có nguồn điện đáng tin cậy."}, {"q": "The word \"commuters\" in paragraph 4 refers to", "o": ["daily travelers", "taxi drivers", "shoppers", "visitors"], "a": 0, "e": "Commuters = người đi lại hằng ngày."}, {"q": "The passage would most likely be followed by details about", "o": ["pollution restitutions in the future", "electric shuttle buses", "automated freeways", "the neighborhood of the future"], "a": 2, "e": "Đoạn văn sẽ tiếp tục bàn về đường cao tốc tự động."}, {"q": "The word \"hybrid\" in paragraph 4 is closest in meaning to", "o": ["combination", "link", "automated", "futuristic"], "a": 0, "e": "Hybrid = kết hợp (combination)."}, {"q": "The author's purpose in the passage is to", "o": ["narrate a story about alternative energy vehicles", "criticize conventional vehicles", "support the invention of electric cars", "describe the possibilities for transportation in the future"], "a": 3, "e": "Tác giả mô tả khả năng giao thông trong tương lai."}, {"q": "It can be inferred from the passage that", "o": ["the present cars are more economical than their future generation", "electricity is the best alternative source of power as it is almost free of pollution", "many new types of practical electric engines have been developed", "the present electric engines are the best option as being practical"], "a": 1, "e": "Điện là nguồn năng lượng thay thế gần như không gây ô nhiễm."}]}];
+  let rq = { topic: 'Tất cả', p: 0 };
+  function drawRQ() {
+    const topics = ['Tất cả', ...new Set(RQ.map(x => x.topic))];
+    const list = RQ.map((x, i) => ({ x, i })).filter(o => rq.topic === 'Tất cả' || o.x.topic === rq.topic);
+    if (!list.length) { body().innerHTML = '<div class="tl-sub">Chưa có bài đọc cho chủ đề này.</div>'; return; }
+    if (!list.some(o => o.i === rq.p)) rq.p = list[0].i;
+    const P0 = RQ[rq.p];
+    body().innerHTML = `<div class="tl-chips">${topics.map(t => `<button class="tl-chip ${t === rq.topic ? 'on' : ''}" data-rqt="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+      <div class="tl-sub"><b>${esc(P0.title)}</b> · ${esc(P0.topic)}</div>
+      <div class="tl-pass">${esc(P0.text).split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>
+      <div id="rq-qs">${P0.qs.map((q, qi) => `<div class="rq-q" data-qi="${qi}"><b>${qi + 1}. ${esc(q.q)}</b><div class="rq-o">${q.o.map((o, k) => `<button type="button" class="rq-b" data-k="${k}">${String.fromCharCode(65 + k)}. ${esc(o)}</button>`).join('')}</div><div class="rq-e" hidden></div></div>`).join('')}</div>
+      <div class="tl-row"><button class="tl-btn soft" id="rq-prev">Bài trước</button><button class="tl-btn" id="rq-go">Nộp bài</button><button class="tl-btn soft" id="rq-next">Bài sau</button></div>
+      <div class="tl-fb" id="rq-fb"></div>`;
+    const ans = {};
+    body().querySelectorAll('.rq-q').forEach(qd => qd.querySelectorAll('.rq-b').forEach(b => b.onclick = () => {
+      if (qd.dataset.done) return;
+      qd.querySelectorAll('.rq-b').forEach(x => x.classList.toggle('on', x === b)); ans[qd.dataset.qi] = +b.dataset.k;
+    }));
+    body().querySelectorAll('[data-rqt]').forEach(b => b.onclick = () => { rq.topic = b.dataset.rqt; const f = RQ.findIndex(x => rq.topic === 'Tất cả' || x.topic === rq.topic); rq.p = f; drawRQ(); });
+    body().querySelector('#rq-prev').onclick = () => { const k = list.findIndex(o => o.i === rq.p); rq.p = list[(k + list.length - 1) % list.length].i; drawRQ(); };
+    body().querySelector('#rq-next').onclick = () => { const k = list.findIndex(o => o.i === rq.p); rq.p = list[(k + 1) % list.length].i; drawRQ(); };
+    body().querySelector('#rq-go').onclick = () => {
+      const key = 'tl_rq_' + day() + '_' + rq.p, fb = body().querySelector('#rq-fb');
+      let ok = 0;
+      P0.qs.forEach((q, qi) => {
+        const qd = body().querySelector(`.rq-q[data-qi="${qi}"]`); qd.dataset.done = '1';
+        qd.querySelectorAll('.rq-b').forEach((b, k) => { b.disabled = true; if (k === q.a) b.classList.add('ok'); });
+        const picked = ans[qi];
+        if (picked === q.a) ok++;
+        else if (picked !== undefined) qd.querySelectorAll('.rq-b')[picked].classList.add('bad');
+        const ex = qd.querySelector('.rq-e'); ex.hidden = false; ex.textContent = (picked === q.a ? 'Đúng. ' : 'Chưa đúng. Đáp án: ' + String.fromCharCode(65 + q.a) + '. ') + (q.e || '');
+      });
+      const pct = Math.round(ok / P0.qs.length * 100);
+      fb.className = 'tl-fb ' + (pct >= 70 ? 'tl-ok' : 'tl-bad');
+      fb.textContent = `Đúng ${ok}/${P0.qs.length} câu (${pct}%).`;
+      if (!store.get(key) && ok > 0) { store.set(key, '1'); rewardXP(Math.min(10, ok * 2)); }
+    };
+  }
+
+  /* --- Ghi chú nhanh --- */
+  function drawNote() {
+    const v = store.get('tl_note') || '';
+    body().innerHTML = `<div class="tl-sub">Ghi chú của em. Ghi từ khó, mẹo nhớ hay bài cần hỏi cô.</div>
+      <textarea class="tl-ta" id="nt-t" placeholder="Viết ghi chú ở đây...">${esc(v)}</textarea>
+      <div class="tl-row"><button class="tl-btn soft" id="nt-dl">Tải .txt</button><button class="tl-btn soft" id="nt-clr">Xoá ghi chú</button></div>
+      <div class="tl-fb" id="nt-fb"></div>`;
+    const ta = body().querySelector('#nt-t');
+    ta.oninput = () => store.set('tl_note', ta.value);
+    body().querySelector('#nt-dl').onclick = () => { const b = new Blob([store.get('tl_note') || ''], { type: 'text/plain;charset=utf-8' }), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = 'ghi-chu.txt'; l.click(); URL.revokeObjectURL(u); };
+    body().querySelector('#nt-clr').onclick = () => { if (!confirm('Xoá toàn bộ ghi chú?')) return; store.set('tl_note', ''); drawNote(); };
+  }
+
   /* --- Linh vật Bông: lời nhắc và hiệu ứng khi nhận XP --- */
   const TIPS = { plan: 'Làm đủ ba việc nhỏ mỗi ngày, học sẽ đều và nhớ lâu hơn. Xong cả ba em được thưởng thêm.', focus: 'Học 25 phút rồi nghỉ 5 phút. Nghỉ đúng giờ giúp nhớ lâu hơn!', sprint: 'Đừng lo sai. Nhớ nghĩa từ đúng lúc còn quan trọng hơn gõ nhanh.', write: 'Viết trước, sửa sau. Đừng xoá khi đang viết.', speak: 'Nói to và chậm, đừng sợ phát âm chưa đúng. Luyện nhiều sẽ hay lên.', read: 'Chạm vào từ lạ để xem nghĩa. Từ đã chạm sẽ được lưu để ôn.', listen: 'Nghe chậm trước, rồi tăng tốc dần. Đừng ngại nghe lại nhiều lần.', due: 'Làm bài sớm trước hạn để tránh dồn việc vào cuối tuần.' };
   function bubble(t) { const b = document.getElementById('tl-bub'); if (b) b.textContent = t; }
   function rewardXP(x) {
     if (I().award) I().award(null, x);
-    const m = panel.querySelector('.tl-mas'); if (m) { m.classList.remove('hop'); void m.offsetWidth; m.classList.add('hop'); }
+    const m = panel.querySelector('.tl-mas'); if (m) { m.classList.remove('hop'); void m.offsetWidth; m.classList.add('hop'); if (m._owlHop) m._owlHop(); }
     bubble('Giỏi quá! Em nhận được ' + x + ' XP.');
   }
 
@@ -8784,6 +8915,7 @@ else {
       <div class="tl-pass" id="rd-p">${toks.map(t => /^\s+$/.test(t) ? t : `<span class="tl-word" data-w="${esc(t.replace(/[^A-Za-z'-]/g, ''))}">${esc(t)}</span>`).join('')}</div>
       <div class="tl-gl" id="rd-g"></div>
       <div class="tl-row"><button class="tl-btn soft" id="rd-prev">Bài trước</button><button class="tl-btn soft" id="rd-next">Bài sau</button></div>
+      <div class="tl-row" style="margin:10px 0 0;justify-content:flex-start"><button class="tl-btn soft" id="rd-dl">Tải danh sách từ (.txt)</button></div>
       <div class="tl-sub" style="margin-top:12px"><b>Từ đã lưu để ôn (${vocabList().length})</b></div>
       <div id="rd-v">${vocabList().slice(-12).reverse().map(w => `<span class="tl-word" data-s="${esc(w)}">${esc(w)}</span> `).join('') || '<span class="tl-sub">Chưa có từ nào. Chạm vào từ lạ để lưu.</span>'}</div>`;
     body().querySelector('#rd-p').onclick = e => {
@@ -8795,6 +8927,7 @@ else {
       say(w);
     };
     body().querySelector('#rd-v').onclick = e => { const s = e.target.closest('[data-s]'); if (s) say(s.dataset.s); };
+    body().querySelector('#rd-dl').onclick = () => { const L = vocabList(); if (!L.length) return I().toast && I().toast('Chưa có từ nào để tải.', 'warn'); const b = new Blob([L.join('\n')], { type: 'text/plain;charset=utf-8' }), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = 'tu-da-luu.txt'; l.click(); URL.revokeObjectURL(u); };
     body().querySelector('#rd-prev').onclick = () => { rd.p = (rd.p + PASS.length - 1) % PASS.length; drawRead(); };
     body().querySelector('#rd-next').onclick = () => { rd.p = (rd.p + 1) % PASS.length; drawRead(); };
   }
@@ -8819,7 +8952,7 @@ else {
   function draw() {
     bubble(TIPS[tab] || '');
     if (tab === 'plan') drawPlan(); else if (tab === 'focus') drawFocus(); else if (tab === 'sprint') drawSprint(); else if (tab === 'write') drawWrite();
-    else if (tab === 'speak') drawSpeak(); else if (tab === 'read') drawRead(); else if (tab === 'listen') drawListen(); else drawDue();
+    else if (tab === 'note') drawNote(); else if (tab === 'rq') drawRQ(); else if (tab === 'speak') drawSpeak(); else if (tab === 'read') drawRead(); else if (tab === 'listen') drawListen(); else drawDue();
   }
   panel.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
     tab = b.dataset.t; panel.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));
@@ -8827,8 +8960,162 @@ else {
     draw();
   });
   panel.querySelector('.tl-x').onclick = () => panel.classList.remove('open');
-  go.onclick = () => { panel.classList.toggle('open'); if (panel.classList.contains('open')) draw(); };
+  /* --- Linh vật Bông 3D: mô hình WebGL nhẹ, tải khi mở bảng; lỗi thì giữ hình SVG --- */
+  const pointer = { x: 0, y: 0 };
+  window.addEventListener('pointermove', e => { pointer.x = (e.clientX / innerWidth - .5) * 2; pointer.y = (e.clientY / innerHeight - .5) * 2; }, { passive: true });
+  function loadThree() {
+    if (window.THREE) return Promise.resolve();
+    return new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  }
+  async function mountOwl(el) {
+    if (!el || el.dataset.gl) return; el.dataset.gl = '1';
+    try { await loadThree(); } catch { return; }
+    const T = window.THREE; if (!T) return;
+    let r; try { r = new T.WebGLRenderer({ alpha: true, antialias: true }); } catch { return; }
+    const W = 56, H = 56; r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); r.setSize(W, H);
+    el.innerHTML = ''; el.appendChild(r.domElement);
+    const sc = new T.Scene(), cam = new T.PerspectiveCamera(34, W / H, .1, 100); cam.position.z = 5.4;
+    sc.add(new T.AmbientLight(0xffffff, .75));
+    const key = new T.DirectionalLight(0xffffff, .9); key.position.set(2, 3, 4); sc.add(key);
+    const mat = c => new T.MeshStandardMaterial({ color: c, roughness: .42, metalness: .05 });
+    const g = new T.Group(); sc.add(g);
+    const body = new T.Mesh(new T.SphereGeometry(1.25, 40, 30), mat(0xB10B32)); body.scale.set(1, 1.08, 1); g.add(body);
+    body.material.color.set(store.get('tl_owl') || '#B10B32');
+    el._owlColor = c => { body.material.color.set(c); store.set('tl_owl', c); };
+    const belly = new T.Mesh(new T.SphereGeometry(.82, 32, 24), mat(0xFFF4D6)); belly.position.set(0, -.18, .8); belly.scale.set(1, 1.1, .4); g.add(belly);
+    const pupils = [];
+    [-.5, .5].forEach(sx => {
+      const w = new T.Mesh(new T.SphereGeometry(.42, 24, 18), mat(0xffffff)); w.position.set(sx, .45, 1.0); g.add(w);
+      const p = new T.Mesh(new T.SphereGeometry(.2, 20, 14), mat(0x0B5CA8)); p.position.set(sx, .45, 1.34); g.add(p); pupils.push(p);
+    });
+    const beak = new T.Mesh(new T.ConeGeometry(.2, .42, 20), mat(0xFDB515)); beak.rotation.x = Math.PI / 2; beak.position.set(0, .05, 1.42); g.add(beak);
+    [-1, 1].forEach(s => { const ear = new T.Mesh(new T.ConeGeometry(.36, .72, 20), mat(0x8A0925)); ear.position.set(s * .9, 1.28, 0); ear.rotation.z = -s * .4; g.add(ear); });
+    let t = 0, hop = 0;
+    const tick = () => {
+      requestAnimationFrame(tick); t += .016;
+      g.position.y = Math.sin(t * 2) * .08;
+      g.rotation.y = Math.sin(t * .8) * .22 + pointer.x * .45;
+      g.rotation.x = pointer.y * .25;
+      pupils.forEach(p => { p.position.x = (p.position.x < 0 ? -.5 : .5) + pointer.x * .08; });
+      if (hop > 0) { g.position.y += Math.sin(hop * Math.PI) * .45; hop -= .03; }
+      r.render(sc, cam);
+    };
+    el._owlHop = () => { hop = 1; };
+    tick();
+  }
+  go.onclick = () => { panel.classList.toggle('open'); if (panel.classList.contains('open')) { draw(); mountOwl(panel.querySelector('.tl-mas')); } };
 })();
 </script>
+<style id="v-mobile">
+/* ===== Giao diện tinh chỉnh + tối ưu cho điện thoại ===== */
+:root{--ui-shadow:0 1px 2px rgba(16,24,40,.05),0 12px 28px -22px rgba(16,24,40,.35)}
+.topbar{backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px)}
+.card{transition:transform .18s ease,box-shadow .18s ease}
+@media (hover:hover){.card:hover{box-shadow:0 2px 4px rgba(16,24,40,.06),0 18px 34px -24px rgba(16,24,40,.4)}}
+.btn{transition:transform .12s ease,box-shadow .18s ease,background-color .18s ease}
+.btn:active{transform:scale(.98)}
+/* Thanh điều hướng: cuộn ngang, không bị cắt chữ */
+.nav{scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.navb{white-space:nowrap}
+@media (max-width:900px){
+  .nav{overflow-x:auto;flex-wrap:nowrap!important;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .navb{scroll-snap-align:start;min-height:42px}
+  .more{flex:none}
+}
+@media (max-width:640px){
+  .wrap{padding-left:12px!important;padding-right:12px!important}
+  .card{padding:16px!important;border-radius:16px!important}
+  h2{font-size:1.3rem!important;line-height:1.25}
+  .mdl{width:calc(100vw - 24px)!important;max-height:86vh;overflow:auto;border-radius:18px!important;padding:20px!important}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .cxl{display:block!important}
+  .cxl-side{position:static!important;margin-bottom:12px}
+  .cxl-side nav{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none}
+  .cxl-side nav::-webkit-scrollbar{display:none}
+  .cxl-nb{white-space:nowrap;flex:none}
+  .ms-col{max-width:84%!important}
+  .ms-b{font-size:.95rem}
+  .tl-p{left:8px!important;right:8px!important;width:auto!important;bottom:70px!important}
+  .tl-go{font-size:.9rem;padding:10px 16px}
+  .art-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .bd-pod{grid-template-columns:1fr!important}
+  .bd-r{flex-wrap:wrap}
+  input,select,textarea{font-size:16px!important}
+}
+@media (pointer:coarse){
+  .btn,.navb,.cxl-nb,button.tl-btn,.tl-tabs button{min-height:44px}
+  .opt{min-height:48px}
+}
+</style>
+<style id="v-bold">
+.cl-name,.clg-card .clg-b>*:first-child,.clg-t,.cxl-chip b,.cxl-hero h1,.cxl-hero h2,.cxl-hero-t h1,.cxl-hero-t h2,.cxl-hero-t b,.cc-name,.cat-name,.cl-card b{font-weight:800!important}
+.ordbox{border:1.5px dashed #CED4DA;border-radius:14px;padding:12px;margin:10px 0;background:#FAFBFC}
+.ord-ans{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:6px;border-bottom:1px solid #E6E8EC;margin-bottom:10px}
+.ord-pool{display:flex;flex-wrap:wrap;gap:8px}
+.ow,.owb{border:1px solid #CED4DA;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 2px 0 #E6E8EC}
+.ow:hover:not([disabled]),.owb:hover:not([disabled]){border-color:#0B5CA8}
+.ow[disabled]{opacity:.35;cursor:default;box-shadow:none}
+.owb{border-color:#B10B32;color:#8A0925}
+</style>
+<style id="v-forum">
+/* Diễn đàn kiểu Moodle: avatar, tên và ngày, nút đăng ký gọn */
+.ftbl{border:1px solid #E6E8EC;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.ft-h,.ft-r{grid-template-columns:44px minmax(0,2.6fr) minmax(0,1.5fr) minmax(0,1.5fr) 74px 84px 44px!important;gap:12px!important;padding:14px 16px!important}
+.ft-h{background:#F8F9FB;color:#1F2A37!important;font-size:.84rem!important;font-weight:700!important;border-bottom:1px solid #E6E8EC!important;padding-top:12px!important;padding-bottom:12px!important}
+.ft-r{border-top:1px solid #EEF0F3!important;background:#fff!important;color:#1F2A37!important}
+.ft-r:nth-of-type(odd){background:#fff!important}
+.ft-r:hover,.ft-r.on{background:#F3F8FE!important}
+.ft-t b{color:#0B5CA8!important;font-weight:600!important;font-size:1rem;line-height:1.35}
+.ft-t b:hover{text-decoration:underline}
+.ft-a,.ft-l{display:flex!important;align-items:center;gap:10px;min-width:0}
+.ft-w{display:flex!important;flex-direction:column;min-width:0;line-height:1.3}
+.ft-w b{font-size:.92rem;color:#1F2A37!important;font-weight:600!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ft-w small,.ft-l small{color:#6B7480;font-size:.82rem}
+.ft-l a,.ft-l b{color:#0B5CA8}
+.ft-av{width:36px!important;height:36px!important;border-radius:50%!important;display:grid!important;place-items:center;background:linear-gradient(135deg,#8CC4F4,#0B5CA8)!important;color:#fff!important;font-weight:700;font-size:.95rem;flex:none}
+.ft-n{font-weight:600;color:#1F2A37}
+.ft-sw{width:46px!important;height:24px!important;border-radius:999px!important;border:1.5px solid #9AA3AE!important;background:#fff!important;position:relative;cursor:pointer;padding:0}
+.ft-sw i{position:absolute;top:50%;left:3px;width:16px;height:16px;border-radius:50%;background:#9AA3AE;transform:translateY(-50%);transition:left .18s,background .18s}
+.ft-sw.on{background:#0B5CA8!important;border-color:#0B5CA8!important}
+.ft-sw.on i{left:25px;background:#fff}
+.ft-k{border:0;background:transparent;font-size:1.2rem;color:#4B5563;cursor:pointer;width:34px;height:34px;border-radius:50%}
+.ft-k:hover{background:#E9EEF5}
+.ft-star{border:0;background:transparent;color:#9AA3AE;cursor:pointer;padding:4px}
+.ft-star.on{color:#F59E0B}
+.ft-pin{background:#FFF4D9;color:#8A5A00;border-radius:999px;padding:1px 8px;font-size:.72rem;font-style:normal;font-weight:700;margin-left:6px}
+.ft-co{background:#EEF2F7;color:#4B5563;border-radius:999px;padding:1px 8px;font-size:.72rem;font-style:normal;margin-left:6px}
+@media (max-width:760px){
+  .ft-h{display:none!important}
+  .ft-h,.ft-r{grid-template-columns:36px minmax(0,1fr) 40px 40px!important;gap:8px!important;padding:12px!important}
+  .ft-r>.ft-a,.ft-r>.ft-l{grid-column:2/3}
+  .ft-r>.ft-a{display:none!important}
+  .ft-r>.ft-l{font-size:.85rem}
+  .ft-r>.ft-n{display:none}
+  .ft-av{width:30px!important;height:30px!important}
+}
+</style>
+<style id="v-readerr">
+.rd-pass{background:#FAFBFC;border-left:4px solid #0B5CA8;padding:12px 14px;border-radius:10px;margin:8px 0 12px;line-height:1.75;font-size:.98rem;color:#1F2A37}
+.errbox{line-height:2.4;margin:10px 0;display:flex;flex-wrap:wrap;gap:6px}
+.ew{border:1px solid #CED4DA;background:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font:inherit;font-weight:600}
+.ew:hover:not([disabled]){border-color:#0B5CA8}
+.ew.on{background:#FCEBEF;border-color:#B10B32;color:#8A0925}
+.ew[disabled]{opacity:.7;cursor:default}
+</style>
+<style id="v-rq">
+.tl-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tl-chip{border:1px solid #DEE2E6;background:#fff;border-radius:999px;padding:5px 11px;font-size:.8rem;font-weight:600;cursor:pointer;color:#5F6670}
+.tl-chip.on{background:#0B5CA8;border-color:#0B5CA8;color:#fff}
+.rq-q{border:1px solid #EEF1F4;border-radius:12px;padding:10px;margin:10px 0}
+.rq-o{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.rq-b{text-align:left;border:1px solid #CED4DA;background:#fff;border-radius:10px;padding:8px 10px;font:inherit;cursor:pointer}
+.rq-b.on{border-color:#0B5CA8;background:#EEF5FD}
+.rq-b.ok{border-color:#1F9D63;background:#E7F6EE}
+.rq-b.bad{border-color:#D6293E;background:#FDECEE}
+.rq-b:disabled{cursor:default}
+.rq-e{margin-top:8px;font-size:.88rem;color:#27415F;background:#F5F7FA;border-radius:8px;padding:8px 10px}
+.tl-pass p{margin:0 0 8px}
+</style>
 </body>
 </html>

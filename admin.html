@@ -3138,7 +3138,7 @@ if (MODE === 'firebase' && FB) {
       { id: 'demo2', order: 2, icon: '', topic: 'Unlock 7', title: 'Animals – Động vật', description: 'Các con vật quen thuộc', published: true, sheetUrl: '', materials: [], words: [W('dog', 'con chó', ''), W('cat', 'con mèo', ''), W('rabbit', 'con thỏ', ''), W('elephant', 'con voi', ''), W('monkey', 'con khỉ', '')] },
       { id: 'demo3', order: 3, icon: '', topic: 'Unlock 7', title: 'School – Trường học', description: 'Đồ dùng học tập', published: false, sheetUrl: '', materials: [], words: [W('teacher', 'giáo viên', ''), W('student', 'học sinh', ''), W('pencil', 'bút chì', ''), W('ruler', 'thước kẻ', '')] }
     ].map(l => ({ ...l, wordCount: l.words.length })),
-    users: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], classAtt: [], classSubs: [], classjoin: [], artworks: [], questions: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
+    users: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], classAtt: [], classSubs: [], classjoin: [], artworks: [], questions: [], arenaSets: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
   };
   const names = Object.entries(ROSTER).flatMap(([c, l]) => l.map(n => [n, c]));
   const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -3287,6 +3287,8 @@ if (MODE === 'firebase' && FB) {
     getTeacher: async uid => { const d = await FB.getDoc(FB.doc(db, 'teachers', uid)); return d.exists() ? { id: d.id, ...d.data() } : null; },
     promoteTeacher: (uid, d) => FB.setDoc(FB.doc(db, 'teachers', uid), { uid, active: true, createdAtMs: Date.now(), by: S.user.email || '', ...d }, { merge: true }),
     resetMail: email => FB.sendPasswordResetEmail(auth, email),
+    watchRoom: (code, cb) => FB.onSnapshot(FB.doc(db, 'rooms', code), d => cb(d.exists() ? d.data() : null)),
+    watchPlayers: (code, cb) => FB.onSnapshot(FB.collection(db, 'rooms', code, 'players'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
     async createTeacher({ name, email, pass }) {
       const app2 = FB.initializeApp(firebaseConfig, 'sec' + Date.now()), a2 = FB.getAuth(app2);
       try {
@@ -3378,11 +3380,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div><button class="btn soft sm" data-a="share-class">Chia sẻ lớp</button></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -4155,7 +4157,7 @@ const PERMS = [
   ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
@@ -4587,6 +4589,67 @@ function cxQA(c, el) {
       if (b.dataset.qa === 'del') { if (!confirm('Xoá câu hỏi này?')) return; await api.del('questions', id); }
     } catch (er) { toast(er.message, 'bad'); }
   };
+}
+/* ----- Chơi chung trực tiếp: mở phòng, cho học sinh vào bằng mã, bắt đầu và chuyển câu ----- */
+function cxLive(c, el) {
+  const B = cBanks(c).filter(b => (b.qs || []).some(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0));
+  if (window.__hostUn) { try { window.__hostUn(); } catch (e) {} window.__hostUn = null; }
+  if (!window.__host || window.__host.classId !== c.id) {
+    el.innerHTML = `<div class="card"><h3>Chơi chung trực tiếp</h3><p class="muted">Cô mở phòng, cho học sinh nhập mã để vào. Cô bấm Bắt đầu, từng câu hiện lên, ai đúng nhanh được nhiều điểm hơn.</p>${B.length ? `<div class="row"><label class="field" style="margin:0;min-width:240px"><span>Chọn đề</span><select id="lv-b">${B.map(b => `<option value="${esc(b.id)}">${esc(b.title)}</option>`).join('')}</select></label><button class="btn" id="lv-open" type="button">Mở phòng</button></div>` : '<div class="empty">Lớp chưa có đề trắc nghiệm. Tạo đề ở tab Đề và kiểm tra trước.</div>'}</div>`;
+    const op = el.querySelector('#lv-open');
+    if (op) op.onclick = async () => {
+      const b = B.find(x => x.id === el.querySelector('#lv-b').value); if (!b) return;
+      const code = Math.random().toString(36).slice(2, 8).toUpperCase().replace(/[^A-Z0-9]/g, '').padEnd(5, 'X').slice(0, 5);
+      const qs = b.qs.filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0).map(q => ({ q: q.q, o: q.o, a: q.a }));
+      try {
+        await api.set('rooms', code, { classId: c.id, title: b.title, hostUid: (S.user || {}).uid || '', qs, state: 'lobby', qi: -1, createdAtMs: Date.now() });
+        window.__host = { classId: c.id, code, qs };
+        cxLive(c, el); toast('Đã mở phòng. Mã: ' + code, 'ok');
+      } catch (er) { toast('Không mở được phòng: ' + er.message, 'bad'); }
+    };
+    return;
+  }
+  const H = window.__host, code = H.code;
+  const board = (list) => [...list].sort((p, q) => (q.score || 0) - (p.score || 0)).map((p, i) => `<div class="cxi" style="margin-top:6px"><b>${i + 1}. ${esc(p.name || 'Học sinh')}</b><span class="grow"></span><span>${p.score || 0} điểm</span></div>`).join('') || '<div class="empty">Chưa có học sinh nào vào phòng.</div>';
+  el.innerHTML = `<div class="card"><div class="row"><h3 class="grow" style="margin:0">Phòng: <span style="letter-spacing:.12em">${esc(code)}</span></h3><span id="lv-st" class="tag">Đang chờ</span></div><p class="muted">Cho học sinh nhập mã <b>${esc(code)}</b> ở tab Chơi chung của lớp.</p><div class="row" style="margin-top:8px"><button class="btn" id="lv-start" type="button">Bắt đầu</button><button class="btn soft" id="lv-next" type="button">Câu tiếp</button><button class="btn soft" id="lv-end" type="button">Kết thúc</button></div><div id="lv-q" style="margin-top:10px"></div><div id="lv-pl" style="margin-top:10px"></div></div>`;
+  const setState = async patch => { try { await api.update('rooms', code, patch); } catch (e) { toast(e.message, 'bad'); } };
+  el.querySelector('#lv-start').onclick = () => { if (!H.qs.length) return; setState({ state: 'q', qi: 0, qStartMs: Date.now() }); };
+  el.querySelector('#lv-next').onclick = () => {
+    const nxt = (window.__hostRoom && window.__hostRoom.qi || 0) + 1;
+    if (nxt >= H.qs.length) return setState({ state: 'end' });
+    setState({ state: 'q', qi: nxt, qStartMs: Date.now() });
+  };
+  el.querySelector('#lv-end').onclick = () => { if (confirm('Kết thúc phòng chơi này?')) setState({ state: 'end' }); };
+  window.__hostRoom = null;
+  const u1 = api.watchRoom(code, r => {
+    window.__hostRoom = r || window.__hostRoom;
+    const st = el.querySelector('#lv-st'); if (st && r) st.textContent = r.state === 'q' ? 'Đang chơi câu ' + (r.qi + 1) : r.state === 'end' ? 'Đã kết thúc' : 'Đang chờ';
+    const qEl = el.querySelector('#lv-q'); if (qEl && r && r.state === 'q') { const q = H.qs[r.qi]; qEl.innerHTML = `<div class="tl-d"><b>${esc(q.q)}</b></div><div class="muted">Đáp án đúng: ${String.fromCharCode(65 + q.a)}. ${esc(q.o[q.a])}</div>`; }
+  });
+  const u2 = api.watchPlayers(code, list => { const pl = el.querySelector('#lv-pl'); if (pl) pl.innerHTML = '<h3 style="margin:0 0 6px">Bảng điểm trực tiếp</h3>' + board(list); });
+  window.__hostUn = () => { try { u1(); u2(); } catch (e) {} };
+}
+/* ----- Bộ câu hỏi cho Cyber Arena: giáo viên soạn, học sinh chơi ----- */
+function cxArenaSets(c, el) {
+  const sets = (S.arenaSets || []).filter(s => s.classId === c.id).sort((p, q) => (q.atMs || 0) - (p.atMs || 0));
+  el.innerHTML = `<div class="card"><h3>Bộ câu hỏi Cyber Arena</h3>
+    <p class="muted" style="margin-top:0">Soạn câu trắc nghiệm theo đúng cách soạn đề (A. B. C. D. và dòng Đáp án). Học sinh chơi Cyber Arena sẽ dùng bộ mới nhất của lớp. Nếu lớp chưa có bộ nào, game lấy câu từ các đề của lớp.</p>
+    <label class="field"><span>Tên bộ câu</span><input id="as-t" maxlength="120" placeholder="Ví dụ: Unit 1 - Hobbies"></label>
+    <label class="field"><span>Nội dung câu hỏi</span><textarea id="as-s" rows="8" placeholder="Câu 1. The more you practise, ___ you become.&#10;A. good&#10;B. better&#10;C. the better&#10;D. the best&#10;Đáp án: C"></textarea></label>
+    <div class="row"><span class="grow"></span><button class="btn" id="as-save" type="button">Lưu bộ câu</button></div></div>
+    <div class="card" style="margin-top:14px"><h3>Các bộ đã lưu (${sets.length})</h3>${sets.length ? sets.map(s => `<div class="cxi" style="margin-top:8px"><div class="grow"><b>${esc(s.title || 'Bộ câu')}</b><div class="muted" style="font-size:.86rem">${(s.qs || []).length} câu</div></div><button class="btn soft sm" data-asdel="${esc(s.id)}" type="button">Xoá</button></div>`).join('') : '<div class="empty">Chưa có bộ câu nào.</div>'}</div>`;
+  el.querySelector('#as-save').onclick = async () => {
+    const title = el.querySelector('#as-t').value.trim() || 'Bộ câu ' + new Date().toLocaleDateString('vi-VN');
+    const r = parseBank(el.querySelector('#as-s').value);
+    const qs = r.qs.filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0).map(q => ({ q: q.q, o: q.o, a: q.a }));
+    if (!qs.length) return toast('Chưa đọc được câu trắc nghiệm nào. Mỗi câu cần đủ A, B và dòng Đáp án.', 'warn');
+    try { await api.add('arenaSets', { classId: c.id, title, qs, createdBy: (S.user || {}).email || '', atMs: Date.now() }); toast('Đã lưu bộ câu (' + qs.length + ' câu).', 'ok'); }
+    catch (er) { toast('Không lưu được: ' + er.message, 'bad'); }
+  };
+  el.querySelectorAll('[data-asdel]').forEach(b => b.onclick = async () => {
+    if (!confirm('Xoá bộ câu này?')) return;
+    try { await api.del('arenaSets', b.dataset.asdel); toast('Đã xoá.'); } catch (er) { toast(er.message, 'bad'); }
+  });
 }
 /* ----- Chế độ gọn: thu nhỏ khoảng cách để xem được nhiều dòng hơn ----- */
 setInterval(() => {
@@ -5590,6 +5653,7 @@ function startData() {
     api.watch('lessons', l => { S.lessons = l; refresh(); }, e => toast('Không đọc được bài học: ' + e.message, 'bad')),
     api.watch('users', u => { S.users = u; refresh(); }, e => toast('Không đọc được học sinh: ' + e.message, 'bad')),
     api.watch('assignments', a => { S.assignments = a; refresh(); }, e => toast('Không đọc được bài tập đã giao: ' + e.message, 'bad')),
+    api.watch('arenaSets', l => { S.arenaSets = l; if (S.view === 'cls' && S.cx && S.cx.tab === 'arena') draw(); }, e => toast('Không đọc được bộ câu game: ' + e.message, 'bad')),
     api.watch('questions', l => { S.questions = l; if (S.view === 'cls' && S.cx && S.cx.tab === 'qa') draw(); }, e => toast('Không đọc được hỏi đáp: ' + e.message, 'bad')),
     api.watch('artworks', a => { S.artworks = a; if (S.view === 'art') vArt(); }, e => toast('Không đọc được phòng tranh: ' + e.message, 'bad')),
     api.watch('classAtt', l => { S.classAtt = l; if (!(S.view === 'cls' && S.cx && S.cx.tab === 'att')) refresh(); }, e => toast('Không đọc được điểm danh (cập nhật Firestore rules): ' + e.message, 'bad')),
@@ -5756,6 +5820,41 @@ addEventListener('unhandledrejection',function(e){setTimeout(function(){show('L�
     const ta = e.target; if (!(ta instanceof HTMLTextAreaElement) || !ta.hasAttribute('data-rich') || ta.dataset.rtb) return;
     ta.dataset.rtb = '1'; const host = ta.closest('label') || ta; host.parentNode.insertBefore(rtBar(ta), host);
   });
+})();
+</script>
+<style id="help-css">
+#hlp-btn{position:fixed;right:18px;bottom:18px;z-index:70;width:48px;height:48px;border-radius:50%;border:0;background:linear-gradient(135deg,#D61F36,#B10B32);color:#fff;font-size:1.3rem;font-weight:800;cursor:pointer;box-shadow:0 14px 28px -12px rgba(177,11,50,.7)}
+#hlp-btn:hover{transform:translateY(-2px)}
+#hlp-ov{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:80;display:none;align-items:center;justify-content:center;padding:16px}
+#hlp-ov.on{display:flex}
+#hlp{background:#fff;border-radius:22px;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:22px 24px;box-shadow:0 30px 70px -28px rgba(16,24,40,.5);font-family:Inter,system-ui,sans-serif;color:#1F2A37}
+#hlp h3{margin:0 0 8px;font-size:1.2rem;color:#B10B32;font-family:'Be Vietnam Pro',Inter,sans-serif}
+#hlp ol{padding-left:20px;line-height:1.7;margin:10px 0}
+#hlp .k{display:inline-block;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:6px;padding:0 6px;font-size:.82rem;font-weight:700}
+#hlp .x{float:right;border:0;background:#F3F4F6;border-radius:999px;width:32px;height:32px;cursor:pointer;font-size:1rem}
+</style>
+<button id="hlp-btn" type="button" aria-label="Hướng dẫn nhanh" title="Hướng dẫn nhanh">?</button>
+<div id="hlp-ov" role="dialog" aria-modal="true" aria-label="Hướng dẫn nhanh"><div id="hlp">
+<button class="x" type="button" data-hx="1" aria-label="Đóng">×</button>
+<h3>Hướng dẫn nhanh</h3>
+<ol>
+<li><b>Tạo lớp:</b> Quản lý theo lớp → Tạo lớp mới. Đặt tên rõ ràng, ví dụ “CS1 Cambridge Unlock 7”.</li>
+<li><b>Thêm học sinh:</b> tab Thành viên → chọn học sinh rồi bấm “Thêm những bạn đã chọn”.</li>
+<li><b>Đặt mật khẩu lớp:</b> tab Thiết lập → Mật khẩu vào lớp. Học sinh nhập mật khẩu là vào ngay.</li>
+<li><b>Đăng thông báo:</b> tab Thông báo. Có thể kéo thả ảnh (kể cả mã QR) vào trang.</li>
+<li><b>Ra đề:</b> tab Đề và kiểm tra. Dán đề, xem trước số câu rồi đăng.</li>
+<li><b>Chấm và theo dõi:</b> tab Bài nộp, Điểm danh, Câu hay sai, Lịch bài tập.</li>
+<li><b>Tìm nhanh:</b> nhấn <span class="k">Ctrl</span> + <span class="k">K</span> để mở một màn hình bất kỳ.</li>
+<li><b>Nháp đề:</b> nội dung đang soạn được tự lưu trên máy, mở lại sẽ được hỏi khôi phục.</li>
+</ol>
+<small style="color:#6B7480">Mẹo: nếu thấy nội dung cũ, nhấn Ctrl + Shift + R để tải lại trang.</small>
+</div></div>
+<script>
+(function () {
+  const ov = document.getElementById('hlp-ov');
+  document.getElementById('hlp-btn').onclick = () => ov.classList.add('on');
+  ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('[data-hx]')) ov.classList.remove('on'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') ov.classList.remove('on'); });
 })();
 </script>
 </body>

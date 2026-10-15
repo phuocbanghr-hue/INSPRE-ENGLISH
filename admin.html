@@ -3380,13 +3380,13 @@ function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
   const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
-  $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div></div>
+  $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div><button class="btn soft sm" data-a="share-class">Chia sẻ lớp</button></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
   ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
-  <div class="acts"><button class="btn soft sm" data-a="sec-up" ${si ? '' : 'disabled'} title="Chuyển lên">↑</button><button class="btn soft sm" data-a="sec-dn" ${si < n - 1 ? '' : 'disabled'} title="Chuyển xuống">↓</button><button class="btn soft sm" data-a="sec-edit">Sửa</button><button class="btn soft sm" data-a="sec-hide">${s.hidden ? 'Hiện' : 'Ẩn'}</button><button class="btn soft sm" data-a="sec-del">Xoá</button></div></div>
+  <div class="acts"><button class="btn soft sm" data-a="sec-up" ${si ? '' : 'disabled'} title="Chuyển lên">↑</button><button class="btn soft sm" data-a="sec-dn" ${si < n - 1 ? '' : 'disabled'} title="Chuyển xuống">↓</button><button class="btn soft sm" data-a="share-sec">Chia sẻ phần</button><button class="btn soft sm" data-a="sec-edit">Sửa</button><button class="btn soft sm" data-a="sec-hide">${s.hidden ? 'Hiện' : 'Ẩn'}</button><button class="btn soft sm" data-a="sec-del">Xoá</button></div></div>
   ${s.summary ? `<p class="cxs-sum">${linkM(s.summary)}</p>` : ''}
   <div class="cxs-b">${(s.items || []).map((it, ii, A) => itemRow(s, it, ii, A.length)).join('') || '<p class="muted" style="padding:6px 2px">Chưa có nội dung trong phần này.</p>'}</div>
   <button class="btn soft sm" data-a="item-add" style="margin-top:8px">＋ Thêm nội dung</button></section>`;
@@ -3396,40 +3396,156 @@ function itemRow(s, it, ii, n) {
   return `<div class="cxi" data-i="${esc(it.id)}"><span class="cxi-ic">${itIc(it.type)}</span><div class="grow" style="min-width:0"><b>${esc(it.title || t.n)}</b> <span class="tag">${t.s}</span><br><small class="muted">${sub}</small></div>
     <div class="acts"><button class="btn soft sm" data-a="item-up" ${ii ? '' : 'disabled'}>↑</button><button class="btn soft sm" data-a="item-dn" ${ii < n - 1 ? '' : 'disabled'}>↓</button><button class="btn soft sm" data-a="share-item">Chia sẻ</button><button class="btn soft sm" data-a="item-edit">Sửa</button>${it.type === 'youtube' ? '<button class="btn soft sm" data-a="item-q">Câu hỏi</button>' : ''}<button class="btn soft sm" data-a="item-del">Xoá</button></div></div>`;
 }
-/* ===== Chia sẻ link nội dung lớp: ?lop=<mã lớp>&de=<mã nội dung>[&k=<mật khẩu lớp>] ===== */
+/* ===== Chia sẻ link: cả lớp, cả phần, từng nội dung. Link dạng ?lop=<mã lớp>[&de=<mã nội dung>][&k=<mật khẩu lớp>] ===== */
 function studentBase() {
   const u = location.href.split(/[?#]/)[0];
   if (/admin(\.html)?$/i.test(u)) return u.replace(/admin(\.html)?$/i, /\.html$/i.test(u) ? 'index.html' : '');
   return u.replace(/[^/]*$/, '');
 }
-const shareUrl = (cid, iid, key) => studentBase() + '?lop=' + encodeURIComponent(cid) + '&de=' + encodeURIComponent(iid) + (key ? '&k=' + encodeURIComponent(key) : '');
-function shareItemForm(c, sec, it) {
-  if (!it) return;
-  const idOk = /^[\w.-]{1,100}$/.test(c.id) && /^[\w.-]{1,100}$/.test(it.id), hid = !!(sec && sec.hidden || it.hidden);
-  const { ov, close } = modal(`<h3>Chia sẻ link</h3>
-    <p class="muted" style="margin:0 0 12px">Học sinh bấm link sẽ được đưa thẳng tới <b>${esc(it.title || 'nội dung này')}</b> của lớp <b>${esc(c.name)}</b>. Đăng nhập xong là vào được, không cần tìm lớp.</p>
+const shareUrl = (cid, iid, key) => studentBase() + '?lop=' + encodeURIComponent(cid) + (iid ? '&de=' + encodeURIComponent(iid) : '') + (key ? '&k=' + encodeURIComponent(key) : '');
+let _qrLib = null;
+const loadQR = () => _qrLib || (_qrLib = window.qrcode ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = ok; s.onerror = () => { _qrLib = null; no(new Error('qr')); }; document.head.appendChild(s); }));
+/* kind: 'class' | 'sec' | 'item' */
+function shareForm(c, kind, sec, it) {
+  const items = kind === 'sec' ? (sec.items || []) : kind === 'item' ? [it] : [];
+  if (kind === 'item' && !it) return; if (kind === 'sec' && !sec) return;
+  const real = c.joinKey || '', hid = kind === 'item' ? !!(sec && sec.hidden || it.hidden) : kind === 'sec' ? !!sec.hidden : false;
+  const idOk = /^[\w.-]{1,100}$/.test(c.id) && items.every(i => /^[\w.-]{1,100}$/.test(i.id));
+  const what = kind === 'class' ? 'lớp <b>' + esc(c.name) + '</b>' : kind === 'sec' ? 'phần <b>' + esc(sec.title) + '</b> của lớp <b>' + esc(c.name) + '</b>' : '<b>' + esc(it.title || 'nội dung này') + '</b> của lớp <b>' + esc(c.name) + '</b>';
+  const head = kind === 'class' ? 'Chia sẻ lớp' : kind === 'sec' ? 'Chia sẻ cả phần' : 'Chia sẻ nội dung';
+  const intro = kind === 'class' ? 'Học sinh bấm link sẽ được đưa thẳng vào ' + what + '.' : kind === 'sec' ? 'Link bên dưới đưa học sinh vào lớp. Lời nhắn sẵn có thêm link riêng của từng nội dung trong ' + what + ', dán vào nhóm lớp là xong.' : 'Học sinh bấm link sẽ được đưa thẳng tới ' + what + '.';
+  const { ov, close } = modal(`<h3>${head}</h3>
+    <p class="muted" style="margin:0 0 12px">${intro} Đăng nhập xong là vào được, không cần tìm lớp.</p>
     ${hid ? '<div class="hint">Nội dung này đang <b>ẩn</b>, học sinh bấm link sẽ chưa thấy. Hãy mở ẩn trước khi gửi.</div>' : ''}
     ${idOk ? '' : '<div class="hint">Mã lớp hoặc mã nội dung có ký tự lạ nên link có thể không chạy được.</div>'}
     <label class="field"><span>Link</span><input id="sh-l" type="text" readonly></label>
+    <label class="field"><span>Lời nhắn sẵn (sửa tuỳ ý rồi sao chép)</span><textarea id="sh-t" rows="${kind === 'sec' ? 6 : 3}" spellcheck="false"></textarea></label>
     <details class="sh-more" style="margin:4px 0 12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">Dành cho thầy cô</summary>
       <p class="muted" style="margin:8px 0">Mặc định, học sinh chưa ở trong lớp sẽ được hỏi mật khẩu lớp. Điền mật khẩu lớp vào đây thì link có thêm <code>&amp;k=...</code>, học sinh chưa vào lớp bấm là tự vào luôn. Đổi lại, ai có link này đều vào được lớp, nên chỉ gửi trong nhóm lớp.</p>
       <label class="field"><span>Mật khẩu lớp (không bắt buộc)</span><input id="sh-k" type="text" autocomplete="off" spellcheck="false" maxlength="30"></label>
-      <div class="muted" id="sh-w" style="font-size:.85rem;color:#B42318" hidden>Mật khẩu cần 4 đến 30 ký tự, chỉ gồm chữ, số, gạch dưới hoặc gạch ngang. Link chưa gắn mật khẩu.</div></details>
-    <div class="row" style="justify-content:flex-end;margin:0"><button class="btn soft" id="sh-x" type="button">Đóng</button><button class="btn soft" id="sh-n" type="button" hidden>Gửi qua…</button><button class="btn" id="sh-c" type="button">Sao chép link</button></div>`);
-  const L = $('#sh-l', ov), K = $('#sh-k', ov), W = $('#sh-w', ov);
-  const draw = () => { const k = K.value.trim(), ok = /^[\w-]{4,30}$/.test(k); W.hidden = !k || ok; L.value = shareUrl(c.id, it.id, ok ? k : ''); };
-  draw(); K.oninput = draw; $('#sh-x', ov).onclick = close;
-  if (navigator.share) $('#sh-n', ov).hidden = false;
-  $('#sh-n', ov).onclick = async () => { try { await navigator.share({ title: it.title || c.name, text: 'Em vào làm bài "' + (it.title || '') + '" của lớp ' + c.name + ' nhé:', url: L.value }); } catch { } };
-  $('#sh-c', ov).onclick = async () => {
-    let ok = false; try { await navigator.clipboard.writeText(L.value); ok = true; } catch { try { L.select(); ok = document.execCommand('copy'); } catch { } }
-    if (ok) { toast('Đã sao chép link.'); if (K.value.trim() && /^[\w-]{4,30}$/.test(K.value.trim())) audit('Chia sẻ link tự vào lớp', c.name); } else { L.select(); toast('Chưa tự sao chép được, bấm giữ vào ô link rồi chọn Sao chép.', 'warn'); }
+      <div id="sh-w" style="font-size:.85rem;color:#B42318" hidden>Mật khẩu cần 4 đến 30 ký tự, chỉ gồm chữ, số, gạch dưới hoặc gạch ngang. Link chưa gắn mật khẩu.</div>
+      <div id="sh-v" style="font-size:.88rem;margin-top:8px" hidden></div></details>
+    <div id="sh-qr" style="text-align:center;margin:0 0 12px" hidden></div>
+    <div class="row" style="justify-content:flex-end;margin:0;flex-wrap:wrap"><button class="btn soft" id="sh-x" type="button">Đóng</button><button class="btn soft" id="sh-q" type="button">Mã QR</button>${kind === 'item' ? '<button class="btn soft" id="sh-more" type="button">Gộp thêm mục khác</button>' : ''}<a class="btn soft" id="sh-m" target="_blank" rel="noopener">Gửi email</a><button class="btn soft" id="sh-n" type="button" hidden>Gửi qua…</button><button class="btn soft" id="sh-cm" type="button">Sao chép lời nhắn</button><button class="btn" id="sh-c" type="button">Sao chép link</button></div>`);
+  const L = $('#sh-l', ov), T = $('#sh-t', ov), K = $('#sh-k', ov), W = $('#sh-w', ov), V = $('#sh-v', ov), Q = $('#sh-qr', ov);
+  /* đảm bảo bảng mã vào lớp (classjoin) có đúng mật khẩu của lớp, phòng khi trước giờ chưa được ghi */
+  if (real && !TEACHER()) api.set('classjoin', real, { classId: c.id, name: c.name }).catch(() => { });
+  let userEdited = false, qrOn = false;
+  const keyNow = () => { const k = K.value.trim(); return /^[\w-]{4,30}$/.test(k) ? k : ''; };
+  const msg = key => {
+    if (kind === 'class') return 'Em vào lớp ' + c.name + ' trên Inspire E-Study nhé: ' + shareUrl(c.id, '', key);
+    if (kind === 'item') return 'Em vào làm "' + shareName(it) + '"' + (shareDetail(it) ? ' (' + shareDetail(it) + ')' : '') + ' của lớp ' + c.name + ' nhé: ' + shareUrl(c.id, it.id, key);
+    return 'Phần "' + sec.title + '" của lớp ' + c.name + ':\n' + items.map(i => '- ' + (i.title || (ITYPE[i.type] || {}).n || 'Nội dung') + ': ' + shareUrl(c.id, i.id, key)).join('\n') + '\nEm bấm từng link để làm nhé.';
   };
+  const mainUrl = key => shareUrl(c.id, kind === 'item' ? it.id : '', key);
+  const draw = () => {
+    const k = K.value.trim(), key = keyNow(); W.hidden = !k || !!key;
+    L.value = mainUrl(key); if (!userEdited) T.value = msg(key);
+    $('#sh-m', ov).href = 'mailto:?subject=' + encodeURIComponent(kind === 'class' ? 'Link vào lớp ' + c.name : kind === 'sec' ? 'Phần ' + sec.title + ' của lớp ' + c.name : (it.title || 'Bài học') + ' của lớp ' + c.name) + '&body=' + encodeURIComponent(T.value);
+    const fix = '<button type="button" class="btn soft sm" id="sh-fix">Dùng mật khẩu lớp hiện tại</button>';
+    if (!k) V.innerHTML = real ? 'Bấm để gắn mật khẩu của lớp vào link, học sinh chưa vào lớp bấm là tự vào. ' + fix : '<span style="color:#B42318">Lớp này <b>chưa có mật khẩu vào lớp</b>. Vào tab Thiết lập của lớp, điền “Mật khẩu vào lớp” rồi bấm Lưu thì link tự vào lớp mới chạy được.</span>';
+    else if (!real) V.innerHTML = '<span style="color:#B42318">Lớp này chưa lưu mật khẩu vào lớp, nên học sinh dùng link này sẽ bị báo sai. Vào tab Thiết lập của lớp, điền mật khẩu rồi bấm Lưu.</span>';
+    else if (k === real) V.innerHTML = '<span style="color:#1B7F3B">Khớp với mật khẩu vào lớp hiện tại.</span>';
+    else V.innerHTML = '<span style="color:#B42318">' + (k.toLowerCase() === real.toLowerCase() ? 'Sai chữ hoa, chữ thường. ' : 'Không khớp mật khẩu vào lớp hiện tại. ') + 'Mật khẩu của lớp đang là <b>' + esc(real) + '</b>.</span> ' + fix;
+    V.hidden = false;
+    const f = $('#sh-fix', ov); if (f) f.onclick = () => { K.value = real; draw(); };
+    if (qrOn) drawQR();
+  };
+  const drawQR = () => loadQR().then(() => { const q = window.qrcode(0, 'M'); q.addData(L.value); q.make(); Q.innerHTML = q.createSvgTag(5, 8) + '<div class="muted" style="font-size:.82rem;margin-top:4px">Chiếu mã này lên bảng, học sinh quét bằng điện thoại.' + (kind === 'sec' ? ' Mã này đưa vào lớp.' : '') + '</div>'; Q.hidden = false; }).catch(() => { Q.innerHTML = '<span class="muted">Chưa tải được thư viện tạo mã QR (cần mạng). Bạn thử lại sau nhé.</span>'; Q.hidden = false; });
+  draw(); K.oninput = draw; T.oninput = () => { userEdited = true; $('#sh-m', ov).href = 'mailto:?body=' + encodeURIComponent(T.value); };
+  $('#sh-x', ov).onclick = close;
+  const mo = $('#sh-more', ov); if (mo) mo.onclick = () => { ov.remove(); shareMany(c, { items: [it.id] }); };
+  $('#sh-q', ov).onclick = () => { qrOn = !qrOn; if (qrOn) drawQR(); else Q.hidden = true; };
+  if (navigator.share) $('#sh-n', ov).hidden = false;
+  $('#sh-n', ov).onclick = async () => { try { await navigator.share({ title: c.name, text: T.value }); } catch { } };
+  const copy = async (el, ok) => {
+    let done = false; try { await navigator.clipboard.writeText(el.value); done = true; } catch { try { el.select(); done = document.execCommand('copy'); } catch { } }
+    if (done) { toast(ok); if (keyNow()) audit('Chia sẻ link tự vào lớp', c.name); } else { el.select(); toast('Chưa tự sao chép được, bấm giữ vào ô rồi chọn Sao chép.', 'warn'); }
+  };
+  $('#sh-c', ov).onclick = () => copy(L, 'Đã sao chép link.');
+  $('#sh-cm', ov).onclick = () => copy(T, 'Đã sao chép lời nhắn.');
   L.focus(); L.select();
+}
+/* ===== Chia sẻ nhiều mục một lần (gửi vào nhóm lớp): chọn bài, soạn lời nhắn, sao chép hoặc đăng thành thông báo lớp ===== */
+const shareDetail = it => {
+  const b = (it.type === 'bank' || it.type === 'test') ? (S.banks || []).find(x => x.id === it.bankId) : null, n = b ? (b.count || (b.qs || []).length) : 0;
+  if (it.type === 'test') return [n ? n + ' câu' : '', (it.minutes || 30) + ' phút', it.tries ? 'làm tối đa ' + it.tries + ' lần' : ''].filter(Boolean).join(', ');
+  if (it.type === 'bank') return n ? n + ' câu luyện tập' : 'luyện tập';
+  if (it.type === 'task') return 'hạn nộp ' + fmtDue(it.due);
+  if (it.type === 'youtube') return 'video';
+  return '';
+};
+const shareName = it => it.title || (ITYPE[it.type] || {}).n || 'Nội dung';
+const shPrefGet = cid => { try { return JSON.parse(localStorage.getItem('inspire_shr_' + cid) || '{}'); } catch { return {}; } };
+const shPrefSet = (cid, o) => { try { localStorage.setItem('inspire_shr_' + cid, JSON.stringify(o)); } catch { } };
+function shareMany(c, pre) {
+  const secs = (c.sections || []).filter(s => (s.items || []).length), real = c.joinKey || '', pf = shPrefGet(c.id);
+  if (!secs.length) return toast('Lớp chưa có nội dung để chia sẻ.', 'warn');
+  const sel = new Set(), vis = (s, i) => !(s.hidden || i.hidden);
+  if (pre && pre.sec) secs.filter(s => s.id === pre.sec).forEach(s => s.items.forEach(i => { if (vis(s, i)) sel.add(i.id); }));
+  if (pre && pre.items) pre.items.forEach(id => sel.add(id));
+  const { ov, close } = modal(`<h3>Chia sẻ nhiều mục vào lớp</h3>
+    <p class="muted" style="margin:0 0 10px">Tick các bài muốn gửi, web soạn sẵn một tin có link từng bài. Dán vào nhóm lớp hoặc đăng luôn thành thông báo lớp.</p>
+    <div class="row" style="margin:0 0 8px;flex-wrap:wrap"><button class="btn soft sm" type="button" data-q="all">Chọn tất cả</button><button class="btn soft sm" type="button" data-q="none">Bỏ chọn</button><button class="btn soft sm" type="button" data-q="exam">Chỉ đề và kiểm tra</button><button class="btn soft sm" type="button" data-q="task">Chỉ bài tập có hạn</button></div>
+    <div id="sm-l" style="max-height:230px;overflow:auto;border:1px solid #E6E8EC;border-radius:10px;padding:8px 10px;margin-bottom:12px">${secs.map(s => `<div data-sec="${esc(s.id)}" style="margin:4px 0 8px"><label style="display:flex;gap:8px;align-items:center;font-weight:800"><input type="checkbox" class="sm-s"> ${esc(s.title)}${s.hidden ? ' <span class="tag off">Đang ẩn</span>' : ''}</label>${s.items.map(i => `<label style="display:flex;gap:8px;align-items:center;margin:3px 0 3px 22px;${vis(s, i) ? '' : 'opacity:.55'}"><input type="checkbox" class="sm-i" value="${esc(i.id)}" data-t="${esc(i.type)}" ${vis(s, i) ? '' : 'disabled'}> <span>${esc(shareName(i))} <span class="tag">${esc((ITYPE[i.type] || ITYPE.link).s)}</span>${vis(s, i) ? '' : ' <span class="tag off">Đang ẩn</span>'}</span></label>`).join('')}</div>`).join('')}</div>
+    <label class="field"><span>Lời mở đầu (web nhớ cho lớp này)</span><input id="sm-in" maxlength="160"></label>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 10px">
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="sm-d"> Kèm chi tiết (số câu, thời gian, hạn nộp)</label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="sm-c"> Thêm link vào lớp ở cuối tin</label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="sm-k" ${real ? '' : 'disabled'}> Gắn mật khẩu lớp để học sinh tự vào</label></div>
+    <div class="muted" id="sm-kn" style="font-size:.85rem;margin:-4px 0 10px">${real ? 'Gắn mật khẩu thì ai có link đều vào được lớp, nên chỉ gửi trong nhóm lớp. Đăng thành thông báo lớp thì học sinh đã ở trong lớp nên không cần gắn.' : 'Lớp chưa có mật khẩu vào lớp. Đặt ở tab Thiết lập của lớp để dùng tính năng tự vào lớp.'}</div>
+    <label class="field"><span>Tin nhắn (sửa tuỳ ý rồi sao chép; đổi lựa chọn phía trên thì web soạn lại)</span><textarea id="sm-t" rows="8" spellcheck="false"></textarea></label>
+    <div id="sm-qr" style="text-align:center;margin:0 0 12px" hidden></div>
+    <div class="row" style="justify-content:flex-end;margin:0;flex-wrap:wrap"><button class="btn soft" id="sm-x" type="button">Đóng</button><button class="btn soft" id="sm-q" type="button">Mã QR</button><a class="btn soft" id="sm-m" target="_blank" rel="noopener">Gửi email</a><button class="btn soft" id="sm-n" type="button" hidden>Gửi qua…</button>${can('content') ? '<button class="btn soft" id="sm-a" type="button">Đăng thành thông báo lớp</button>' : ''}<button class="btn" id="sm-c2" type="button">Sao chép tin nhắn</button></div>`);
+  const T = $('#sm-t', ov), IN = $('#sm-in', ov), D = $('#sm-d', ov), CL = $('#sm-c', ov), K = $('#sm-k', ov), Q = $('#sm-qr', ov);
+  IN.value = pf.intro != null ? pf.intro : 'Cả lớp vào làm các bài sau nhé:'; D.checked = pf.det !== false; CL.checked = !!pf.cl; K.checked = !!(real && pf.key);
+  if (real && !TEACHER()) api.set('classjoin', real, { classId: c.id, name: c.name }).catch(() => { });
+  const chosen = () => { const r = []; secs.forEach(s => s.items.forEach(i => { if (sel.has(i.id)) r.push(i); })); return r; };
+  const key = () => (K.checked && real && /^[\w-]{4,30}$/.test(real)) ? real : '';
+  const build = () => {
+    const A = chosen(), k = key(); if (!A.length) return IN.value.trim() + '\n(Chưa chọn bài nào)';
+    const lines = A.map((i, n) => { const d = D.checked ? shareDetail(i) : ''; return (A.length > 1 ? (n + 1) + '. ' : '') + shareName(i) + (d ? ' (' + d + ')' : '') + '\n' + shareUrl(c.id, i.id, k); });
+    return [IN.value.trim(), lines.join('\n\n'), CL.checked ? 'Vào lớp: ' + shareUrl(c.id, '', k) : ''].filter(Boolean).join('\n\n');
+  };
+  const syncBoxes = () => { ov.querySelectorAll('.sm-i').forEach(b => { b.checked = sel.has(b.value); }); ov.querySelectorAll('[data-sec]').forEach(d => { const ids = [...d.querySelectorAll('.sm-i:not(:disabled)')], sb = d.querySelector('.sm-s'); sb.checked = ids.length > 0 && ids.every(b => b.checked); sb.indeterminate = !sb.checked && ids.some(b => b.checked); }); };
+  const mailLink = () => { $('#sm-m', ov).href = 'mailto:?subject=' + encodeURIComponent('Bài mới của lớp ' + c.name) + '&body=' + encodeURIComponent(T.value); };
+  const draw = () => { syncBoxes(); T.value = build(); mailLink(); shPrefSet(c.id, { intro: IN.value, det: D.checked, cl: CL.checked, key: K.checked }); if (!Q.hidden) drawQR(); };
+  const qrUrl = () => { const A = chosen(); return A.length === 1 ? shareUrl(c.id, A[0].id, key()) : shareUrl(c.id, '', key()); };
+  const drawQR = () => loadQR().then(() => { const q = window.qrcode(0, 'M'); q.addData(qrUrl()); q.make(); Q.innerHTML = q.createSvgTag(5, 8) + '<div class="muted" style="font-size:.82rem;margin-top:4px">Chiếu mã này lên bảng, học sinh quét bằng điện thoại. ' + (chosen().length === 1 ? 'Mã đưa tới bài đã chọn.' : 'Mã đưa vào lớp.') + '</div>'; Q.hidden = false; }).catch(() => { Q.innerHTML = '<span class="muted">Chưa tải được thư viện tạo mã QR (cần mạng).</span>'; Q.hidden = false; });
+  ov.addEventListener('change', e => {
+    const b = e.target;
+    if (b.classList.contains('sm-i')) { b.checked ? sel.add(b.value) : sel.delete(b.value); draw(); }
+    else if (b.classList.contains('sm-s')) { b.closest('[data-sec]').querySelectorAll('.sm-i:not(:disabled)').forEach(x => { b.checked ? sel.add(x.value) : sel.delete(x.value); }); draw(); }
+    else if (b === D || b === CL || b === K) draw();
+  });
+  IN.oninput = draw;
+  ov.addEventListener('click', e => {
+    const q = e.target.closest('[data-q]'); if (!q) return;
+    sel.clear(); secs.forEach(s => s.items.forEach(i => { if (!vis(s, i)) return; const m = q.dataset.q; if (m === 'all' || (m === 'exam' && (i.type === 'test' || i.type === 'bank')) || (m === 'task' && i.type === 'task')) sel.add(i.id); })); draw();
+  });
+  T.oninput = mailLink;
+  $('#sm-x', ov).onclick = close;
+  $('#sm-q', ov).onclick = () => { if (Q.hidden) drawQR(); else Q.hidden = true; };
+  if (navigator.share) $('#sm-n', ov).hidden = false;
+  $('#sm-n', ov).onclick = async () => { try { await navigator.share({ title: c.name, text: T.value }); } catch { } };
+  $('#sm-c2', ov).onclick = async () => {
+    if (!chosen().length) return toast('Chọn ít nhất một bài để chia sẻ.', 'warn');
+    let ok = false; try { await navigator.clipboard.writeText(T.value); ok = true; } catch { try { T.select(); ok = document.execCommand('copy'); } catch { } }
+    if (ok) { toast('Đã sao chép tin nhắn.'); if (key()) audit('Chia sẻ link tự vào lớp', c.name); } else { T.select(); toast('Chưa tự sao chép được, bấm giữ vào ô tin nhắn rồi chọn Sao chép.', 'warn'); }
+  };
+  const A = $('#sm-a', ov);
+  if (A) A.onclick = async () => {
+    if (!chosen().length) return toast('Chọn ít nhất một bài để đăng.', 'warn');
+    if (key() && !confirm('Thông báo có gắn mật khẩu lớp, mọi thành viên lớp đều thấy mật khẩu trong link. Vẫn đăng?')) return;
+    const title = (IN.value.trim().replace(/[:：]\s*$/, '') || 'Bài mới cho lớp').slice(0, 120), body = T.value.split('\n\n').slice(IN.value.trim() ? 1 : 0).join('\n\n');
+    try { await saveClass(c, { announcements: [{ id: 'an' + Date.now().toString(36), title, text: body.slice(0, 2000), pinned: false, hidden: false, atMs: Date.now() }, ...(c.announcements || [])] }); audit('Đăng thông báo chia sẻ bài', c.name); toast('Đã đăng thông báo lớp.'); }
+    catch (er) { toast(er.message, 'bad'); }
+  };
+  draw();
 }
 function cxContent(c, el) {
   const secs = c.sections || [];
-  el.innerHTML = `<div class="row"><button class="btn" data-a="sec-add">＋ Thêm chương / phần</button><button class="btn soft" data-a="bulk">Dán nhiều link một lần</button><span class="grow"></span></div>
+  el.innerHTML = `<div class="row"><button class="btn" data-a="sec-add">＋ Thêm chương / phần</button><button class="btn soft" data-a="bulk">Dán nhiều link một lần</button><button class="btn soft" data-a="share-many">Chia sẻ nhiều mục</button><span class="grow"></span></div>
     <div class="hint">Học sinh thấy các phần theo đúng thứ tự này, giống trang môn học trên Moodle. Phần đang <b>ẩn</b> chỉ giáo viên thấy. Link Drive cần chia sẻ “Bất kỳ ai có đường liên kết” (quyền Người xem) để học sinh mở được.</div>
     ${secs.map((s, i) => secHTML(s, i, secs.length)).join('') || '<div class="card empty">Lớp chưa có phần nào. Bấm “Thêm chương / phần”.</div>'}`;
 }
@@ -3485,7 +3601,10 @@ async function cxClick(e) {
       case 'canva-fs': { const e2 = $('#cv-fs'); if (e2 && e2.requestFullscreen) e2.requestFullscreen().catch(() => { }); return; }
       case 'canva-view': { const it = ((c.canva || {}).items || []).find(i => i.id === x.closest('[data-cv]').dataset.cv); const src = it && canvaEmbed(it.url); if (!src) return toast('Link không hợp lệ.', 'warn'); $('#cv-prev').innerHTML = `<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden"><iframe src="${esc(src)}" allowfullscreen allow="fullscreen" style="position:absolute;inset:0;width:100%;height:100%;border:0" title="Xem thử"></iframe></div>`; return; }
       case 'canva-access': { const uids = [...document.querySelectorAll('.cv-ck:checked')].map(i => i.value); await saveClass(c, { canva: { ...(c.canva || {}), all: $('#cv-all').checked, personal: $('#cv-per').checked, uids } }); audit('Cấp quyền trình chiếu Canva', c.name); return toast('Đã lưu quyền trình chiếu.'); }
-      case 'share-item': return shareItemForm(c, sec, (sec.items || []).find(i => i.id === iid));
+      case 'share-item': return shareForm(c, 'item', sec, (sec.items || []).find(i => i.id === iid));
+      case 'share-sec': return shareMany(c, { sec: sec.id });
+      case 'share-many': return shareMany(c);
+      case 'share-class': return shareForm(c, 'class');
       case 'item-add': return itemForm(c, sid);
       case 'item-edit': return itemForm(c, sid, (sec.items || []).find(i => i.id === iid));
       case 'item-q': return itemQForm(c, sid, (sec.items || []).find(i => i.id === iid));
@@ -3494,6 +3613,7 @@ async function cxClick(e) {
       case 'bulk': return bulkForm(c);
       case 'mem-ok': return void await addMembers(c, S.users.filter(u => u.id === x.dataset.u)), toast('Đã duyệt.');
       case 'mem-okall': { const p = pending(c); await addMembers(c, p); return toast('Đã duyệt ' + p.length + ' học sinh.'); }
+      case 'mem-view': return studentView(stuOf(c, x.dataset.u), c);
       case 'mem-add': { const ids = [...document.querySelectorAll('.ma-ck:checked')].map(k => k.value); if (!ids.length) return toast('Chọn ít nhất một bạn.', 'warn'); await addMembers(c, S.users.filter(u => ids.includes(u.id))); return toast('Đã thêm ' + ids.length + ' học sinh.'); }
       case 'mem-rm': { const u = stuOf(c, x.dataset.u); if (!confirm('Bỏ ' + (u.name || 'bạn này') + ' khỏi lớp ' + c.name + '?')) return; const nm = { ...(c.names || {}) }; delete nm[u.id]; await api.update('classes', c.id, { members: (c.members || []).filter(m => m !== u.id), names: nm, updatedAtMs: Date.now() }); return toast('Đã bỏ khỏi lớp.'); }
       case 'bk-new': return cbankForm(null, c);
@@ -3675,11 +3795,48 @@ async function addMembers(c, us) {
   await api.update('classes', c.id, { members: m, names: nm, updatedAtMs: Date.now() }); audit('Thêm học sinh', c.name + ' (' + us.length + ')');
   if (!TEACHER()) await Promise.all(us.filter(u => !u.className).map(u => api.update('users', u.id, { className: c.name }).catch(() => { })));
 }
+/* ----- giáo viên xem chi tiết từng học sinh: học gì, XP đến từ đâu (chỉ xem, không sửa) ----- */
+const XP_LABEL = { cd: 'Chuyên đề (bài làm, câu hỏi trong video)', pron: 'Luyện phát âm', stress: 'Luyện trọng âm', daily: 'Nhiệm vụ mỗi ngày', bonus: 'Hộp quà may mắn', bank: 'Luyện đề ngân hàng', tool: 'Công cụ học tập', other: 'Hoạt động khác' };
+const xpLabel = k => XP_LABEL[k] || (k.startsWith('l_') ? 'Bài học: ' + (ACTS[k.slice(2)] || (k === 'l_mind' ? 'Thư giãn' : 'hoạt động khác')) : k);
+function studentView(u, c) {
+  if (!u) return;
+  const total = u.xp || 0, src = Object.entries(u.xpsrc || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]), tracked = src.reduce((s, [, v]) => s + v, 0), rest = Math.max(0, total - tracked);
+  const rows = rest > 0 ? [...src, ['__old', rest]] : src, top = Math.max(1, ...rows.map(r => r[1]));
+  const bar = (label, v, color) => `<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="flex:0 0 220px;font-size:.9rem">${esc(label)}</span><div style="flex:1;background:#EEF0F3;border-radius:6px;height:12px;overflow:hidden"><i style="display:block;height:100%;width:${Math.max(2, Math.round(v / top * 100))}%;background:${color || 'var(--brand,#B10B32)'}"></i></div><b style="flex:0 0 64px;text-align:right">${v} XP</b></div>`;
+  const days = Object.entries(u.daily || {}).filter(([, v]) => typeof v === 'number').sort((a, b) => a[0] < b[0] ? 1 : -1).slice(0, 14), dtop = Math.max(1, ...days.map(d => d[1]));
+  const L = (typeof sortedLessons === 'function' ? sortedLessons() : S.lessons || []).filter(l => { const p = (u.progress || {})[l.id]; return p && Object.keys(ACTS).some(k => isDone(p, k)); });
+  const sc = v => typeof v === 'number' ? v + '%' : v === true ? 'Xong' : '–';
+  const cdp = Object.entries(u.cdp || {}).sort((a, b) => (+a[0]) - (+b[0]));
+  const bids = new Set(cBanks(c).map(b => b.id)); (c.sections || []).forEach(s => (s.items || []).forEach(i => { if (i.bankId) bids.add(i.bankId); }));
+  const banks = [...bids].map(id => (S.banks || []).find(b => b.id === id)).filter(Boolean);
+  const subs = (S.classSubs || []).filter(x => x.classId === c.id && x.uid === u.id);
+  const itemTitle = id => { let r = ''; (c.sections || []).forEach(s => (s.items || []).forEach(i => { if (i.id === id) r = i.title || ''; })); return r || 'Bài tập'; };
+  const mis = Object.values(u.mistakes || {}).reduce((s, a) => s + (a || []).length, 0);
+  const th = h => `<th style="text-align:left;padding:6px 8px">${h}</th>`;
+  const { ov, close } = modal(`<h3>${avH(u)}${esc(u.name || 'Học sinh')}</h3>
+    <p style="margin:0 0 10px" class="muted">${esc(u.email || '')} · Lớp ${esc(c.name)} · <b>${total} XP</b> · chuỗi ${u.streak || 0} ngày · hoạt động gần nhất ${fmtTime(u.lastActive) || '–'}</p>
+    <div class="hint" style="margin-bottom:12px">Cửa sổ này chỉ để xem, không sửa được dữ liệu của học sinh. Thống kê XP theo nguồn chỉ tính từ lúc web học sinh được cập nhật, XP cũ nằm ở mục chưa phân loại.</div>
+    <h4 style="margin:12px 0 4px">XP đến từ đâu</h4>
+    ${rows.length ? rows.map(([k, v]) => k === '__old' ? bar('Chưa phân loại (XP từ trước khi có thống kê)', v, '#9AA3AF') : bar(xpLabel(k), v)).join('') : '<p class="muted">Chưa có XP.</p>'}
+    <h4 style="margin:16px 0 4px">XP theo ngày gần đây</h4>
+    ${days.length ? days.map(([d, v]) => bar(d, v, '#1E6FD9').replace('flex:0 0 220px', 'flex:0 0 110px')).join('') : '<p class="muted">Chưa có dữ liệu theo ngày.</p>'}
+    <h4 style="margin:16px 0 4px">Bài học đã làm</h4>
+    ${L.length ? `<div class="tbl-wrap"><table><thead><tr>${th('Bài')}${Object.values(ACTS).map(n => th(n)).join('')}</tr></thead><tbody>${L.map(l => { const p = u.progress[l.id] || {}; return `<tr><td style="white-space:nowrap">${esc(l.title)}</td>${Object.keys(ACTS).map(k => `<td>${isDone(p, k) ? sc(p[k]) : '–'}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Chưa làm bài học nào.</p>'}
+    <h4 style="margin:16px 0 4px">Chuyên đề ôn thi</h4>
+    ${cdp.length ? `<div class="tbl-wrap"><table><thead><tr>${th('Chuyên đề')}${th('Điểm cao nhất')}${th('Đúng / tổng')}${th('Lần cuối')}</tr></thead><tbody>${cdp.map(([n, x]) => { const cd = (S.chuyende || []).find(z => String(z.n) === String(n)); return `<tr><td>${esc(cd && cd.title ? cd.title : 'Chuyên đề ' + n)}</td><td>${typeof x.score === 'number' ? x.score + '%' : '–'}</td><td>${x.correct ?? '–'}/${x.total ?? '–'}</td><td>${fmtTime(x.at)}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Chưa làm chuyên đề nào.</p>'}
+    <h4 style="margin:16px 0 4px">Đề và bài kiểm tra của lớp</h4>
+    ${banks.length ? `<div class="tbl-wrap"><table><thead><tr>${th('Đề')}${th('Điểm cao nhất')}${th('Lần gần nhất')}${th('Số lượt làm')}</tr></thead><tbody>${banks.map(b => { const best = (u.bankbest || {})[b.id], last = (u.banklast || {})[b.id], n = (u.bankatt || {})[b.id]; return `<tr><td>${esc(b.title)}</td><td>${best != null ? best + '%' : 'Chưa làm'}</td><td>${last != null ? last + '%' : '–'}</td><td>${n || 0}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có đề.</p>'}
+    <h4 style="margin:16px 0 4px">Bài tập đã nộp</h4>
+    ${subs.length ? subs.map(x => `<div style="margin:4px 0">${esc(itemTitle(x.iid))} <small class="muted">· ${fmtTime(x.atMs)}</small></div>`).join('') : '<p class="muted">Chưa nộp bài tập nào.</p>'}
+    <p style="margin:14px 0 0">Số từ cần ôn lại: <b>${mis}</b></p>
+    <div class="row" style="justify-content:flex-end;margin:14px 0 0"><button class="btn" id="sv-x" type="button">Đóng</button></div>`);
+  $('#sv-x', ov).onclick = close;
+}
 function cxMembers(c, el) {
   const mem = (c.members || []).map(id => stuOf(c, id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi')), pend = pending(c);
   const avail = S.users.filter(u => !u.disabled && !(c.members || []).includes(u.id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
   el.innerHTML = `${pend.length ? `<div class="card" style="margin-bottom:14px;background:var(--warn-bg);border-color:#F2DA9B"><div class="row" style="margin:0 0 6px"><b class="grow">${pend.length} học sinh đăng ký với tên lớp “${esc(c.name)}” đang chờ<br><small class="muted" style="font-weight:500">${c.joinKey ? `Lớp đã có mật khẩu “${esc(c.joinKey)}”: học sinh nhập mật khẩu là vào ngay, không cần duyệt. Nút Duyệt tất cả chỉ để cho chắc.` : 'Lớp chưa có mật khẩu. Đặt mật khẩu ở tab Thiết lập để học sinh tự vào, khỏi duyệt từng em.'}</small></b><button class="btn" data-a="mem-okall">Duyệt tất cả</button></div>${pend.map(u => `<div class="row" style="margin:0;padding:6px 0;border-top:1px solid #F2DA9B">${avH(u, 28)}<span class="grow">${esc(u.name)} <small class="muted">${esc(u.email || '')}</small></span><button class="btn soft sm" data-a="mem-ok" data-u="${esc(u.id)}">Duyệt</button></div>`).join('')}</div>` : ''}
-    <div class="card"><div class="row" style="margin-bottom:10px"><h3 class="grow" style="margin:0">Thành viên lớp (${mem.length})</h3><input id="mem-q" placeholder="Tìm học sinh…" style="max-width:220px"><button class="btn soft sm" id="mem-csv">Xuất điểm CSV</button><button class="btn soft sm" id="mem-link">Sao chép thông tin vào lớp</button></div>${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Email</th><th>XP</th><th>Hoạt động gần nhất</th><th></th></tr></thead><tbody>${mem.map(u => `<tr><td>${avH(u, 28)}<b>${esc(u.name || 'Học sinh')}</b></td><td>${esc(u.email || '')}</td><td>${u.xp || 0}</td><td>${fmtTime(u.lastActive)}</td><td><button class="btn soft sm" data-a="mem-rm" data-u="${esc(u.id)}">Bỏ khỏi lớp</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh. Duyệt học sinh chờ duyệt hoặc thêm bên dưới.</p>'}</div>
+    <div class="card"><div class="row" style="margin-bottom:10px"><h3 class="grow" style="margin:0">Thành viên lớp (${mem.length})</h3><input id="mem-q" placeholder="Tìm học sinh…" style="max-width:220px"><button class="btn soft sm" id="mem-csv">Xuất điểm CSV</button><button class="btn soft sm" id="mem-link">Sao chép thông tin vào lớp</button></div>${mem.length ? `<div class="tbl-wrap"><table><thead><tr><th>Học sinh</th><th>Email</th><th>XP</th><th>Hoạt động gần nhất</th><th></th></tr></thead><tbody>${mem.map(u => `<tr><td>${avH(u, 28)}<b>${esc(u.name || 'Học sinh')}</b></td><td>${esc(u.email || '')}</td><td>${u.xp || 0}</td><td>${fmtTime(u.lastActive)}</td><td><button class="btn soft sm" data-a="mem-view" data-u="${esc(u.id)}">Xem chi tiết</button> <button class="btn soft sm" data-a="mem-rm" data-u="${esc(u.id)}">Bỏ khỏi lớp</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Lớp chưa có học sinh. Duyệt học sinh chờ duyệt hoặc thêm bên dưới.</p>'}</div>
     <div class="card" style="margin-top:14px"><h3>Thêm học sinh vào lớp</h3><input id="ma-q" placeholder="Tìm theo tên hoặc email…" style="margin-bottom:8px"><div class="ma-list" id="ma-l">${avail.map(u => `<label class="ma-i" data-q="${esc(normN((u.name || '') + ' ' + (u.email || '') + ' ' + (u.className || '')))}"><input type="checkbox" class="ma-ck" value="${esc(u.id)}">${avH(u, 24)}<span>${esc(u.name || 'Học sinh')} <small class="muted">${esc(u.className || 'chưa có lớp')} · ${esc(u.email || '')}</small></span></label>`).join('') || '<p class="muted">Mọi học sinh đã ở trong lớp.</p>'}</div>
     <div class="row" style="margin:10px 0 0"><button class="btn" data-a="mem-add">Thêm những bạn đã chọn</button></div></div>`;
   const q = $('#ma-q'); if (q) q.oninput = () => { const v = normN(q.value); document.querySelectorAll('#ma-l .ma-i').forEach(r => { r.style.display = !v || r.dataset.q.includes(v) ? '' : 'none'; }); };

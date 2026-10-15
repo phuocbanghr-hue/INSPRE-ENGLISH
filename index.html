@@ -6141,6 +6141,25 @@ if (MODE === 'firebase' && FB) {
     unsendMsg: segs => FB.updateDoc(FB.doc(db, ...segs), { text: '', unsent: true }),
     sendPoll: (cid, q, opts) => FB.addDoc(FB.collection(db, 'classes', cid, 'chat'), { text: q, uid: S.user.uid, name: myName(), role: 'student', atMs: Date.now(), at: FB.serverTimestamp(), poll: { q, opts, votes: {} } }),
     votePoll: (segs, idx) => FB.updateDoc(FB.doc(db, ...segs), { ['poll.votes.' + S.user.uid]: idx }),
+    getRoom: async code => { const d = await FB.getDoc(FB.doc(db, 'rooms', code)); return d.exists() ? d.data() : null; },
+    joinRoom: (code, name) => FB.setDoc(FB.doc(db, 'rooms', code, 'players', S.user.uid), { name, score: 0, streak: 0, uid: S.user.uid }, { merge: true }),
+    watchRoom: (code, cb) => FB.onSnapshot(FB.doc(db, 'rooms', code), d => cb(d.exists() ? d.data() : null)),
+    watchPlayers: (code, cb) => FB.onSnapshot(FB.collection(db, 'rooms', code, 'players'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+    answerRoom: (code, qi, chosen, pts, streak) => FB.setDoc(FB.doc(db, 'rooms', code, 'players', S.user.uid), { score: FB.increment(pts), streak, ans: { [qi]: chosen } }, { merge: true }),
+    arenaSets: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'arenaSets'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+    arenaItem: (code, data) => FB.addDoc(FB.collection(db, 'arena', code, 'items'), { ...data, uid: S.user.uid }),
+    arenaItems: (code, cb) => FB.onSnapshot(FB.collection(db, 'arena', code, 'items'), s => cb(s.docs.map(d => d.data()))),
+    arenaList: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'arena'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+    arenaCreate: (code, room) => FB.setDoc(FB.doc(db, 'arena', code), room),
+    arenaWatch: (code, cb) => FB.onSnapshot(FB.doc(db, 'arena', code), d => cb(d.exists() ? d.data() : null)),
+    arenaJoin: (code, prof) => FB.setDoc(FB.doc(db, 'arena', code, 'players', S.user.uid), prof, { merge: true }),
+    arenaPlayers: (code, cb) => FB.onSnapshot(FB.collection(db, 'arena', code, 'players'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })))),
+    arenaAnswer: (code, qi, data) => FB.setDoc(FB.doc(db, 'arena', code, 'answers', S.user.uid + '_' + qi), { ...data, uid: S.user.uid, qi }),
+    arenaAnswers: (code, cb) => FB.onSnapshot(FB.collection(db, 'arena', code, 'answers'), s => cb(s.docs.map(d => d.data()))),
+    arenaAttack: (code, data) => FB.addDoc(FB.collection(db, 'arena', code, 'attacks'), { ...data, from: S.user.uid }),
+    arenaAttacks: (code, cb) => FB.onSnapshot(FB.collection(db, 'arena', code, 'attacks'), s => cb(s.docs.map(d => d.data()))),
+    arenaShield: (code, until) => FB.addDoc(FB.collection(db, 'arena', code, 'shields'), { uid: S.user.uid, until, atMs: Date.now() }),
+    arenaShields: (code, cb) => FB.onSnapshot(FB.collection(db, 'arena', code, 'shields'), s => cb(s.docs.map(d => d.data()))),
     watchQA: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'questions'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('qa', e); cb([]); }),
     askQA: (c, text) => FB.addDoc(FB.collection(db, 'questions'), { classId: c.id, uid: S.user.uid, name: myName(), text, atMs: Date.now(), at: FB.serverTimestamp() }),
     watchArt: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'artworks'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('art', e); cb([]); }),
@@ -6408,7 +6427,7 @@ function viewClass() {
     ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}${meetBtn(c)}${avNudge()}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
-    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['qa', 'Hỏi cô'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
+    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['qa', 'Hỏi cô'], ['arena', 'Cyber Arena'], ['live', 'Chơi chung'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
     <section class="cxl-main" id="cxl-main"></section></div>`;
   main.onclick = e => {
     const dr = e.target.closest('[data-drawer]'), dc = e.target.closest('[data-drawer-close]');
@@ -6456,6 +6475,8 @@ function drawClassTab(c) {
   else if (CX.tab === 'art') { el.innerHTML = cxlArt(c); mountArt(c); }
   else if (CX.tab === 'board') { el.innerHTML = cxlBoard(c); mountBoard(c); const bb = $('#bd-body'); if (bb) bb.onclick = boardClick; }
   else if (CX.tab === 'qa') { el.innerHTML = cxlQA(c); mountQA(c); }
+  else if (CX.tab === 'live') { el.innerHTML = cxlLive(c); mountLive(c); }
+  else if (CX.tab === 'arena') { el.innerHTML = cxlArena(c); mountArena(c); }
   else if (CX.tab === 'listen') el.innerHTML = cxlListen(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
   else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
@@ -6903,6 +6924,159 @@ function openGame(g, claim, already) {
   const re = $('#gm-re', o); if (re) re.onclick = () => popGame(g.url);
   const x = $('#gm-x', o); if (x) x.onclick = () => claim(id, xp, x).then(() => { const gb = document.querySelector('[data-gd="' + CSS.escape(id) + '"]'); if (gb) { gb.disabled = true; gb.textContent = 'Đã nhận XP hôm nay'; } });
 }
+/* ===== Tô màu bí ẩn: trả lời đúng thì một ô tranh được tô màu, tô xong tranh thì mở quà ===== */
+const PAINT_COL = { r: '#E53935', y: '#FDD835', o: '#FB8C00', b: '#8D6E63', g: '#43A047' };
+function makePic(kind) {
+  const N = 10, g = Array.from({ length: N }, () => Array(N).fill('.'));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const cx = x - 4.5, cy = y - 4.5;
+    if (kind === 'sun') {
+      const d = Math.hypot(cx, cy);
+      if (d <= 2.6) g[y][x] = 'y';
+      else if ((Math.abs(cx) < .6 || Math.abs(cy) < .6 || Math.abs(Math.abs(cx) - Math.abs(cy)) < .6) && d <= 4.6) g[y][x] = 'o';
+    } else if (kind === 'heart') {
+      const X = cx / 4, Y = (4.5 - y) / 4 + .1;
+      if (Math.pow(X * X + Y * Y - 1, 3) - X * X * Y * Y * Y <= 0) g[y][x] = 'r';
+    } else {
+      if (Math.hypot(x - 4.5, y - 3.2) <= 3.2) g[y][x] = 'g';
+      else if (x >= 4 && x <= 5 && y >= 6 && y <= 9) g[y][x] = 'b';
+    }
+  }
+  return g;
+}
+const PAINT_KINDS = [['heart', 'Trái tim'], ['sun', 'Mặt trời'], ['tree', 'Cây xanh']];
+function paintCard() {
+  const day = dayKey(), gift = store.get('paint_gift_' + day) === '1';
+  return `<article class="card gm-c pt-card"><div class="gm-p">Trò chơi của Inspire</div><h3>Tô màu bí ẩn</h3><p class="muted">Trả lời đúng để tô màu từng ô của bức tranh. Tô xong tranh hoặc hết lượt là được mở một hộp quà.</p><div class="gm-b"><button class="btn" id="pt-play" type="button">Chơi ngay</button>${gift ? '<span class="muted">Hôm nay em đã mở quà rồi</span>' : ''}</div></article>`;
+}
+function openPaint() {
+  const pool = (S.allLessons || []).flatMap(l => l.words || []).filter(w => w && w.en && w.vi);
+  if (pool.length < 4) return toast('Cần ít nhất 4 từ trong bài học để chơi.', 'warn');
+  const dayIdx = Math.abs(parseInt(dayKey().replace(/\D/g, '').slice(-6) || '0', 10));
+  const [kind, kindName] = PAINT_KINDS[dayIdx % PAINT_KINDS.length];
+  const pic = makePic(kind);
+  const cells = []; pic.forEach((row, y) => row.forEach((c, x) => { if (c !== '.') cells.push({ x, y, c }); }));
+  cells.sort(() => Math.random() - .5);
+  const total = Math.min(cells.length, 24), order = cells.slice(0, total);
+  const revealed = new Set();
+  const ov = document.createElement('div');
+  ov.className = 'pt-ov';
+  ov.innerHTML = `<div class="pt-box"><div class="pt-top"><span>Tranh: <b>${esc(kindName)}</b></span><span>Lượt còn: <b id="pt-l">3</b></span><button class="btn soft sm" id="pt-x" type="button">Thoát</button></div>
+    <div class="pt-grid" id="pt-g" style="grid-template-columns:repeat(10,1fr)">${pic.map((row, y) => row.map((c, x) => `<i class="pt-c" data-k="${x},${y}"></i>`).join('')).join('')}</div>
+    <div class="pt-q" id="pt-q"></div><div class="pt-o" id="pt-o"></div><div class="pt-f" id="pt-f"></div><div class="pt-s" id="pt-s"></div></div>`;
+  document.body.appendChild(ov);
+  const $ = s => ov.querySelector(s);
+  let lives = 3, idx = 0, cur = null, busy = false, done = false;
+  const pickQ = () => {
+    const c = pool[Math.floor(Math.random() * pool.length)], opts = [c.vi]; let g = 0;
+    while (opts.length < 4 && g++ < 200) { const v = pool[Math.floor(Math.random() * pool.length)].vi; if (!opts.includes(v)) opts.push(v); }
+    return { en: c.en, vi: c.vi, opts: opts.sort(() => Math.random() - .5) };
+  };
+  const showQ = () => {
+    if (idx >= total || lives <= 0) return finish();
+    cur = pickQ(); busy = false;
+    $('#pt-q').textContent = cur.en; $('#pt-f').textContent = ''; $('#pt-l').textContent = lives;
+    $('#pt-o').innerHTML = cur.opts.map((o, i) => `<button class="pt-b" type="button" data-i="${i}">${esc(o)}</button>`).join('');
+  };
+  const reveal = () => {
+    const cell = order[idx]; const el = ov.querySelector(`.pt-c[data-k="${cell.x},${cell.y}"]`);
+    if (el) { el.style.background = PAINT_COL[cell.c]; el.classList.add('on'); }
+    revealed.add(idx); idx++;
+  };
+  const rewardRoll = () => {
+    const r = Math.random();
+    if (r < .05) return { xp: 30, name: 'Thẻ đặc biệt', note: 'Bạn được cộng 30 XP. Lưu ý: thẻ này không thay đổi việc nộp bài tập của cô.' };
+    if (r < .35) return { xp: 10, name: 'Quà lớn', note: 'Bạn được cộng 10 XP.' };
+    return { xp: 5, name: 'Quà nhỏ', note: 'Bạn được cộng 5 XP.' };
+  };
+  const finish = () => {
+    done = true;
+    const day = dayKey(), opened = store.get('paint_gift_' + day) === '1';
+    $('#pt-q').textContent = idx >= total ? 'Tranh đã tô xong!' : 'Hết lượt rồi';
+    $('#pt-o').innerHTML = opened ? '<span class="muted">Hôm nay em đã mở quà rồi. Hẹn em ngày mai nhé!</span>' :
+      '<button class="pt-box-gift" id="pt-gift" type="button" aria-label="Mở hộp quà">Mở hộp quà</button>';
+    $('#pt-s').textContent = 'Tô được ' + idx + '/' + total + ' ô tranh.';
+  };
+  ov.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'pt-x') return ov.remove();
+    if (b.id === 'pt-gift') {
+      if (store.get('paint_gift_' + dayKey()) === '1') return;
+      store.set('paint_gift_' + dayKey(), '1');
+      b.disabled = true; b.textContent = 'Đang mở…';
+      const rw = rewardRoll();
+      $('#pt-o').innerHTML = `<div class="pt-gr"><b>${esc(rw.name)}</b><div>${esc(rw.note)}</div></div>`;
+      await award(null, rw.xp, {}, 'game'); toast('Đã cộng ' + rw.xp + ' XP.');
+      return;
+    }
+    if (!b.classList.contains('pt-b') || busy || done || !cur) return;
+    busy = true;
+    const ok = cur.opts[+b.dataset.i] === cur.vi;
+    ov.querySelectorAll('.pt-b').forEach(x => { x.disabled = true; if (x.textContent === cur.vi) x.classList.add('ok'); });
+    if (ok) { reveal(); $('#pt-f').textContent = 'Đúng! Một ô tranh đã được tô màu.'; $('#pt-f').className = 'pt-f ok'; }
+    else { lives--; b.classList.add('bad'); $('#pt-f').textContent = 'Sai. Đáp án là: ' + cur.vi; $('#pt-f').className = 'pt-f bad'; $('#pt-l').textContent = Math.max(0, lives); }
+    setTimeout(() => { if (done) return; showQ(); }, ok ? 700 : 1300);
+  });
+  showQ();
+}
+/* ===== Trò chơi tự tạo: Ghép nghĩa vô tận (chơi mãi, điểm cao được lưu) ===== */
+function wordRushCard() {
+  const best = +(store.get('wr_best') || 0);
+  return `<article class="card gm-c wr-card"><div class="gm-p">Trò chơi của Inspire</div><h3>Ghép nghĩa vô tận</h3><p class="muted">Đọc từ tiếng Anh, chọn nghĩa đúng. Sai 3 lần là hết lượt, nhưng chơi bao lâu cũng được. Điểm cao nhất của em: <b>${best}</b></p><div class="gm-b"><button class="btn" id="wr-play" type="button">Chơi ngay</button></div></article>`;
+}
+function openWordRush() {
+  const pool = (S.allLessons || []).flatMap(l => l.words || []).filter(w => w && w.en && w.vi);
+  if (pool.length < 4) return toast('Cần ít nhất 4 từ trong bài học để chơi.', 'warn');
+  const ov = document.createElement('div');
+  ov.className = 'wr-ov';
+  ov.innerHTML = `<div class="wr-box"><div class="wr-top"><span>Điểm <b id="wr-s">0</b></span><span>Chuỗi <b id="wr-k">0</b></span><span id="wr-l">Lượt còn: 3</span><button class="btn soft sm" id="wr-x" type="button">Thoát</button></div><div class="wr-q" id="wr-q"></div><div class="wr-o" id="wr-o"></div><div class="wr-f" id="wr-f"></div></div>`;
+  document.body.appendChild(ov);
+  const rnd = a => a[Math.floor(Math.random() * a.length)];
+  let score = 0, streak = 0, lives = 3, cur = null, busy = false;
+  const $ = s => ov.querySelector(s);
+  const pick = () => {
+    const c = rnd(pool), opts = [c.vi];
+    let guard = 0;
+    while (opts.length < 4 && guard++ < 200) { const v = rnd(pool).vi; if (!opts.includes(v)) opts.push(v); }
+    return { en: c.en, vi: c.vi, opts: opts.sort(() => Math.random() - .5) };
+  };
+  const draw = () => {
+    cur = pick(); busy = false;
+    $('#wr-q').textContent = cur.en; $('#wr-s').textContent = score; $('#wr-k').textContent = streak;
+    $('#wr-l').textContent = 'Lượt còn: ' + lives; $('#wr-f').textContent = '';
+    $('#wr-o').innerHTML = cur.opts.map((o, i) => `<button class="wr-b" type="button" data-i="${i}">${esc(o)}</button>`).join('');
+  };
+  const end = () => {
+    const best = Math.max(+(store.get('wr_best') || 0), score);
+    store.set('wr_best', String(best));
+    const xp = Math.min(15, Math.floor(score / 5)), claimed = store.get('wr_xp_' + dayKey()) === '1';
+    $('#wr-q').textContent = 'Kết thúc!';
+    $('#wr-f').textContent = '';
+    $('#wr-o').innerHTML = `<p style="margin:6px 0">Điểm: <b>${score}</b> · Điểm cao nhất: <b>${best}</b></p>` +
+      (xp && !claimed ? `<button class="btn" id="wr-claim" type="button">Nhận +${xp} XP</button>` : (xp ? '<span class="muted">Đã nhận XP của game hôm nay</span>' : '')) +
+      ` <button class="btn soft" id="wr-again" type="button">Chơi lại</button>`;
+    ov._xp = xp;
+  };
+  ov.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'wr-x') return ov.remove();
+    if (b.id === 'wr-again') { score = 0; streak = 0; lives = 3; return draw(); }
+    if (b.id === 'wr-claim') {
+      const xp = ov._xp || 0; if (!xp) return;
+      store.set('wr_xp_' + dayKey(), '1'); b.disabled = true; b.textContent = 'Đã nhận';
+      await award(null, xp, {}, 'game'); toast('Đã cộng ' + xp + ' XP.'); return;
+    }
+    if (!b.classList.contains('wr-b') || busy || !cur) return;
+    busy = true;
+    const ok = cur.opts[+b.dataset.i] === cur.vi;
+    ov.querySelectorAll('.wr-b').forEach(x => { x.disabled = true; if (x.textContent === cur.vi) x.classList.add('ok'); });
+    if (ok) { streak++; score += 10 + Math.min(streak, 10); $('#wr-f').textContent = 'Đúng!'; $('#wr-f').className = 'wr-f ok'; }
+    else { streak = 0; lives--; b.classList.add('bad'); $('#wr-f').textContent = 'Sai. Đáp án là: ' + cur.vi; $('#wr-f').className = 'wr-f bad'; }
+    $('#wr-s').textContent = score; $('#wr-k').textContent = streak; $('#wr-l').textContent = 'Lượt còn: ' + Math.max(0, lives);
+    setTimeout(() => { if (lives <= 0) end(); else draw(); }, ok ? 650 : 1300);
+  });
+  draw();
+}
 function viewGames() {
   const list = ((S.site && S.site.games) || []).filter(g => g && /^https?:\/\//i.test(g.url || '') && forMyClass(g));
   const dk = dayKey(), doneKey = id => 'inspire_game_' + (S.user && S.user.uid) + '_' + id;
@@ -6911,9 +7085,11 @@ function viewGames() {
       <div class="gm-b"><button class="btn" data-gp="${esc(id)}">Chơi ngay</button>${xp ? `<button class="btn soft" data-gd="${esc(id)}" data-xp="${xp}" ${done ? 'disabled' : ''}>${done ? 'Đã nhận XP hôm nay' : 'Em đã chơi xong, nhận +' + xp + ' XP'}</button>` : ''}</div></article>`; };
   main.innerHTML = `<style>.gm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0 50px}.gm-c{display:flex;flex-direction:column;gap:8px}.gm-c h3{margin:0;color:#0B5CA8}.gm-p{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#F26522}.gm-b{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px}</style>
     <h2 style="margin:26px 0 6px;font-size:2.2rem">Trò chơi luyện từ</h2><p class="muted">Chơi game do thầy cô chọn để nhớ từ nhanh hơn. Bấm Chơi ngay để chơi toàn màn hình ngay trên web, chơi xong bấm nhận XP (mỗi game nhận một lần mỗi ngày).</p>
-    <div class="gm-g">${list.length ? list.map(card).join('') : empty(((S.site && S.site.games) || []).length ? 'Có trò chơi nhưng chưa dành cho lớp của em. Em liên hệ thầy cô nhé.' : 'Thầy cô chưa gắn trò chơi nào. Em quay lại sau nhé!')}</div>`;
+    <div class="gm-g">${paintCard()}${wordRushCard()}${list.length ? list.map(card).join('') : empty(((S.site && S.site.games) || []).length ? 'Có trò chơi nhưng chưa dành cho lớp của em. Em liên hệ thầy cô nhé.' : 'Thầy cô chưa gắn trò chơi nào. Em quay lại sau nhé!')}</div>`;
   const claim = async (id, xp, btn) => { if (store.get(doneKey(id)) === dk) return; store.set(doneKey(id), dk); if (btn) { btn.disabled = true; btn.textContent = 'Đã nhận XP hôm nay'; } await award(null, xp, {}, 'daily'); toast('Đã cộng ' + xp + ' XP.'); };
   main.querySelectorAll('[data-gd]').forEach(b => b.onclick = () => claim(b.dataset.gd, +b.dataset.xp, b));
+  const wrBtn = main.querySelector('#wr-play'); if (wrBtn) wrBtn.onclick = openWordRush;
+  const ptBtn = main.querySelector('#pt-play'); if (ptBtn) ptBtn.onclick = openPaint;
   main.querySelectorAll('[data-gp]').forEach(b => b.onclick = () => { const g = list.find(x => String(x.id || x.url) === b.dataset.gp); if (g) openGame(g, claim, doneKey(String(g.id || g.url)) && store.get(doneKey(String(g.id || g.url))) === dk); });
 }
 const brandHTML = (link = true) => `<${link ? 'a href="#" data-go="home"' : 'div'} class="brand"><img src="${LOGO}" alt="Inspire"><span><b>Inspire</b><small>Do it with passion</small></span></${link ? 'a' : 'div'}>`;
@@ -6976,6 +7152,317 @@ function mountQA(c) {
   try {
     window.__qaUn = api.watchQA(c, list => { const el = document.getElementById('qa-list'); if (el) el.innerHTML = qaHTML(list); });
   } catch (er) { console.warn('qa', er); }
+}
+/* ===== Chơi chung trực tiếp: cô mở phòng, học sinh nhập mã vào chơi cùng ===== */
+function cxlLive(c) {
+  return `<section class="card" style="padding:16px 18px"><h3 style="margin:0 0 6px">Chơi chung</h3><p class="muted" style="margin:0 0 10px">Cô mở phòng và cho mã. Em nhập mã để vào chơi cùng cả lớp. Ai đúng nhanh được nhiều điểm hơn.</p><div id="lv-box"><div class="row"><input id="lv-code" maxlength="6" placeholder="Nhập mã phòng" style="text-transform:uppercase;max-width:220px"><button class="btn" id="lv-join" type="button">Vào phòng</button></div></div></section>`;
+}
+function mountLive(c) {
+  if (window.__liveUn) { try { window.__liveUn(); } catch (e) {} window.__liveUn = null; }
+  const btn = document.getElementById('lv-join'), inp = document.getElementById('lv-code');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const code = (inp.value || '').trim().toUpperCase();
+    if (code.length < 4) return toast('Nhập mã phòng cô đưa.', 'warn');
+    try {
+      const room = await api.getRoom(code);
+      if (!room || room.classId !== c.id) return toast('Không tìm thấy phòng này trong lớp.', 'bad');
+      if (room.state === 'end') return toast('Phòng này đã kết thúc.', 'warn');
+      await api.joinRoom(code, myName());
+      window.__liveRoom = { code, answered: {}, players: [] };
+      window.__liveUn = api.watchRoom(code, r => renderLive(code, r));
+      const pu = api.watchPlayers(code, list => { window.__liveRoom.players = list; renderLive(code, window.__liveRoomLast || null); });
+      const prev = window.__liveUn;
+      window.__liveUn = () => { try { prev(); pu(); } catch (e) {} };
+    } catch (er) { toast('Không vào được phòng: ' + er.message, 'bad'); }
+  };
+}
+function renderLive(code, room) {
+  window.__liveRoomLast = room;
+  const box = document.getElementById('lv-box'); if (!box || !window.__liveRoom) return;
+  const players = window.__liveRoom.players || [];
+  const board = () => [...players].sort((p, q) => (q.score || 0) - (p.score || 0)).slice(0, 10).map((p, i) => `<div class="lv-r"><b>${i + 1}</b> ${esc(p.name || 'Học sinh')} <span>${p.score || 0} điểm</span></div>`).join('') || '<div class="muted">Chưa có ai vào phòng.</div>';
+  if (!room) { box.innerHTML = '<div class="empty">Phòng đã đóng.</div>'; return; }
+  if (room.state === 'lobby' || !room.state) { box.innerHTML = `<div class="lv-big">Mã phòng: <b>${esc(code)}</b></div><p class="muted">Chờ cô bắt đầu… (${players.length} bạn đã vào)</p>${board()}`; return; }
+  if (room.state === 'q') {
+    const q = room.qs[room.qi]; const done = window.__liveRoom.answered[room.qi];
+    if (!q) { box.innerHTML = '<div class="empty">Đang chuyển câu…</div>'; return; }
+    box.innerHTML = `<div class="lv-big">Câu ${room.qi + 1}/${room.qs.length}</div><div class="lv-q">${esc(q.q)}</div><div class="lv-o">${q.o.map((o, k) => `<button class="lv-b" type="button" data-k="${k}" ${done ? 'disabled' : ''}>${String.fromCharCode(65 + k)}. ${esc(o)}</button>`).join('')}</div><div class="muted" id="lv-f">${done ? 'Em đã trả lời. Chờ câu tiếp theo.' : ''}</div>`;
+    box.querySelectorAll('.lv-b').forEach(b => b.onclick = async () => {
+      if (window.__liveRoom.answered[room.qi]) return;
+      window.__liveRoom.answered[room.qi] = true;
+      const k = +b.dataset.k, ok = k === q.a;
+      const secs = Math.max(0, (Date.now() - (room.qStartMs || Date.now())) / 1000);
+      const pts = ok ? Math.round(100 + Math.max(0, 50 - secs * 5)) : 0;
+      try { await api.answerRoom(code, room.qi, k, pts, ok ? 1 : 0); } catch (e) { console.warn(e); }
+      b.classList.add(ok ? 'ok' : 'bad');
+      box.querySelectorAll('.lv-b').forEach(x => x.disabled = true);
+      const f = box.querySelector('#lv-f'); if (f) f.textContent = ok ? 'Đúng! +' + pts + ' điểm' : 'Chưa đúng. Đáp án: ' + String.fromCharCode(65 + q.a);
+    });
+    return;
+  }
+  box.innerHTML = `<div class="lv-big">Kết thúc!</div><p class="muted">Bảng điểm cuối cùng</p>${board()}`;
+}
+/* ===== CYBER ARENA: đấu trí theo thời gian chung, không cần giáo viên điều khiển ===== */
+const AR = { PERQ: 15000, WIN: 11000, N: 8, LOBBY: 60000, HEIST: 100, STEAL: 150, SHIELD: 80, SHIELD_MS: 60000, CD: 30000, VIRUS: 120, VIRUS_DMG: 100 };
+const AR_COL = ['#A855F7', '#22D3EE', '#F472B6', '#84CC16', '#FACC15'];
+const arNow = () => Date.now();
+function arPhase(room, t) {
+  if (!room) return { k: 'none' };
+  if (t < room.startAtMs) return { k: 'lobby', left: room.startAtMs - t };
+  const qi = Math.floor((t - room.startAtMs) / AR.PERQ);
+  if (qi >= room.qs.length) return { k: 'end' };
+  const inQ = t - room.startAtMs - qi * AR.PERQ;
+  return inQ < AR.WIN ? { k: 'q', qi, el: inQ, left: AR.WIN - inQ } : { k: 'reveal', qi, left: AR.PERQ - inQ };
+}
+const SKILLS = {
+  attacker: { n: 'ATTACKER', d: 'Chuyên tấn công', s: [{ id: 'steal', t: 1, n: 'Steal Boost', d: 'Hack lấy thêm 30 cr' }, { id: 'vmaster', t: 2, n: 'Virus Master', d: 'Virus rẻ hơn 40 cr' }, { id: 'crit', t: 3, n: 'Critical Hack', d: '25% cơ hội hack được thưởng thêm 50 cr' }] },
+  defender: { n: 'DEFENDER', d: 'Chuyên phòng thủ', s: [{ id: 'fw', t: 1, n: 'Advanced Firewall', d: 'Khiên rẻ hơn 30 cr' }, { id: 'recov', t: 2, n: 'Recovery Protocol', d: 'Khiên chặn được một đòn thì hoàn 40 cr' }, { id: 'av', t: 3, n: 'Anti-Virus', d: 'Virus làm bạn mất ít hơn 50 cr' }] },
+  strategist: { n: 'STRATEGIST', d: 'Chuyên chiến thuật', s: [{ id: 'disc', t: 1, n: 'Market Discount', d: 'Chợ đen giảm 30 cr' }, { id: 'lucky', t: 2, n: 'Lucky Drop', d: 'Lucky Chip cho tối đa 260 cr' }, { id: 'analyst', t: 3, n: 'Data Analyst', d: 'Xem độ chính xác của đối thủ' }] },
+  scholar: { n: 'SCHOLAR', d: 'Chuyên học tập', s: [{ id: 'kb', t: 1, n: 'Knowledge Boost', d: 'Mỗi câu đúng +10 cr' }, { id: 'perfect', t: 2, n: 'Perfect Streak', d: 'Combo thưởng +35 cr thay vì +20' }, { id: 'final', t: 3, n: 'Final Exam Bonus', d: 'Đạt 6 câu đúng trong trận: +50 cr' }] }
+};
+const AR_EVT = {
+  double: { n: 'DOUBLE CREDITS', d: 'Điểm của mọi câu đúng ở câu này được gấp đôi.' },
+  blackout: { n: 'SYSTEM BLACKOUT', d: 'Bảng xếp hạng tạm ẩn ở câu này. Ai đang dẫn đầu, hãy tự đoán!' },
+  treasure: { n: 'TREASURE DROP', d: 'Người trả lời đúng đầu tiên ở câu này nhận thêm 100 cr.' },
+  chaos: { n: 'CHAOS.EXE', d: 'Mỗi câu đúng ở câu này được thêm 50 cr.' }
+};
+// Sự kiện ngẫu nhiên: suy ra từ mốc bắt đầu trận nên mọi máy đều thấy cùng một sự kiện
+function arEvent(room, qi) {
+  if (!room || !room.createdAtMs || qi <= 0) return null;
+  const k = (Math.floor(room.createdAtMs / 1000) + qi * 7) % 10;
+  if (k >= 4) return null;
+  const types = ['double', 'blackout', 'treasure', 'chaos'];
+  const key = types[(k + qi) % types.length];
+  return { key, ...AR_EVT[key] };
+}
+const arTierOf = correct => (correct >= 6 ? 3 : correct >= 3 ? 2 : 1);
+const arHas = (branch, id, tier) => { const b = SKILLS[branch]; if (!b) return false; const s = b.s.find(z => z.id === id); return !!s && s.t <= (tier || 1); };
+function arLedger(room, answers, attacks, shields, items, players) {
+  const bal = {}, add = (u, v) => { bal[u] = (bal[u] || 0) + v; };
+  const br = {}; (players || []).forEach(p => { br[p.uid || p.id] = p.branch || ''; });
+  const cor = {}; answers.forEach(a => { if (a.ok) cor[a.uid] = (cor[a.uid] || 0) + 1; });
+  const tier = u => arTierOf(cor[u] || 0);
+  const H = u => arHas(br[u], '', 0);
+  answers.forEach(a => {
+    if (!a.ok) return;
+    add(a.uid, a.pts + (a.bonus || 0));
+    if (arHas(br[a.uid], 'kb', tier(a.uid))) add(a.uid, 10);
+    if (a.bonus && arHas(br[a.uid], 'perfect', tier(a.uid))) add(a.uid, 15);
+  });
+  answers.forEach(a => {
+    if (!a.ok) return;
+    const ev = arEvent(room, a.qi);
+    if (ev && ev.key === 'double') add(a.uid, a.pts || 0);
+    if (ev && ev.key === 'chaos') add(a.uid, 50);
+  });
+  Object.keys(cor).forEach(u => { if (arHas(br[u], 'final', tier(u)) && cor[u] >= 6) add(u, 50); });
+  const firstOk = {};
+  answers.filter(a => a.ok).sort((p, q) => (p.atMs || 0) - (q.atMs || 0)).forEach(a => { if (firstOk[a.qi] === undefined) firstOk[a.qi] = a.uid; });
+  Object.keys(firstOk).forEach(qi => { const ev = arEvent(room, +qi); if (ev && ev.key === 'treasure') add(firstOk[qi], 100); });
+  attacks.forEach(t => {
+    const tf = tier(t.from), tt = tier(t.to || '');
+    if (t.type === 'virus') {
+      add(t.from, -(arHas(br[t.from], 'vmaster', tf) ? AR.VIRUS - 40 : AR.VIRUS));
+      if (!t.blocked) add(t.to, -(arHas(br[t.to], 'av', tt) ? AR.VIRUS_DMG - 50 : AR.VIRUS_DMG));
+      else if (arHas(br[t.to], 'recov', tt)) add(t.to, 40);
+    } else {
+      add(t.from, -AR.HEIST);
+      if (!t.blocked) {
+        add(t.from, AR.STEAL + (arHas(br[t.from], 'steal', tf) ? 30 : 0));
+        add(t.to, -AR.STEAL);
+        if (t.crit && arHas(br[t.from], 'crit', tf)) add(t.from, 50);
+      } else if (arHas(br[t.to], 'recov', tt)) add(t.to, 40);
+    }
+  });
+  shields.forEach(s => add(s.uid, -(arHas(br[s.uid], 'fw', tier(s.uid)) ? AR.SHIELD - 30 : AR.SHIELD)));
+  const used = new Set();
+  (items || []).forEach(it => {
+    const disc = arHas(br[it.uid], 'disc', tier(it.uid)) ? 30 : 0;
+    if (it.type === 'lucky') { add(it.uid, (it.val || 0) - (100 - disc)); return; }
+    if (it.type === 'booster') {
+      add(it.uid, -(150 - disc));
+      const nxt = answers.filter(a => a.uid === it.uid && a.ok && (a.atMs || 0) > (it.atMs || 0) && !used.has(a.uid + '_' + a.qi)).sort((p, q) => (p.atMs || 0) - (q.atMs || 0))[0];
+      if (nxt) { used.add(nxt.uid + '_' + nxt.qi); add(it.uid, 60); }
+    }
+  });
+  return bal;
+}
+const arBranchOf = (players, uid) => ((players || []).find(p => (p.uid || p.id) === uid) || {}).branch || '';
+function skillsHTML(me, st) {
+  const br = arBranchOf(st.players, me);
+  if (!br) return '<div class="ar-sk-none">Chọn một nhánh kỹ năng ở màn hình trước để mở khoá kỹ năng trong trận.</div>';
+  const cor = st.answers.filter(a => a.uid === me && a.ok).length, tier = arTierOf(cor);
+  const b = SKILLS[br];
+  return `<div class="ar-sk"><b>Kỹ năng ${b.n}</b> <small>(${cor} câu đúng · cấp ${tier}/3)</small>
+    <div class="ar-sk-l">${b.s.map(k => `<div class="ar-sk-i ${k.t <= tier ? 'on' : ''}"><b>${k.n}</b><span>${k.t <= tier ? k.d : 'Mở ở cấp ' + k.t + ': ' + k.d}</span></div>`).join('')}</div></div>`;
+}
+function cxlArena(c) {
+  const id = store.get('arena_id') || (S.profile && S.profile.name) || myName();
+  const brc = store.get('arena_branch') || '';
+  const av = store.get('arena_av') || 'avatars/hacker-1.png';
+  const col = store.get('arena_col') || AR_COL[0];
+  return `<section class="card ar-card"><div class="ar-h"><div><div class="ar-eb">CYBER ARENA</div><h3 style="margin:0">Đấu trí theo thời gian chung</h3></div></div>
+  <p class="muted" style="margin:6px 0 12px">Cả lớp vào cùng lúc là chơi chung. Không cần cô điều khiển: trận tự bắt đầu sau 60 giây và câu hỏi tự chuyển theo đồng hồ.</p>
+  <div class="ar-br"><b>Nhánh kỹ năng</b><div class="ar-br-l">${Object.keys(SKILLS).map(k => `<button type="button" class="ar-br-b ${k === brc ? 'on' : ''}" data-br="${k}">${SKILLS[k].n}<small>${SKILLS[k].d}</small></button>`).join('')}</div></div>
+  <div class="ar-av-pick">${['avatars/hacker-1.png', 'avatars/hacker-2.png', 'avatars/hacker-3.png', 'avatars/hacker-4.png', 'avatars/hacker-5.png'].map(p => `<button type="button" class="ar-av-b ${p === av ? 'on' : ''}" data-av="${p}"><img src="${p}" alt=""></button>`).join('')}</div>
+  <div class="ar-id"><label>Hacker ID <input id="ar-id" maxlength="16" value="${esc(id)}"></label><div class="ar-cols">${AR_COL.map(c2 => `<button type="button" class="ar-sw ${c2 === col ? 'on' : ''}" data-col="${c2}" style="background:${c2}"></button>`).join('')}</div></div>
+  <label class="ar-chk" style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:600"><input type="checkbox" id="ar-boss"> Chế độ Boss: cả lớp cùng đánh bại VIRUS-404</label><div class="row" style="margin-top:10px"><button class="btn" id="ar-new" type="button">Tạo trận mới</button><button class="btn soft" id="ar-join" type="button">Vào trận đang mở</button></div>
+  <div id="ar-body" style="margin-top:14px"><div class="muted">Đang tìm trận…</div></div></section>`;
+}
+function mountArena(c) {
+  if (window.__arUn) { try { window.__arUn(); } catch (e) {} window.__arUn = null; }
+  if (window.__arTick) { clearInterval(window.__arTick); window.__arTick = null; }
+  const idEl = document.getElementById('ar-id');
+  if (!idEl) return;
+  idEl.onchange = () => store.set('arena_id', idEl.value.trim() || 'Hacker');
+  document.querySelectorAll('.ar-br-b').forEach(b => b.onclick = () => { store.set('arena_branch', b.dataset.br); document.querySelectorAll('.ar-br-b').forEach(x => x.classList.toggle('on', x === b)); });
+  document.querySelectorAll('.ar-av-b').forEach(b => b.onclick = () => { store.set('arena_av', b.dataset.av); document.querySelectorAll('.ar-av-b').forEach(x => x.classList.toggle('on', x === b)); });
+  document.querySelectorAll('.ar-sw').forEach(b => b.onclick = () => { store.set('arena_col', b.dataset.col); document.querySelectorAll('.ar-sw').forEach(x => x.classList.toggle('on', x === b)); });
+  const st = { list: [], sets: [], code: null, room: null, players: [], answers: [], attacks: [], shields: [], items: [], unsub: [] };
+  window.__arState = st;
+  const subRoom = code => {
+    st.unsub.forEach(f => { try { f(); } catch (e) {} }); st.unsub = [];
+    st.code = code;
+    st.unsub.push(api.arenaWatch(code, r => { st.room = r; }));
+    st.unsub.push(api.arenaPlayers(code, l => { st.players = l; }));
+    st.unsub.push(api.arenaAnswers(code, l => { st.answers = l.filter(a => a && a.uid); }));
+    st.unsub.push(api.arenaAttacks(code, l => { st.attacks = l; }));
+    st.unsub.push(api.arenaShields(code, l => { st.shields = l; }));
+    st.unsub.push(api.arenaItems(code, l => { st.items = l; }));
+    window.__arUn = () => st.unsub.forEach(f => { try { f(); } catch (e) {} });
+  };
+  window.__arSub = subRoom;
+  const unList = api.arenaList(c, list => { st.list = list; });
+  const unSets = api.arenaSets(c, l => { st.sets = l; });
+  const prevUn = window.__arUn;
+  window.__arUn = () => { try { unList(); } catch (e) {} if (prevUn) prevUn(); };
+  const prevUn3 = window.__arUn;
+  window.__arUn = () => { try { unSets(); } catch (e) {} prevUn3(); };
+  const pick = () => {
+    const now = arNow();
+    return st.list.filter(r => r.startAtMs + AR.N * AR.PERQ > now).sort((a, b) => b.startAtMs - a.startAtMs)[0] || null;
+  };
+  const doJoin = async code => {
+    const name = (document.getElementById('ar-id').value || 'Hacker').trim().slice(0, 16);
+    store.set('arena_id', name);
+    await api.arenaJoin(code, { name, color: store.get('arena_col') || AR_COL[0], branch: store.get('arena_branch') || '', av: store.get('arena_av') || 'avatars/hacker-1.png', joinedAtMs: arNow() });
+    subRoom(code);
+  };
+  document.getElementById('ar-join').onclick = async () => {
+    const r = pick(); if (!r) return toast('Chưa có trận nào đang mở. Bấm Tạo trận mới nhé.', 'warn');
+    try { await doJoin(r.id); } catch (er) { toast('Không vào được: ' + er.message, 'bad'); }
+  };
+  document.getElementById('ar-new').onclick = async () => {
+    const set = [...(st.sets || [])].sort((p, q) => (q.atMs || 0) - (p.atMs || 0))[0];
+    const pool = set ? set.qs.filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0 && q.q) : (S.banks || []).filter(b => b.classId === c.id).flatMap(b => b.qs || []).filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0 && q.q);
+    if (pool.length < 3) return toast('Lớp cần có ít nhất 3 câu trắc nghiệm trong đề để mở trận.', 'warn');
+    const qs = [...pool].sort(() => Math.random() - .5).slice(0, AR.N).map(q => ({ q: q.q, o: q.o, a: q.a }));
+    const code = Math.random().toString(36).slice(2, 7).toUpperCase().padEnd(5, 'X');
+    try {
+      await api.arenaCreate(code, { classId: c.id, creator: S.user.uid, title: 'Cyber Arena · ' + c.name, startAtMs: arNow() + AR.LOBBY, perQ: AR.PERQ, qs, createdAtMs: arNow(), boss: document.getElementById('ar-boss') && document.getElementById('ar-boss').checked ? { name: 'VIRUS-404', hp: 2000 + qs.length * 200 } : null });
+      toast('Đã mở trận ' + code + '. Các bạn vào trong 60 giây là chơi cùng nhau.', 'ok');
+      await doJoin(code);
+    } catch (er) { toast('Không tạo được trận: ' + er.message, 'bad'); }
+  };
+  window.__arTick = setInterval(() => renderArena(st), 400);
+  renderArena(st);
+}
+function bossHTML(boss, players) {
+  const pct = Math.round(boss.hp / boss.max * 100);
+  const mvpId = Object.keys(boss.dmg).sort((a, b) => boss.dmg[b] - boss.dmg[a])[0];
+  const mvp = players.find(p => (p.uid || p.id) === mvpId);
+  const defeated = boss.hp <= 0;
+  return `<div class="ar-boss ${defeated ? 'dead' : ''}"><div class="ar-bt"><b>BOSS: ${esc(boss.name)}</b><span>${defeated ? 'ĐÃ BỊ HẠ' : 'HP ' + boss.hp + '/' + boss.max}</span></div>
+    <div class="ar-bar"><i style="width:${pct}%"></i></div>
+    <div class="ar-bm">Sát thương cả lớp: <b>${boss.tot}</b>${mvp ? ' · MVP: <b>' + esc(mvp.name || 'Hacker') + '</b> (' + boss.dmg[mvpId] + ' sát thương)' : ''}</div></div>`;
+}
+function renderArena(st) {
+  const body = document.getElementById('ar-body'); if (!body) return;
+  const now = arNow();
+  if (!st.code) { const r = st.list.filter(x => x.startAtMs + AR.N * AR.PERQ > now).sort((a, b) => b.startAtMs - a.startAtMs)[0]; body.innerHTML = r ? `<div class="ar-note">Có trận đang mở: <b>${esc(r.title || '')}</b>. Bấm “Vào trận đang mở”.</div>` : '<div class="empty">Chưa có trận nào. Bấm Tạo trận mới để mở.</div>'; return; }
+  if (!st.room) { body.innerHTML = '<div class="muted">Đang tải trận…</div>'; return; }
+  const room = st.room, ph = arPhase(room, now), me = (S.user || {}).uid;
+  const bal = arLedger(room, st.answers, st.attacks, st.shields, st.items, st.players);
+  const my = bal[me] || 0;
+  const players = st.players.map(p => ({ ...p, cr: bal[p.uid || p.id] || 0 })).sort((a, b) => b.cr - a.cr);
+  const board = players.map((p, i) => `<div class="ar-row ${(p.uid || p.id) === me ? 'me' : ''}"><span class="ar-rk">${i + 1}</span>${p.av ? `<img class="ar-av" src="${esc(p.av)}" alt="">` : `<span class="ar-dot" style="background:${esc(p.color || '#A855F7')}"></span>`}<b>${esc(p.name || 'Hacker')}</b><span class="grow"></span><span>${p.cr} cr</span></div>`).join('') || '<div class="muted">Chưa có ai.</div>';
+  const boss = room.boss ? (() => {
+    const dmg = {}; let tot = 0;
+    st.answers.forEach(a => { if (a.ok) { const d = Math.round(((a.pts || 0) + (a.bonus || 0)) / 10); dmg[a.uid] = (dmg[a.uid] || 0) + d; tot += d; } });
+    return { hp: Math.max(0, room.boss.hp - tot), max: room.boss.hp, dmg, tot, name: room.boss.name };
+  })() : null;
+  const evNow = (ph.k === 'q' || ph.k === 'reveal') ? arEvent(room, ph.qi) : null;
+  const evBanner = evNow ? `<div class="ar-evt ${evNow.key}"><b>SỰ KIỆN: ${esc(evNow.n)}</b><span>${esc(evNow.d)}</span></div>` : '';
+  let main = '';
+  if (ph.k === 'lobby') main = `<div class="ar-big">Trận bắt đầu sau <b>${Math.ceil(ph.left / 1000)}</b> giây</div><p class="muted">Các bạn khác vào trong lúc này là chơi chung.</p>`;
+  else if (ph.k === 'end') {
+    main = `<div class="ar-big">Trận kết thúc</div>`;
+    const key = 'arena_xp_' + room.createdAtMs;
+    if (!store.get(key)) { store.set(key, '1'); const xp = Math.min(100, Math.floor(my / 10)); if (xp > 0) award(null, xp, {}, 'arena'); }
+      if (boss && boss.hp <= 0 && st.answers.some(a => a.uid === me && a.ok)) { const bk = 'arena_boss_' + room.createdAtMs; if (!store.get(bk)) { store.set(bk, '1'); award(null, 20, {}, 'arena_boss'); toast('Cả lớp đã hạ VIRUS-404! +20 XP', 'ok'); } }
+  } else if (ph.k === 'q' || ph.k === 'reveal') {
+    const q = room.qs[ph.qi];
+    const done = st.answers.find(a => a.uid === me && a.qi === ph.qi);
+    const sec = ph.el / 1000;
+    const pts = sec < 5 ? 150 : sec < 10 ? 100 : 70;
+    const streak = (() => { let s = 0; for (let i = 0; i < ph.qi; i++) { const a = st.answers.find(z => z.uid === me && z.qi === i); if (a && a.ok) s++; else s = 0; } return s; })();
+    main = `<div class="ar-big">Câu ${ph.qi + 1}/${room.qs.length} <span class="ar-t">${ph.k === 'q' ? 'còn ' + Math.ceil(ph.left / 1000) + 's' : 'đáp án'}</span></div>
+      <div class="ar-q">${esc(q.q)}</div>
+      <div class="ar-o">${q.o.map((o, k) => `<button type="button" class="ar-b ${done ? (k === q.a ? 'ok' : (done.c === k ? 'bad' : '')) : (ph.k !== 'q' && k === q.a ? 'ok' : '')}" data-k="${k}" ${done || ph.k !== 'q' ? 'disabled' : ''}>${String.fromCharCode(65 + k)}. ${esc(o)}</button>`).join('')}</div>
+      <div class="ar-f">${done ? (done.ok ? 'Đúng! +' + done.pts + ' cr' + (done.bonus ? ' (combo +' + done.bonus + ')' : '') : 'Chưa đúng.') : (ph.k === 'q' ? 'Trả lời càng sớm càng nhiều cr. Đúng liên tiếp 3 câu được thưởng combo.' : 'Hết giờ câu này.')}</div>`;
+    if (done) {} 
+    else if (ph.k === 'q') {
+      window.__arAns = window.__arAns || {};
+      body.querySelectorAll && 0;
+    }
+    body.dataset.qi = ph.qi;
+    body.dataset.pts = pts; body.dataset.streak = streak; body.dataset.sec = sec; body.dataset.ans = q.a;
+    body.dataset.phase = ph.k;
+  }
+  const canAct = ph.k !== 'lobby' && ph.k !== 'end';
+  const heistList = players.filter(p => (p.uid || p.id) !== me).map(p => `<button class="ar-hk" type="button" data-to="${esc(p.uid || p.id)}" data-nm="${esc(p.name || 'Hacker')}" ${(my < AR.HEIST || !canAct || (st.attacks.filter(t => t.from === me).slice(-1)[0] || { atMs: 0 }).atMs + AR.CD > now) ? 'disabled' : ''}>Hack ${esc(p.name || 'Hacker')}</button>`).join('');
+  const bo = (evNow && evNow.key === 'blackout') ? '<div class="muted">Bảng điểm đang bị ẩn (SYSTEM BLACKOUT)</div>' : board;
+  const lastMine = (st.attacks.filter(t => t.from === me).slice(-1)[0] || { atMs: 0 }).atMs;
+  const cooling = lastMine + AR.CD > now;
+  const virusList = players.filter(p => (p.uid || p.id) !== me).map(p => `<button class="ar-hk ar-vr" type="button" data-vto="${esc(p.uid || p.id)}" data-nm="${esc(p.name || 'Hacker')}" ${(my < AR.VIRUS || !canAct || cooling) ? 'disabled' : ''}>Virus ${esc(p.name || 'Hacker')}</button>`).join('');
+  const shielded = st.shields.some(s => s.uid === me && (s.until || 0) > now);
+  body.innerHTML = `<div class="ar-top"><span>Trận: <b>${esc(room.title || '')}</b></span><span>Mã <b>${esc(st.code)}</b></span><span>Credits: <b>${my}</b></span></div>
+    ${boss ? bossHTML(boss, st.players) : ''}
+    ${evBanner}
+    ${main}
+    ${skillsHTML(me, st)}
+    <div class="ar-grid"><div class="ar-col"><h4>Bảng điểm</h4>${bo}</div>
+    <div class="ar-col"><h4>Hack và phòng thủ</h4><div class="ar-hks">${heistList || '<span class="muted">Chưa có đối thủ.</span>'}</div><div class="ar-hks">${virusList}</div><p class="muted" style="font-size:.82rem">Virus tốn 120 cr, làm đối thủ mất 100 cr.</p>
+    <div class="ar-mkt"><b>Chợ đen</b><button class="ar-mk" type="button" data-item="booster" ${my < 150 || !canAct ? 'disabled' : ''}>Coin Booster (150 cr): câu đúng tiếp theo +60 cr</button><button class="ar-mk" type="button" data-item="lucky" ${my < 100 || !canAct ? 'disabled' : ''}>Lucky Chip (100 cr): nhận ngẫu nhiên 0–200 cr</button></div>
+    <button class="btn soft sm" id="ar-sh" type="button" ${my < AR.SHIELD || shielded || ph.k === 'end' ? 'disabled' : ''}>${shielded ? 'Khiên đang bật' : 'Bật khiên (' + AR.SHIELD + ' cr)'}</button>
+    <p class="muted" style="font-size:.82rem">Hack tốn ${AR.HEIST} cr, lấy ${AR.STEAL} cr từ đối thủ. Khiên chặn được một lần hack trong 60 giây.</p></div></div>`;
+  body.querySelectorAll('.ar-b').forEach(b => b.onclick = async () => {
+    const qi = +body.dataset.qi, ok = +b.dataset.k === +body.dataset.ans;
+    const prev = st.answers.filter(z => z.uid === me).sort((a, b2) => a.qi - b2.qi);
+    let s = 0; for (const a of prev) { if (a.qi < qi && a.ok) s++; else if (a.qi < qi) s = 0; }
+    const bonus = ok && s >= 2 ? 20 : 0;
+    const pts = ok ? (+body.dataset.sec < 5 ? 150 : +body.dataset.sec < 10 ? 100 : 70) : 0;
+    b.classList.add(ok ? 'ok' : 'bad');
+    try { await api.arenaAnswer(st.code, qi, { ok, c: +b.dataset.k, pts, bonus, atMs: arNow() }); } catch (e) { toast('Không ghi được đáp án: ' + e.message, 'bad'); }
+  });
+  body.querySelectorAll('.ar-hk').forEach(b => b.onclick = async () => {
+    const blocked = st.shields.some(s => s.uid === b.dataset.to && (s.until || 0) > arNow());
+    const crit = arHas(arBranchOf(st.players, me), 'crit', arTierOf(st.answers.filter(a => a.uid === me && a.ok).length)) && Math.random() < .25;
+    try { await api.arenaAttack(st.code, { to: b.dataset.to, name: b.dataset.nm, blocked, crit, atMs: arNow() }); toast(blocked ? 'Đối thủ có khiên, hack bị chặn!' : 'Hack thành công! +' + AR.STEAL + ' cr', blocked ? 'warn' : 'ok'); } catch (e) { toast(e.message, 'bad'); }
+  });
+  body.querySelectorAll('.ar-vr').forEach(b => b.onclick = async () => {
+    const blocked = st.shields.some(s => s.uid === b.dataset.vto && (s.until || 0) > arNow());
+    try { await api.arenaAttack(st.code, { type: 'virus', to: b.dataset.vto, name: b.dataset.nm, blocked, atMs: arNow() }); toast(blocked ? 'Đối thủ có khiên, virus bị chặn!' : 'Virus đã gửi đi!', blocked ? 'warn' : 'ok'); } catch (e) { toast(e.message, 'bad'); }
+  });
+  body.querySelectorAll('.ar-mk').forEach(b => b.onclick = async () => {
+    const type = b.dataset.item;
+    const cost = type === 'booster' ? 150 : 100;
+    if (my < cost) return toast('Không đủ Credits.', 'warn');
+    try { await api.arenaItem(st.code, { type, atMs: arNow(), val: type === 'lucky' ? Math.floor(Math.random() * (arHas(arBranchOf(st.players, me), 'lucky', arTierOf(st.answers.filter(a => a.uid === me && a.ok).length)) ? 261 : 201)) : 0 }); toast(type === 'booster' ? 'Đã mua Coin Booster: câu đúng tiếp theo +60 cr.' : 'Đã mua Lucky Chip!', 'ok'); } catch (e) { toast(e.message, 'bad'); }
+  });
+  const sh = body.querySelector('#ar-sh');
+  if (sh) sh.onclick = async () => { try { await api.arenaShield(st.code, arNow() + AR.SHIELD_MS); toast('Đã bật khiên 60 giây.', 'ok'); } catch (e) { toast(e.message, 'bad'); } };
 }
 function avNudge() {
   if (S.profile && S.profile.avatar) return '';
@@ -8899,19 +9386,32 @@ else {
 
   /* --- Từ điển Cambridge: tra từ Anh – Việt ngay trong Công cụ học --- */
   function drawDict() {
-    body().innerHTML = `<div class="tl-sub">Tra từ trên Từ điển Cambridge (Anh – Việt). Gõ từ rồi bấm Tra hoặc Enter.</div>
+    body().innerHTML = `<div class="tl-sub">Tra nghĩa, phát âm và ví dụ tiếng Anh. Gõ từ rồi bấm Tra hoặc Enter.</div>
       <input class="tl-in" id="dc-in" placeholder="Gõ từ tiếng Anh, ví dụ: arrive" autocomplete="off" autocapitalize="none">
-      <div class="tl-row"><button class="tl-btn" id="dc-go" type="button">Tra từ</button></div>
-      <div class="tl-sub" style="margin-top:10px">Kết quả mở ở tab mới của Cambridge.</div>`;
-    const go = () => {
-      const w = (document.getElementById('dc-in').value || '').trim().toLowerCase().replace(/[^a-z' -]/g, '').replace(/\s+/g, '-');
+      <div class="tl-row"><button class="tl-btn" id="dc-go" type="button">Tra từ</button><a class="tl-btn soft" id="dc-cam" target="_blank" rel="noopener" href="#">Mở Cambridge (nghĩa Việt)</a></div>
+      <div id="dc-out" class="tl-dc"></div>`;
+    const look = async () => {
+      const w = (document.getElementById('dc-in').value || '').trim().toLowerCase().replace(/[^a-z' -]/g, '');
+      const out = document.getElementById('dc-out'), cam = document.getElementById('dc-cam');
       if (!w) return;
-      window.open('https://dictionary.cambridge.org/dictionary/english-vietnamese/' + encodeURIComponent(w), '_blank', 'noopener');
+      cam.href = 'https://dictionary.cambridge.org/dictionary/english-vietnamese/' + encodeURIComponent(w.replace(/\s+/g, '-'));
+      out.innerHTML = '<div class="tl-sub">Đang tra…</div>';
+      try {
+        const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(w.replace(/\s+/g, '%20')));
+        if (!r.ok) throw new Error('not found');
+        const e0 = (await r.json())[0];
+        const au = (e0.phonetics || []).find(p => p.audio);
+        out.innerHTML = `<div class="tl-d"><span><b class="tl-w">${esc(e0.word)}</b> <small class="muted">${esc(e0.phonetic || '')}</small></span>${au ? '<button class="tl-btn soft" id="dc-au" type="button">Nghe</button>' : ''}</div>` +
+          (e0.meanings || []).slice(0, 3).map(m => `<div class="tl-dc-m"><i>${esc(m.partOfSpeech)}</i><ol>${(m.definitions || []).slice(0, 3).map(d => `<li>${esc(d.definition)}${d.example ? `<br><small class="muted">“${esc(d.example)}”</small>` : ''}</li>`).join('')}</ol></div>`).join('');
+        if (au) { const player = new Audio(au.audio); const btn = document.getElementById('dc-au'); if (btn) btn.onclick = () => player.play().catch(() => {}); }
+      } catch (er) {
+        out.innerHTML = '<div class="tl-fb tl-bad">Chưa tìm thấy từ này. Kiểm tra lại chính tả, hoặc bấm “Mở Cambridge” để xem nghĩa tiếng Việt.</div>';
+      }
     };
-    body().querySelector('#dc-go').onclick = go;
+    body().querySelector('#dc-go').onclick = look;
     const inp = body().querySelector('#dc-in');
     inp.focus();
-    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+    inp.onkeydown = e => { if (e.key === 'Enter') look(); };
   }
   /* --- Nói: nhận diện giọng nói và so sánh với từ mẫu --- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -9285,5 +9785,13 @@ else {
   });
 })();
 </script>
+<style id="v-dict">.tl-w{font-size:1.3rem;color:#0B5CA8}.tl-dc{margin-top:10px}.tl-dc-m{margin:10px 0 6px;padding:10px 12px;border-radius:12px;background:#FAFBFC;border:1px solid #EEF1F4}.tl-dc-m>i{color:#B10B32;font-weight:700;font-size:.85rem}.tl-dc-m ol{padding-left:20px;margin:6px 0 0}.tl-dc li{margin-bottom:8px;line-height:1.5}</style>
+<style id="v-wr">.wr-ov{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:14px}.wr-box{background:#fff;border-radius:22px;max-width:520px;width:100%;padding:20px;box-shadow:0 30px 70px -28px rgba(16,24,40,.5);text-align:center}.wr-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.92rem;margin-bottom:14px}.wr-q{font-size:2rem;font-weight:800;color:#0B5CA8;min-height:2.6em;display:flex;align-items:center;justify-content:center;word-break:break-word}.wr-o{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.wr-b{border:1.5px solid #CED4DA;background:#fff;border-radius:14px;padding:14px 10px;font:inherit;font-weight:600;cursor:pointer;transition:transform .1s}.wr-b:hover:not(:disabled){transform:translateY(-2px);border-color:#0B5CA8}.wr-b.ok{background:#E7F6EE;border-color:#1F9D63}.wr-b.bad{background:#FDECEE;border-color:#D6293E}.wr-f{min-height:1.4em;font-weight:700}.wr-f.ok{color:#1F9D63}.wr-f.bad{color:#D6293E}@media(max-width:600px){.wr-o{grid-template-columns:1fr}.wr-q{font-size:1.6rem}}</style>
+<style id="v-paint">.pt-ov{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:12px}.pt-box{background:#fff;border-radius:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:18px;box-shadow:0 30px 70px -28px rgba(16,24,40,.5);text-align:center}.pt-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.92rem;margin-bottom:10px}.pt-grid{display:grid;gap:3px;width:min(300px,80vw);margin:4px auto 12px;background:#F5F7FA;padding:8px;border-radius:14px}.pt-c{display:block;aspect-ratio:1;background:#E4E8EE;border-radius:4px;transition:background .4s,transform .3s}.pt-c.on{transform:scale(1.04)}.pt-q{font-size:1.6rem;font-weight:800;color:#0B5CA8;min-height:1.8em;word-break:break-word}.pt-o{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0;min-height:60px}.pt-b{border:1.5px solid #CED4DA;background:#fff;border-radius:14px;padding:12px 8px;font:inherit;font-weight:600;cursor:pointer}.pt-b.ok{background:#E7F6EE;border-color:#1F9D63}.pt-b.bad{background:#FDECEE;border-color:#D6293E}.pt-f{min-height:1.3em;font-weight:700}.pt-f.ok{color:#1F9D63}.pt-f.bad{color:#D6293E}.pt-s{color:#6B7480;font-size:.9rem;margin-top:6px}.pt-box-gift{grid-column:1/-1;border:0;border-radius:18px;padding:18px;font:inherit;font-size:1.15rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#F59E0B,#FB7185);cursor:pointer;animation:ptShake 1.2s ease-in-out infinite}@keyframes ptShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}.pt-gr{grid-column:1/-1;background:#FFF8E6;border:1px solid #F2DA9B;border-radius:14px;padding:14px;animation:giftpop .5s cubic-bezier(.2,1.6,.4,1)}@keyframes giftpop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}@media(max-width:600px){.pt-o{grid-template-columns:1fr}}</style>
+<style id="v-live">.lv-big{font-size:1.2rem;font-weight:800;color:#0B5CA8;margin:6px 0}.lv-q{font-size:1.4rem;font-weight:700;margin:8px 0 12px}.lv-o{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lv-b{border:1.5px solid #CED4DA;background:#fff;border-radius:14px;padding:14px;font:inherit;font-weight:600;cursor:pointer}.lv-b.ok{background:#E7F6EE;border-color:#1F9D63}.lv-b.bad{background:#FDECEE;border-color:#D6293E}.lv-r{display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #EEF1F4}@media(max-width:600px){.lv-o{grid-template-columns:1fr}}</style>
+<style id="v-boss">.ar-boss{border:1px solid rgba(168,85,247,.5);background:linear-gradient(135deg,#1e1b4b,#312e81);color:#f5f3ff;border-radius:16px;padding:12px 14px;margin:10px 0}.ar-boss.dead{background:linear-gradient(135deg,#052e16,#14532d)}.ar-bt{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700}.ar-bar{height:14px;border-radius:99px;background:rgba(255,255,255,.15);overflow:hidden;margin:8px 0}.ar-bar i{display:block;height:100%;background:linear-gradient(90deg,#f472b6,#a855f7);transition:width .5s}.ar-bm{font-size:.88rem;opacity:.9}</style>
+<style id="v-arena-shop">.ar-av-pick{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.ar-av-b{border:2px solid transparent;background:#fff;border-radius:14px;padding:2px;cursor:pointer;width:64px;height:64px;overflow:hidden}.ar-av-b img{width:100%;height:100%;object-fit:cover;border-radius:10px}.ar-av-b.on{border-color:#A855F7;box-shadow:0 0 0 3px rgba(168,85,247,.25)}.ar-av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none}.ar-mkt{display:flex;flex-direction:column;gap:6px;margin:10px 0}.ar-mk{border:1px solid #A855F7;background:#fff;color:#6B21A8;border-radius:12px;padding:8px 10px;font:inherit;font-size:.86rem;font-weight:600;text-align:left;cursor:pointer}.ar-mk:disabled{opacity:.45;cursor:default}</style>
+<style id="v-skills">.ar-br-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:6px}.ar-br-b{border:2px solid #E5E7EB;background:#fff;border-radius:14px;padding:10px;text-align:left;font:inherit;font-weight:700;cursor:pointer;color:#1F2A37}.ar-br-b small{display:block;font-weight:400;color:#6B7480;font-size:.8rem;margin-top:2px}.ar-br-b.on{border-color:#A855F7;background:#FAF5FF}.ar-sk{background:#FAF5FF;border:1px solid #E9D5FF;border-radius:14px;padding:12px;margin:10px 0}.ar-sk-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px}.ar-sk-i{border:1px dashed #D8B4FE;border-radius:10px;padding:8px 10px;font-size:.84rem;color:#6B7480}.ar-sk-i.on{border-style:solid;border-color:#A855F7;background:#fff;color:#1F2A37}.ar-sk-i b{display:block;margin-bottom:2px}.ar-sk-none{font-size:.88rem;color:#6B7480;margin:8px 0}</style>
+<style id="v-events">.ar-evt{border-radius:14px;padding:10px 14px;margin:10px 0;display:flex;flex-direction:column;gap:2px;color:#fff;font-size:.9rem;animation:arEvtIn .5s ease-out}.ar-evt b{font-size:1rem;letter-spacing:.04em}.ar-evt.double{background:linear-gradient(135deg,#f59e0b,#ef4444)}.ar-evt.blackout{background:linear-gradient(135deg,#111827,#374151)}.ar-evt.treasure{background:linear-gradient(135deg,#eab308,#84cc16)}.ar-evt.chaos{background:linear-gradient(135deg,#ec4899,#8b5cf6);animation:arEvtIn .5s ease-out,arGlitch 1.2s steps(2) infinite}@keyframes arEvtIn{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}@keyframes arGlitch{0%,100%{filter:none}50%{filter:hue-rotate(40deg)}}</style>
 </body>
 </html>

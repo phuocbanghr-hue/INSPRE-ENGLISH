@@ -1325,6 +1325,12 @@ body:has(.auth){overflow-x:hidden}
 .cv-hint{font-size:.86rem;margin:8px 0 0}
 .cv-steps{margin:0 0 10px;padding-left:20px;color:#4B5563;font-size:.92rem}.cv-form{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.cv-form input{flex:1;min-width:200px}
 </style>
+<style>
+/* link chia sẻ bài làm */
+.deep-note{margin:10px 0;padding:10px 12px;border-radius:10px;background:#FFF5F6;border-left:4px solid #C8142D;color:#1F2937;font-size:.92rem;line-height:1.45}
+.sh-more{margin:4px 0 12px;font-size:.92rem}.sh-more summary{cursor:pointer;color:#0B5CA8;font-weight:600;padding:4px 0}
+.cxl-a .btn.soft[data-share]{white-space:nowrap}
+</style>
 </head>
 <body>
 <header class="topbar" id="topbar"></header>
@@ -6214,6 +6220,7 @@ function startClasses(uid) {
 function stopClasses() { CX.uns.forEach(u => u && u()); CX.uns = []; stopCxThreads(); clearInterval(CX.timer); Object.assign(CX, { list: [], dms: [], sel: null, tab: 'content', thread: 'all', first: true, sigC: '' }); }
 function stopCxThreads() { if (CX.gun) { CX.gun(); CX.gun = null; } if (CX.dun) { CX.dun(); CX.dun = null; } CX.msgs = []; CX.dmsgs = []; }
 function onClassData() {
+  setTimeout(tryDeep, 0);
   if (S.view === 'classes') viewClasses(); else if (S.view === 'class' && CX.tab !== 'chat') viewClass(); else if (S.view === 'home') drawClassStrip();
   else if (S.view === 'class') drawCxThreads();
 }
@@ -6414,6 +6421,7 @@ function viewClass() {
     const cs = e.target.closest('[data-cvsave]'); if (cs) { const u = ($('#cv-my').value || '').trim(), m = u.match(/src=["']([^"']+)["']/i), url = m ? m[1] : u; if (!canvaEmbed(url)) { toast('Link chưa đúng. Dùng link “Xem” dạng canva.com/design/…/view nhé.', 'warn'); return; } api.updateMe({ canvaWork: { ...((S.profile || {}).canvaWork || {}), [c.id]: { url, atMs: Date.now() } } }).then(() => { toast('Đã lưu dự án.', 'ok'); drawClassTab(c); }).catch(er => toast('Không lưu được: ' + er.message, 'bad')); return; }
     const cc = e.target.closest('[data-cvclear]'); if (cc) { const cw = { ...((S.profile || {}).canvaWork || {}) }; delete cw[c.id]; api.updateMe({ canvaWork: cw }).then(() => drawClassTab(c)).catch(() => { }); return; }
     const cf = e.target.closest('[data-cvfs]'); if (cf) { const st = document.getElementById(cf.dataset.cvfs); if (st && st.requestFullscreen) st.requestFullscreen().catch(() => { }); else if (st) st.classList.add('cv-fake'); return; }
+    const shr = e.target.closest('[data-share]'); if (shr) { openShare(c, shr.dataset.share); return; }
     const bk = e.target.closest('[data-bank]'); if (bk) { S.cbank = bk.dataset.bank; go('cbank'); return; }
     const ts = e.target.closest('[data-test]'); if (ts) { S.ctest = { cid: c.id, iid: ts.dataset.test }; go('ctest'); return; }
     const sb = e.target.closest('[data-submit]'); if (sb) { askSubmit(c, sb.dataset.submit); return; }
@@ -6477,9 +6485,10 @@ function itemCard(c, it) {
   const b = bankOfItem(it);
   if (!b || b.published === false) return row('Đề này chưa sẵn sàng', '');
   const n = b.count || (b.qs || []).length;
-  if (it.type === 'bank') return row(`${n} câu · ${best != null ? 'Điểm cao nhất ' + best + '%' : 'Chưa làm'}`, `<button class="btn sm" data-bank="${esc(b.id)}">Luyện tập</button>`);
+  const shB = `<button class="btn soft sm" data-share="${esc(it.id)}" title="Sao chép link để gửi cho bạn bè">Chia sẻ</button>`;
+  if (it.type === 'bank') return row(`${n} câu · ${best != null ? 'Điểm cao nhất ' + best + '%' : 'Chưa làm'}`, `<button class="btn sm" data-bank="${esc(b.id)}">Luyện tập</button>` + shB);
   const tries = it.tries || 0, left = tries ? Math.max(0, tries - used) : null;
-  return row(`${n} câu · ${it.minutes || 30} phút · ${tries ? 'còn ' + left + '/' + tries + ' lượt' : 'không giới hạn lượt'} · ${best != null ? 'Điểm cao nhất ' + best + '%' : 'Chưa làm'}`, left === 0 ? '<span class="tg" style="background:#eee">Hết lượt</span>' : `<button class="btn sm" data-test="${esc(it.id)}">${used ? 'Làm lại' : 'Làm bài'}</button>`);
+  return row(`${n} câu · ${it.minutes || 30} phút · ${tries ? 'còn ' + left + '/' + tries + ' lượt' : 'không giới hạn lượt'} · ${best != null ? 'Điểm cao nhất ' + best + '%' : 'Chưa làm'}`, (left === 0 ? '<span class="tg" style="background:#eee">Hết lượt</span>' : `<button class="btn sm" data-test="${esc(it.id)}">${used ? 'Làm lại' : 'Làm bài'}</button>`) + shB);
 }
 function cxlContent(c) {
   const secs = (c.sections || []).filter(s => !s.hidden), nx = nextTask(c);
@@ -7998,9 +8007,9 @@ function redrawClassData() { if (S.view === 'class' && ['tasks', 'attend', 'cont
 
 /* ----- vào lớp bằng mật khẩu ----- */
 const waitClass = async id => { for (let i = 0; i < 25 && !CX.list.some(c => c.id === id); i++) await new Promise(r => setTimeout(r, 200)); return CX.list.some(c => c.id === id); };
-function askClassKey() {
+function askClassKey(note) {
   const o = document.createElement('div'); o.className = 'ovl';
-  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Tham gia lớp"><h3>Tham gia lớp bằng mật khẩu</h3><p class="muted" style="margin:6px 0 14px">Nhập mật khẩu lớp do thầy cô hoặc admin cung cấp. Vào một lần là lớp nằm luôn trong danh sách Lớp của em.</p><label class="field"><span>Mật khẩu lớp</span><input id="ck" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30"></label><div class="msg" id="ck-m" role="alert"></div><div class="mdl-f"><button class="btn soft" data-x="1">Huỷ</button><button class="btn" id="ck-go">Vào lớp</button></div></div>`;
+  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Tham gia lớp"><h3>Tham gia lớp bằng mật khẩu</h3>${typeof note === 'string' && note ? `<p class="deep-note">${esc(note)}</p>` : ''}<p class="muted" style="margin:6px 0 14px">Nhập mật khẩu lớp do thầy cô hoặc admin cung cấp. Vào một lần là lớp nằm luôn trong danh sách Lớp của em.</p><label class="field"><span>Mật khẩu lớp</span><input id="ck" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30"></label><div class="msg" id="ck-m" role="alert"></div><div class="mdl-f"><button class="btn soft" data-x="1">Huỷ</button><button class="btn" id="ck-go">Vào lớp</button></div></div>`;
   document.body.appendChild(o);
   const close = () => { o.remove(); document.removeEventListener('keydown', esc_); }, esc_ = e => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', esc_);
@@ -8013,7 +8022,8 @@ function askClassKey() {
     try {
       const r = await api.joinClass(k); store.set(TK, '{}'); close();
       toast(r.already ? 'Em đã ở trong lớp ' + r.name + ' rồi.' : 'Đã vào lớp ' + r.name + '.', 'ok');
-      if (await waitClass(r.id)) openClass(r.id);
+      const toDeep = !!(DEEP.d && DEEP.d.cid === r.id);
+      if (await waitClass(r.id)) { if (toDeep) tryDeep(); else openClass(r.id); }
     } catch (e) {
       b.disabled = false; store.set(TK, JSON.stringify({ n: ((Date.now() - (fl.t || 0) < 60000 ? fl.n : 0) || 0) + 1, t: Date.now() }));
       m.textContent = e.code === 'bad-key' ? 'Mật khẩu chưa đúng hoặc lớp đang đóng ghi danh. Em hỏi thầy cô nhé.' : 'Không vào được lớp: ' + e.message;
@@ -8105,13 +8115,97 @@ function chatExtras() {
   drawCxThreads = function () { _t(); chatExtras(); };
 }
 
+/* ===== Link chia sẻ bài làm: ?lop=<mã lớp>&de=<mã bài>[&k=<mật khẩu lớp>] ===== */
+const DEEP = (() => {
+  const SK = 'inspire_deep', ID = /^[\w.-]{1,100}$/; let d = null;
+  try {
+    const q = new URLSearchParams(location.search), cid = q.get('lop'), iid = q.get('de');
+    if (cid && iid && ID.test(cid) && ID.test(iid)) {
+      const k = (q.get('k') || '').trim();
+      d = { cid, iid, k: /^[\w-]{4,30}$/.test(k) ? k : '' };
+      sessionStorage.setItem(SK, JSON.stringify(d));
+      history.replaceState(null, '', location.pathname);
+    } else { const t = sessionStorage.getItem(SK); if (t) d = JSON.parse(t); }
+  } catch { }
+  return { d, SK, busy: false, asked: false };
+})();
+function deepDone() { DEEP.d = null; try { sessionStorage.removeItem(DEEP.SK); } catch { } }
+function tryDeep() {
+  const d = DEEP.d;
+  if (!d || DEEP.busy || !S.user || !S.profile || CX.sigC === '' || !['classes', 'home', 'class'].includes(S.view)) return;
+  const c = CX.list.find(x => x.id === d.cid);
+  if (!c) {
+    // chờ một chút phòng khi danh sách lớp chưa về đủ
+    if (!d.t1) { d.t1 = Date.now(); setTimeout(tryDeep, 1500); return; }
+    if (Date.now() - d.t1 < 1400) return;
+    if (d.k) {
+      const k = d.k; d.k = ''; DEEP.busy = true;
+      api.joinClass(k).then(async r => { await waitClass(r.id); DEEP.busy = false; tryDeep(); })
+        .catch(() => { DEEP.busy = false; if (!DEEP.asked) { DEEP.asked = true; askClassKey('Mật khẩu trong link chưa đúng. Em nhập mật khẩu lớp để vào làm bài nhé.'); } });
+      return;
+    }
+    if (!DEEP.asked) { DEEP.asked = true; askClassKey('Em chưa ở trong lớp có bài này. Nhập mật khẩu lớp để vào làm bài nhé.'); }
+    return;
+  }
+  let it = null, hid = false;
+  (c.sections || []).forEach(s => (s.items || []).forEach(i => { if (i.id === d.iid) { it = i; hid = !!(s.hidden || i.hidden); } }));
+  const fail = msg => { deepDone(); toast(msg, 'warn'); openClass(c.id); };
+  if (!it || hid) return fail('Bài này chưa mở hoặc đã bị gỡ khỏi lớp. Em hỏi thầy cô nhé.');
+  if (it.type !== 'test' && it.type !== 'bank') { deepDone(); openClass(c.id); return; }
+  if (!S.banksReady) return;
+  const b = bankOfItem(it);
+  if (!b || b.published === false) {
+    if (!d.t2) { d.t2 = Date.now(); setTimeout(tryDeep, 2500); return; }
+    if (Date.now() - d.t2 < 2400) return;
+    return fail('Đề này chưa sẵn sàng. Em hỏi thầy cô nhé.');
+  }
+  deepDone(); CX.sel = c.id; CX.tab = 'content'; CX.thread = 'all';
+  if (it.type === 'test') { S.ctest = { cid: c.id, iid: it.id }; go('ctest'); }
+  else { S.cbank = b.id; go('cbank'); }
+}
+const shareLink = (cid, iid, key) => location.href.split(/[?#]/)[0] + '?lop=' + encodeURIComponent(cid) + '&de=' + encodeURIComponent(iid) + (key ? '&k=' + encodeURIComponent(key) : '');
+function openShare(c, iid) {
+  let it = null; (c.sections || []).forEach(s => (s.items || []).forEach(i => { if (i.id === iid) it = i; }));
+  if (!it) return;
+  const o = document.createElement('div'); o.className = 'ovl';
+  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Gửi link làm bài"><h3>Gửi link làm bài</h3>
+    <p class="muted" style="margin:6px 0 12px">Bạn nào bấm vào link sẽ được đưa thẳng tới <b>${esc(it.title || 'bài này')}</b> của lớp <b>${esc(c.name)}</b>. Đăng nhập xong là vào được đề, không cần tìm lớp.</p>
+    <label class="field"><span>Link làm bài</span><input id="sh-l" type="text" readonly></label>
+    <details class="sh-more"><summary>Dành cho thầy cô: bạn chưa vào lớp thì sao?</summary>
+      <p class="muted" style="margin:8px 0">Mặc định, bạn chưa ở trong lớp sẽ được hỏi mật khẩu lớp. Nếu muốn bấm link là tự vào lớp luôn, điền mật khẩu lớp vào đây. Lưu ý: ai có link này đều vào được lớp, nên chỉ gửi trong nhóm của lớp.</p>
+      <label class="field"><span>Mật khẩu lớp (không bắt buộc)</span><input id="sh-k" type="text" autocomplete="off" spellcheck="false" maxlength="30"></label></details>
+    <div class="mdl-f"><button class="btn soft" data-x="1">Đóng</button><button class="btn soft" id="sh-n" hidden>Gửi qua…</button><button class="btn" id="sh-c">Sao chép link</button></div></div>`;
+  document.body.appendChild(o);
+  const L = o.querySelector('#sh-l'), K = o.querySelector('#sh-k'), cur = () => { const k = K.value.trim(); return shareLink(c.id, it.id, /^[\w-]{4,30}$/.test(k) ? k : ''); };
+  const close = () => { o.remove(); document.removeEventListener('keydown', esc_); }, esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  const draw = () => { L.value = cur(); }; draw(); K.oninput = draw;
+  if (navigator.share) o.querySelector('#sh-n').hidden = false;
+  o.onclick = async e => {
+    if (e.target === o || e.target.closest('[data-x]')) return close();
+    if (e.target.closest('#sh-n')) { try { await navigator.share({ title: it.title || c.name, text: 'Em vào làm bài "' + (it.title || '') + '" của lớp ' + c.name + ' nhé:', url: L.value }); } catch { } return; }
+    if (e.target.closest('#sh-c')) {
+      let ok = false; try { await navigator.clipboard.writeText(L.value); ok = true; } catch { try { L.select(); ok = document.execCommand('copy'); } catch { } }
+      if (ok) toast('Đã sao chép link làm bài.', 'ok'); else { L.select(); toast('Chưa tự sao chép được. Em bấm giữ vào ô link rồi chọn Sao chép nhé.', 'warn'); }
+    }
+  };
+  L.focus(); L.select();
+}
+{
+  const _va = viewAuth;
+  viewAuth = function () {
+    _va();
+    if (DEEP.d) { const b = main.querySelector('.auth-brand'); if (b) b.insertAdjacentHTML('afterend', '<p class="deep-note">Em đăng nhập (hoặc tạo tài khoản) xong, hệ thống sẽ đưa em thẳng tới bài thầy cô vừa gửi.</p>'); }
+  };
+}
+
 /* ---------- khởi động ---------- */
 if (LOAD_ERR) { go('loading'); }
 else {
   let uP, uL, uA, uS, uE, uB, uC, uN;
   watchSite();
   api.onAuth(u => {
-    uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
+    uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.banksReady = false; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
     S.user = u; S.profile = null; S.lessons = []; S.assignments = []; S.announce = null; S.streakChecked = false;
     if (!u) { stopClasses(); go('auth'); return; }
     startChat(u.uid); startGroups(u.uid); startClasses(u.uid);
@@ -8122,7 +8216,7 @@ else {
       if (contentOn) return; contentOn = true;
       uL = api.watchLessons(list => { S.rawLessons = list; recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }, err => toast('Không tải được bài học: ' + err.message, 'bad'));
       uE = api.watchEnrol(u.uid, ids => { S.enrol = [...new Set(ids || [])]; S.enrolReady = true; applyLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'classes') viewClasses(); else if (S.view === 'courses') viewCourses(); else if (S.view === 'course' && !isEnrolled(S.course)) go('home'); else if (S.view === 'lesson' && S.lesson && !(courseOf(S.lesson) && isEnrolled(courseOf(S.lesson).id))) go('home'); });
-      uB = api.watchBanks(list => { S.banks = list.filter(b => b.published !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); if (S.view === 'course') viewCourse(); });
+      uB = api.watchBanks(list => { S.banks = list.filter(b => b.published !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); S.banksReady = true; if (S.view === 'course') viewCourse(); setTimeout(tryDeep, 0); });
       uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
       uN = api.watchPosts(list => { S.posts = list; onPosts(); });
       uA = api.watchAssignments(list => { S.assignments = list; remindOnce(); if (S.view === 'home') drawDash(); });
@@ -8138,7 +8232,7 @@ else {
         if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
       }
       checkBadges(); remindOnce();
-      if (S.view === 'auth' || S.view === 'loading') { go('classes'); return; }
+      if (S.view === 'auth' || S.view === 'loading') { go('classes'); tryDeep(); return; }
       renderTop();
       if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'lesson') { drawLessonHead(); if (!S.tab && S.wordsLoaded) drawLessonBody(); }
     }, err => toast('Không đọc được hồ sơ: ' + err.message, 'bad'));

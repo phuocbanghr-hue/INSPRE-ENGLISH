@@ -8591,7 +8591,7 @@ else {
   const go = document.createElement('button'); go.className = 'tl-go'; go.textContent = 'Công cụ học'; go.setAttribute('aria-label', 'Mở công cụ học');
   const panel = document.createElement('div'); panel.className = 'tl-p'; panel.setAttribute('role', 'dialog');
   panel.innerHTML = `<div class="tl-h"><div class="tl-mas" aria-hidden="true">${OWL}</div><div class="tl-bub" id="tl-bub"></div><button class="tl-x" aria-label="Đóng">×</button></div>
-    <div class="tl-tabs"><button data-t="plan" class="on">Hôm nay</button><button data-t="focus">Tập trung</button><button data-t="sprint">Đua từ 60 giây</button><button data-t="due">Hạn sắp tới</button><button data-t="write">Luyện viết</button><button data-t="speak">Nói</button><button data-t="read">Đọc</button><button data-t="listen">Nghe</button></div><div id="tl-body"></div>`;
+    <div class="tl-tabs"><button data-t="plan" class="on">Hôm nay</button><button data-t="focus">Tập trung</button><button data-t="sprint">Đua từ 60 giây</button><button data-t="due">Hạn sắp tới</button><button data-t="write">Luyện viết</button><button data-t="speak">Nói</button><button data-t="dict">Từ điển</button><button data-t="read">Đọc</button><button data-t="listen">Nghe</button></div><div id="tl-body"></div>`;
   document.body.append(go, panel);
 
   let tab = 'plan';
@@ -8791,7 +8791,7 @@ else {
     });
   }
   /* --- Linh vật Bông: lời nhắc và hiệu ứng khi nhận XP --- */
-  const TIPS = { plan: 'Làm đủ ba việc nhỏ mỗi ngày, học sẽ đều và nhớ lâu hơn. Xong cả ba em được thưởng thêm.', focus: 'Học 25 phút rồi nghỉ 5 phút. Nghỉ đúng giờ giúp nhớ lâu hơn!', sprint: 'Đừng lo sai. Nhớ nghĩa từ đúng lúc còn quan trọng hơn gõ nhanh.', write: 'Viết trước, sửa sau. Đừng xoá khi đang viết.', speak: 'Nói to và chậm, đừng sợ phát âm chưa đúng. Luyện nhiều sẽ hay lên.', read: 'Chạm vào từ lạ để xem nghĩa. Từ đã chạm sẽ được lưu để ôn.', listen: 'Nghe chậm trước, rồi tăng tốc dần. Đừng ngại nghe lại nhiều lần.', due: 'Làm bài sớm trước hạn để tránh dồn việc vào cuối tuần.' };
+  const TIPS = { dict: 'Gặp từ lạ thì tra ngay, nhớ ghi lại vào Ghi chú.', plan: 'Làm đủ ba việc nhỏ mỗi ngày, học sẽ đều và nhớ lâu hơn. Xong cả ba em được thưởng thêm.', focus: 'Học 25 phút rồi nghỉ 5 phút. Nghỉ đúng giờ giúp nhớ lâu hơn!', sprint: 'Đừng lo sai. Nhớ nghĩa từ đúng lúc còn quan trọng hơn gõ nhanh.', write: 'Viết trước, sửa sau. Đừng xoá khi đang viết.', speak: 'Nói to và chậm, đừng sợ phát âm chưa đúng. Luyện nhiều sẽ hay lên.', read: 'Chạm vào từ lạ để xem nghĩa. Từ đã chạm sẽ được lưu để ôn.', listen: 'Nghe chậm trước, rồi tăng tốc dần. Đừng ngại nghe lại nhiều lần.', due: 'Làm bài sớm trước hạn để tránh dồn việc vào cuối tuần.' };
   function bubble(t) { const b = document.getElementById('tl-bub'); if (b) b.textContent = t; }
   function rewardXP(x) {
     if (I().award) I().award(null, x);
@@ -8800,6 +8800,22 @@ else {
     bubble('Giỏi quá! Em nhận được ' + x + ' XP.');
   }
 
+  /* --- Từ điển Cambridge: tra từ Anh – Việt ngay trong Công cụ học --- */
+  function drawDict() {
+    body().innerHTML = `<div class="tl-sub">Tra từ trên Từ điển Cambridge (Anh – Việt). Gõ từ rồi bấm Tra hoặc Enter.</div>
+      <input class="tl-in" id="dc-in" placeholder="Gõ từ tiếng Anh, ví dụ: arrive" autocomplete="off" autocapitalize="none">
+      <div class="tl-row"><button class="tl-btn" id="dc-go" type="button">Tra từ</button></div>
+      <div class="tl-sub" style="margin-top:10px">Kết quả mở ở tab mới của Cambridge.</div>`;
+    const go = () => {
+      const w = (document.getElementById('dc-in').value || '').trim().toLowerCase().replace(/[^a-z' -]/g, '').replace(/\s+/g, '-');
+      if (!w) return;
+      window.open('https://dictionary.cambridge.org/dictionary/english-vietnamese/' + encodeURIComponent(w), '_blank', 'noopener');
+    };
+    body().querySelector('#dc-go').onclick = go;
+    const inp = body().querySelector('#dc-in');
+    inp.focus();
+    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  }
   /* --- Nói: nhận diện giọng nói và so sánh với từ mẫu --- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const lev = (a, b) => { const m = a.length, n = b.length; let p = Array.from({ length: n + 1 }, (_, j) => j); for (let i = 1; i <= m; i++) { const c = [i]; for (let j = 1; j <= n; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; } return p[n]; };
@@ -8886,7 +8902,7 @@ else {
   function draw() {
     bubble(TIPS[tab] || '');
     if (tab === 'plan') drawPlan(); else if (tab === 'focus') drawFocus(); else if (tab === 'sprint') drawSprint(); else if (tab === 'write') drawWrite();
-    else if (tab === 'speak') drawSpeak(); else if (tab === 'read') drawRead(); else if (tab === 'listen') drawListen(); else drawDue();
+    else if (tab === 'speak') drawSpeak(); else if (tab === 'dict') drawDict(); else if (tab === 'read') drawRead(); else if (tab === 'listen') drawListen(); else drawDue();
   }
   panel.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
     tab = b.dataset.t; panel.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));

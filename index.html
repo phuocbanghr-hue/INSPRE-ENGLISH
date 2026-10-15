@@ -1357,6 +1357,7 @@ if (!NOT_CONFIGURED) {
     const V = "https://www.gstatic.com/firebasejs/10.12.2/";
     const [a, b, c] = await Promise.all([import(V + "firebase-app.js"), import(V + "firebase-auth.js"), import(V + "firebase-firestore.js")]);
     FB = { ...a, ...b, ...c };
+    try { FB = { ...FB, ...(await import(V + "firebase-storage.js")) }; } catch (e) { console.warn("storage", e); }
     const app = FB.initializeApp(firebaseConfig); auth = FB.getAuth(app); db = FB.getFirestore(app);
     for (const p of [FB.indexedDBLocalPersistence, FB.browserLocalPersistence, FB.browserSessionPersistence]) {
       if (!p) continue; try { await FB.setPersistence(auth, p); break; } catch (e) { console.warn('persistence', e); }
@@ -6133,6 +6134,8 @@ if (MODE === 'firebase' && FB) {
     unsendMsg: segs => FB.updateDoc(FB.doc(db, ...segs), { text: '', unsent: true }),
     sendPoll: (cid, q, opts) => FB.addDoc(FB.collection(db, 'classes', cid, 'chat'), { text: q, uid: S.user.uid, name: myName(), role: 'student', atMs: Date.now(), at: FB.serverTimestamp(), poll: { q, opts, votes: {} } }),
     votePoll: (segs, idx) => FB.updateDoc(FB.doc(db, ...segs), { ['poll.votes.' + S.user.uid]: idx }),
+    watchQA: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'questions'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('qa', e); cb([]); }),
+    askQA: (c, text) => FB.addDoc(FB.collection(db, 'questions'), { classId: c.id, uid: S.user.uid, name: myName(), text, atMs: Date.now(), at: FB.serverTimestamp() }),
     watchArt: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'artworks'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('art', e); cb([]); }),
     submitArt: (cid, bid, qi, d) => FB.setDoc(FB.doc(db, 'artworks', cid + '_' + bid + '_' + qi + '_' + S.user.uid), { classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }),
     watchKudos: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'kudos'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => d.data())), e => { console.error('kudos', e); cb([]); }),
@@ -6394,10 +6397,10 @@ function viewClass() {
     ${secs.map(s => `<div class="cxl-drw-g"><button class="cxl-drw-t" data-sec="${esc(s.id)}">${esc(s.title)}</button>${(s.items || []).filter(i => !i.hidden).map(i => `<div class="cxl-drw-i" data-sec="${esc(s.id)}"><span class="cxl-dot"></span>${esc(i.title || ITYPE_N[i.type] || 'Nội dung')}</div>`).join('')}</div>`).join('')}</div>
     <div class="cxl-drw-bg" data-drawer-close></div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="classes">Lớp học</a><span>›</span><b>${esc(c.name)}</b></nav>
-    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}${avNudge()}</div></section>
+    ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}${meetBtn(c)}${avNudge()}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
-    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
+    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['qa', 'Hỏi cô'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
     <section class="cxl-main" id="cxl-main"></section></div>`;
   main.onclick = e => {
     const dr = e.target.closest('[data-drawer]'), dc = e.target.closest('[data-drawer-close]');
@@ -6435,6 +6438,7 @@ function drawClassTab(c) {
   const el = $('#cxl-main'); if (!el) return;
   if (CX.tab !== 'board' && CX.boardUn) { CX.boardUn(); CX.boardUn = null; CX.boardCid = null; }
   if (CX.tab !== 'art' && CX.artUn) { CX.artUn(); CX.artUn = null; CX.artCid = null; }
+  if (CX.tab !== 'qa' && window.__qaUn) { window.__qaUn(); window.__qaUn = null; }
   if (CX.tab === 'content') { el.innerHTML = cxlDue(c) + cxlContent(c); (c.sections || []).forEach(s => (s.items || []).forEach(it => { if (it.type === 'youtube' && (it.qs || []).some(q => q.t != null)) mountCYT(it); })); }
   else if (CX.tab === 'canva' && canvaTab(c)) el.innerHTML = cxlCanva(c);
   else if (CX.tab === 'tasks') el.innerHTML = cxlTasks(c);
@@ -6442,6 +6446,7 @@ function drawClassTab(c) {
   else if (CX.tab === 'attend') el.innerHTML = cxlAttend(c);
   else if (CX.tab === 'art') { el.innerHTML = cxlArt(c); mountArt(c); }
   else if (CX.tab === 'board') { el.innerHTML = cxlBoard(c); mountBoard(c); const bb = $('#bd-body'); if (bb) bb.onclick = boardClick; }
+  else if (CX.tab === 'qa') { el.innerHTML = cxlQA(c); mountQA(c); }
   else if (CX.tab === 'listen') el.innerHTML = cxlListen(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
   else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
@@ -6936,6 +6941,32 @@ const AUTH_ERR = {
   'auth/email-already-in-use': 'Email này đã có tài khoản. Hãy đăng nhập.', 'auth/weak-password': 'Mật khẩu cần ít nhất 6 ký tự.', 'auth/invalid-email': 'Email chưa đúng định dạng.',
   'auth/too-many-requests': 'Thử quá nhiều lần. Chờ vài phút rồi thử lại.', 'auth/network-request-failed': 'Mất kết nối mạng.', 'auth/operation-not-allowed': 'Chưa bật đăng nhập Email/Password trong Firebase.'
 };
+function meetBtn(c) {
+  const u = String(c.meetUrl || '');
+  if (!/^https:\/\/meet\.google\.com\//i.test(u)) return '';
+  return `<div class="meet-wrap"><a class="meet-btn" href="${esc(u)}" target="_blank" rel="noopener">Vào Google Meet của lớp</a><small class="muted">Thầy cô sẽ hiện trên màn hình. Có thắc mắc thì hỏi trong Chat lớp.</small></div>`;
+}
+function cxlQA(c) {
+  return `<section class="card" style="padding:16px 18px"><h3 style="margin:0 0 6px">Hỏi cô</h3><p class="muted" style="margin:0 0 10px">Có điều gì chưa hiểu? Gửi câu hỏi, cô sẽ trả lời để cả lớp cùng xem.</p><div class="row"><input id="qa-t" maxlength="300" placeholder="Viết câu hỏi…" style="flex:1"><button class="btn" id="qa-send" type="button">Gửi</button></div><div id="qa-list" style="margin-top:14px"><div class="loading">Đang tải…</div></div></section>`;
+}
+function qaHTML(list) {
+  if (!list.length) return '<div class="empty">Chưa có câu hỏi nào. Em là người đầu tiên hỏi nhé!</div>';
+  return list.map(q => `<div class="qa-i ${q.pinned ? 'pin' : ''}"><b>${esc(q.name || 'Học sinh')}</b> <small class="muted">${chTime(q.atMs || Date.now())}</small>${q.pinned ? ' <span class="tg tk">Ghim</span>' : ''}<div>${esc(q.text || '')}</div>${q.answer ? `<div class="qa-a"><b>Cô trả lời:</b> ${esc(q.answer)}</div>` : '<small class="muted">Đang chờ cô trả lời</small>'}</div>`).join('');
+}
+function mountQA(c) {
+  if (window.__qaUn) window.__qaUn();
+  const btn = document.getElementById('qa-send'), inp = document.getElementById('qa-t');
+  if (btn) btn.onclick = async () => {
+    const t = inp.value.trim(); if (!t) return;
+    btn.disabled = true;
+    try { await api.askQA(c, t); inp.value = ''; toast('Đã gửi câu hỏi.', 'ok'); }
+    catch (er) { toast('Không gửi được: ' + er.message, 'bad'); }
+    finally { btn.disabled = false; }
+  };
+  try {
+    window.__qaUn = api.watchQA(c, list => { const el = document.getElementById('qa-list'); if (el) el.innerHTML = qaHTML(list); });
+  } catch (er) { console.warn('qa', er); }
+}
 function avNudge() {
   if (S.profile && S.profile.avatar) return '';
   return `<div class="avnudge" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#FFF8E6;border:1px solid #F2DA9B;border-radius:14px;padding:12px 14px;margin:12px 0"><span class="avf f1" style="width:44px;height:44px;border-radius:50%;background:#E9ECEF;display:inline-block"></span><span style="flex:1;min-width:180px"><b>Đổi ảnh đại diện để bạn bè nhận ra em!</b><br><small class="muted">Chụp một tấm ảnh rõ mặt, mất vài giây thôi.</small></span><button class="btn sm" data-avnudge="1">Chụp ảnh ngay</button></div>`;
@@ -8002,7 +8033,7 @@ function heroExtra(c) {
 /* ----- thông báo lớp ----- */
 function cxlAnn(c) {
   const L = annSorted(c);
-  return `<section class="cx-ann">${L.map(a => `<article class="card cx-ann-i ${a.pinned ? 'pin' : ''}"><header><b>${esc(a.title || 'Thông báo')}</b>${a.pinned ? '<span class="tg tk">Đã ghim</span>' : ''}</header><div class="cx-ann-b">${linkM(a.text || '')}</div><small class="muted">${esc(a.by || 'Giáo viên')} · ${chTime(a.atMs || Date.now())}</small></article>`).join('') || '<div class="card empty">Lớp chưa có thông báo nào.</div>'}</section>`;
+  return `<section class="cx-ann">${L.map(a => `<article class="card cx-ann-i ${a.pinned ? 'pin' : ''}"><header><b>${esc(a.title || 'Thông báo')}</b>${a.pinned ? '<span class="tg tk">Đã ghim</span>' : ''}</header><div class="cx-ann-b">${a.img ? `<img class="ann-img" src="${a.img}" alt="${esc(a.title || '')}">` : ''}${a.file ? `<a class="ann-file" href="${esc(a.file.url)}" target="_blank" rel="noopener">Tải tệp: ${esc(a.file.name || 'tệp')}</a>` : ''}${linkM(a.text || '')}</div><small class="muted">${esc(a.by || 'Giáo viên')} · ${chTime(a.atMs || Date.now())}</small></article>`).join('') || '<div class="card empty">Lớp chưa có thông báo nào.</div>'}</section>`;
 }
 
 /* ----- bài tập và nộp bài ----- */
@@ -8764,6 +8795,7 @@ else {
   function bubble(t) { const b = document.getElementById('tl-bub'); if (b) b.textContent = t; }
   function rewardXP(x) {
     if (I().award) I().award(null, x);
+    if (window.fxXP) window.fxXP(x, innerWidth - 110, innerHeight - 170);
     const m = panel.querySelector('.tl-mas'); if (m) { m.classList.remove('hop'); void m.offsetWidth; m.classList.add('hop'); if (m._owlHop) m._owlHop(); }
     bubble('Giỏi quá! Em nhận được ' + x + ' XP.');
   }
@@ -9029,6 +9061,115 @@ else {
   w.querySelector('#bong-x').onclick = () => { localStorage.setItem(KEY, '1'); w.remove(); };
   setTimeout(open, 2500);
   setInterval(() => { if (!bub.classList.contains('open')) open(); }, 45000);
+})();
+</script>
+<style id="v-ann-img">.ann-img{display:block;max-width:100%;max-height:420px;margin:6px 0 10px;border-radius:12px;border:1px solid #E6E8EC;background:#fff;object-fit:contain}</style>
+<style id="v-ann-file">.ann-file{display:inline-block;margin:6px 0;padding:8px 14px;border-radius:999px;background:#EEF5FD;color:#0B5CA8;font-weight:700;text-decoration:none;border:1px solid #D6E7F8}.ann-file:hover{background:#DDEBFA}</style>
+<style id="v-meet">.meet-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}.meet-btn{display:inline-block;background:#1E8E3E;color:#fff!important;font-weight:700;padding:10px 18px;border-radius:999px;text-decoration:none;box-shadow:0 10px 20px -12px rgba(30,142,62,.7)}.meet-btn:hover{filter:brightness(1.05)}</style>
+<style id="v-qa">.qa-i{border-top:1px solid #EEF1F4;padding:10px 0}.qa-i.pin{background:#FFF8E6;border-radius:10px;padding:10px}.qa-a{margin-top:6px;background:#EEF5FD;border-radius:10px;padding:8px 10px}</style>
+<style id="v-mobile-pro">
+/* ===== Điện thoại: chữ dễ đọc, nút dễ bấm, bố cục gọn, các nút nổi không che nội dung ===== */
+@media (max-width:640px){
+  html{-webkit-text-size-adjust:100%}
+  body{font-size:15.5px;line-height:1.55;padding-bottom:96px!important}
+  .wrap,.page,main{padding-left:12px!important;padding-right:12px!important}
+  /* Thanh trên: gọn, cuộn ngang */
+  .topbar{padding:8px 10px!important}
+  .brand b,.brand span{font-size:1rem}
+  .nav{gap:4px!important}
+  .navb{font-size:.84rem!important;padding:9px 12px!important;border-radius:999px!important}
+  /* Thẻ và tiêu đề */
+  .card{border-radius:16px!important;padding:14px!important;margin-bottom:12px}
+  h1{font-size:1.45rem!important;line-height:1.25}
+  h2{font-size:1.2rem!important;line-height:1.3}
+  h3{font-size:1.02rem!important}
+  .muted,small{font-size:.86rem}
+  /* Nút và ô nhập: đủ lớn cho ngón tay */
+  .btn,.tl-btn,.meet-btn{min-height:44px;padding:10px 16px!important;font-size:.95rem}
+  .btn.sm{min-height:38px}
+  input,select,textarea{font-size:16px!important;min-height:44px}
+  textarea{min-height:110px}
+  /* Công cụ học và Bông: không che nút chính */
+  .tl-go{left:10px!important;bottom:10px!important;padding:11px 16px!important}
+  .bong{right:8px!important;bottom:10px!important;width:84px!important}
+  .bong-fig{width:64px!important;height:64px!important}
+  .bong-bub{width:min(250px,calc(100vw - 110px))!important;bottom:76px!important}
+  /* Bảng dữ liệu cuộn ngang gọn */
+  .tbl-wrap,table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Hộp thoại kiểu bảng trượt từ dưới lên */
+  .ovl{align-items:flex-end!important}
+  .mdl{width:100vw!important;max-width:100vw!important;border-radius:20px 20px 0 0!important;max-height:88vh;margin:0!important;padding:18px!important}
+  /* Lớp học: danh sách mục cuộn ngang, nội dung rộng hết màn hình */
+  .cxl{display:block!important}
+  .cxl-side{position:static!important;margin-bottom:10px;padding:6px!important;border-radius:14px}
+  .cxl-side nav{display:flex;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .cxl-nb{flex:none;white-space:nowrap;min-height:40px;padding:8px 12px!important;border-radius:999px}
+  .cxl-hero,.cxl-hero-t{padding:14px!important}
+  /* Chat và bài đăng */
+  .ms-col{max-width:86%!important}
+  .ms-b{font-size:.98rem;padding:9px 13px}
+  .cx-ann-i{padding:12px!important}
+  .ann-img{max-height:300px}
+  /* Diễn đàn: mỗi chủ đề là một thẻ dọc */
+  .ftbl{border-radius:14px}
+  .ft-r{padding:12px!important}
+  /* Lưới thẻ thành một cột */
+  .grid,.cards,.kpis{grid-template-columns:1fr!important;gap:10px!important}
+  /* Bài đọc và bài làm */
+  .tl-pass,.rd-pass{font-size:1rem;line-height:1.75}
+  .opt,.rq-b,.ew,.mrow{min-height:46px}
+  .opts{grid-template-columns:1fr!important}
+  .tl-p{left:8px!important;right:8px!important;width:auto!important;bottom:70px!important;max-height:78vh}
+}
+@media (max-width:380px){
+  body{font-size:15px}
+  .navb{font-size:.8rem!important;padding:8px 10px!important}
+}
+</style>
+<script>
+/* Hiệu ứng: kim tuyến, điểm XP bay lên, và Bông thỉnh thoảng bay ngang màn hình */
+(function () {
+  const css = `
+  .fx-c{position:fixed;width:9px;height:14px;top:-20px;z-index:9999;pointer-events:none;border-radius:2px;animation:fxFall var(--d) cubic-bezier(.2,.6,.4,1) forwards}
+  @keyframes fxFall{to{transform:translate(var(--x),110vh) rotate(var(--r));opacity:.9}}
+  .fx-xp{position:fixed;z-index:9999;pointer-events:none;font-weight:800;color:#FF6A00;font-size:1.3rem;text-shadow:0 2px 8px rgba(0,0,0,.2);animation:fxUp 1.2s ease-out forwards;transform:translate(-50%,-50%)}
+  @keyframes fxUp{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}20%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{transform:translate(-50%,-140%) scale(1);opacity:0}}
+  .bong-fly{position:fixed;left:0;top:0;z-index:9998;width:72px;height:72px;pointer-events:none;animation:bfly var(--t) linear forwards}
+  .bong-fly svg{width:100%;height:100%;animation:bflap .33s ease-in-out infinite alternate;filter:drop-shadow(0 8px 10px rgba(177,11,50,.35))}
+  @keyframes bfly{0%{transform:translate(-100px,var(--y)) rotate(-6deg)}50%{transform:translate(50vw,calc(var(--y) - 70px)) rotate(5deg)}100%{transform:translate(calc(100vw + 100px),var(--y)) rotate(-4deg)}}
+  @keyframes bflap{from{transform:scaleY(1) rotate(-4deg)}to{transform:scaleY(.82) rotate(4deg)}}`;
+  const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  const COLS = ['#B10B32', '#0B5CA8', '#FDB515', '#1F9D63', '#F04A5E', '#8A5A00'];
+  window.fxBurst = function (x, y, n) {
+    for (let i = 0; i < (n || 40); i++) {
+      const p = document.createElement('i'); p.className = 'fx-c';
+      p.style.left = (x + (Math.random() - .5) * 80) + 'px'; p.style.top = y + 'px';
+      p.style.background = COLS[i % COLS.length];
+      p.style.setProperty('--d', (1.3 + Math.random() * 1.3) + 's');
+      p.style.setProperty('--x', ((Math.random() - .5) * 260) + 'px');
+      p.style.setProperty('--r', (Math.random() * 720) + 'deg');
+      document.body.appendChild(p); setTimeout(() => p.remove(), 2800);
+    }
+  };
+  window.fxXP = function (n, x, y) {
+    const X = x || innerWidth / 2, Y = y || innerHeight / 2;
+    const el = document.createElement('div'); el.className = 'fx-xp'; el.textContent = '+' + n + ' XP';
+    el.style.left = X + 'px'; el.style.top = Y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1300);
+    window.fxBurst(X, Y, 28);
+  };
+  const fly = () => {
+    const el = document.createElement('div'); el.className = 'bong-fly';
+    el.style.setProperty('--y', (70 + Math.random() * Math.max(120, innerHeight * .45)) + 'px');
+    el.style.setProperty('--t', '7.5s');
+    el.innerHTML = '<svg viewBox="0 0 64 64"><ellipse cx="32" cy="36" rx="22" ry="22" fill="#B10B32"/><ellipse cx="32" cy="39" rx="13" ry="12" fill="#FFF4D6"/><circle cx="24" cy="26" r="9" fill="#fff"/><circle cx="40" cy="26" r="9" fill="#fff"/><circle cx="25" cy="27" r="4" fill="#0B5CA8"/><circle cx="39" cy="27" r="4" fill="#0B5CA8"/><path d="M29 33 L35 33 L32 39 Z" fill="#FDB515"/><path d="M14 14 L21 21 M50 14 L43 21" stroke="#8A0925" stroke-width="4" stroke-linecap="round"/></svg>';
+    document.body.appendChild(el); setTimeout(() => el.remove(), 7700);
+  };
+  setTimeout(fly, 12000);
+  setInterval(() => { if (!document.hidden && Math.random() < .6) fly(); }, 55000);
+  document.addEventListener('click', e => {
+    if (e.target.closest('#bong-fig')) { const r = e.target.closest('#bong-fig').getBoundingClientRect(); window.fxBurst(r.left + r.width / 2, r.top, 36); }
+  });
 })();
 </script>
 </body>

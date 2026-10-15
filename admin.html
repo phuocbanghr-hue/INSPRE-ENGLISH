@@ -3394,7 +3394,38 @@ function itemRow(s, it, ii, n) {
   const t = ITYPE[it.type] || ITYPE.link, b = (it.type === 'bank' || it.type === 'test') ? (S.banks || []).find(x => x.id === it.bankId) : null;
   const sub = it.type === 'text' ? esc(String(it.text || '').slice(0, 100)) : (it.type === 'bank' || it.type === 'test') ? (b ? esc(b.title) + ' · ' + (b.count || (b.qs || []).length) + ' câu' + (it.type === 'test' ? ' · ' + (it.minutes || 30) + ' phút' : '') : '<span class="tag bad">Không tìm thấy đề</span>') : it.type === 'task' ? 'Hạn: ' + fmtDue(it.due) : `<a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(String(it.url || '').slice(0, 80))}</a>`;
   return `<div class="cxi" data-i="${esc(it.id)}"><span class="cxi-ic">${itIc(it.type)}</span><div class="grow" style="min-width:0"><b>${esc(it.title || t.n)}</b> <span class="tag">${t.s}</span><br><small class="muted">${sub}</small></div>
-    <div class="acts"><button class="btn soft sm" data-a="item-up" ${ii ? '' : 'disabled'}>↑</button><button class="btn soft sm" data-a="item-dn" ${ii < n - 1 ? '' : 'disabled'}>↓</button><button class="btn soft sm" data-a="item-edit">Sửa</button>${it.type === 'youtube' ? '<button class="btn soft sm" data-a="item-q">Câu hỏi</button>' : ''}<button class="btn soft sm" data-a="item-del">Xoá</button></div></div>`;
+    <div class="acts"><button class="btn soft sm" data-a="item-up" ${ii ? '' : 'disabled'}>↑</button><button class="btn soft sm" data-a="item-dn" ${ii < n - 1 ? '' : 'disabled'}>↓</button><button class="btn soft sm" data-a="share-item">Chia sẻ</button><button class="btn soft sm" data-a="item-edit">Sửa</button>${it.type === 'youtube' ? '<button class="btn soft sm" data-a="item-q">Câu hỏi</button>' : ''}<button class="btn soft sm" data-a="item-del">Xoá</button></div></div>`;
+}
+/* ===== Chia sẻ link nội dung lớp: ?lop=<mã lớp>&de=<mã nội dung>[&k=<mật khẩu lớp>] ===== */
+function studentBase() {
+  const u = location.href.split(/[?#]/)[0];
+  if (/admin(\.html)?$/i.test(u)) return u.replace(/admin(\.html)?$/i, /\.html$/i.test(u) ? 'index.html' : '');
+  return u.replace(/[^/]*$/, '');
+}
+const shareUrl = (cid, iid, key) => studentBase() + '?lop=' + encodeURIComponent(cid) + '&de=' + encodeURIComponent(iid) + (key ? '&k=' + encodeURIComponent(key) : '');
+function shareItemForm(c, sec, it) {
+  if (!it) return;
+  const idOk = /^[\w.-]{1,100}$/.test(c.id) && /^[\w.-]{1,100}$/.test(it.id), hid = !!(sec && sec.hidden || it.hidden);
+  const { ov, close } = modal(`<h3>Chia sẻ link</h3>
+    <p class="muted" style="margin:0 0 12px">Học sinh bấm link sẽ được đưa thẳng tới <b>${esc(it.title || 'nội dung này')}</b> của lớp <b>${esc(c.name)}</b>. Đăng nhập xong là vào được, không cần tìm lớp.</p>
+    ${hid ? '<div class="hint">Nội dung này đang <b>ẩn</b>, học sinh bấm link sẽ chưa thấy. Hãy mở ẩn trước khi gửi.</div>' : ''}
+    ${idOk ? '' : '<div class="hint">Mã lớp hoặc mã nội dung có ký tự lạ nên link có thể không chạy được.</div>'}
+    <label class="field"><span>Link</span><input id="sh-l" type="text" readonly></label>
+    <details class="sh-more" style="margin:4px 0 12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">Dành cho thầy cô</summary>
+      <p class="muted" style="margin:8px 0">Mặc định, học sinh chưa ở trong lớp sẽ được hỏi mật khẩu lớp. Điền mật khẩu lớp vào đây thì link có thêm <code>&amp;k=...</code>, học sinh chưa vào lớp bấm là tự vào luôn. Đổi lại, ai có link này đều vào được lớp, nên chỉ gửi trong nhóm lớp.</p>
+      <label class="field"><span>Mật khẩu lớp (không bắt buộc)</span><input id="sh-k" type="text" autocomplete="off" spellcheck="false" maxlength="30"></label>
+      <div class="muted" id="sh-w" style="font-size:.85rem;color:#B42318" hidden>Mật khẩu cần 4 đến 30 ký tự, chỉ gồm chữ, số, gạch dưới hoặc gạch ngang. Link chưa gắn mật khẩu.</div></details>
+    <div class="row" style="justify-content:flex-end;margin:0"><button class="btn soft" id="sh-x" type="button">Đóng</button><button class="btn soft" id="sh-n" type="button" hidden>Gửi qua…</button><button class="btn" id="sh-c" type="button">Sao chép link</button></div>`);
+  const L = $('#sh-l', ov), K = $('#sh-k', ov), W = $('#sh-w', ov);
+  const draw = () => { const k = K.value.trim(), ok = /^[\w-]{4,30}$/.test(k); W.hidden = !k || ok; L.value = shareUrl(c.id, it.id, ok ? k : ''); };
+  draw(); K.oninput = draw; $('#sh-x', ov).onclick = close;
+  if (navigator.share) $('#sh-n', ov).hidden = false;
+  $('#sh-n', ov).onclick = async () => { try { await navigator.share({ title: it.title || c.name, text: 'Em vào làm bài "' + (it.title || '') + '" của lớp ' + c.name + ' nhé:', url: L.value }); } catch { } };
+  $('#sh-c', ov).onclick = async () => {
+    let ok = false; try { await navigator.clipboard.writeText(L.value); ok = true; } catch { try { L.select(); ok = document.execCommand('copy'); } catch { } }
+    if (ok) { toast('Đã sao chép link.'); if (K.value.trim() && /^[\w-]{4,30}$/.test(K.value.trim())) audit('Chia sẻ link tự vào lớp', c.name); } else { L.select(); toast('Chưa tự sao chép được, bấm giữ vào ô link rồi chọn Sao chép.', 'warn'); }
+  };
+  L.focus(); L.select();
 }
 function cxContent(c, el) {
   const secs = c.sections || [];
@@ -3454,6 +3485,7 @@ async function cxClick(e) {
       case 'canva-fs': { const e2 = $('#cv-fs'); if (e2 && e2.requestFullscreen) e2.requestFullscreen().catch(() => { }); return; }
       case 'canva-view': { const it = ((c.canva || {}).items || []).find(i => i.id === x.closest('[data-cv]').dataset.cv); const src = it && canvaEmbed(it.url); if (!src) return toast('Link không hợp lệ.', 'warn'); $('#cv-prev').innerHTML = `<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden"><iframe src="${esc(src)}" allowfullscreen allow="fullscreen" style="position:absolute;inset:0;width:100%;height:100%;border:0" title="Xem thử"></iframe></div>`; return; }
       case 'canva-access': { const uids = [...document.querySelectorAll('.cv-ck:checked')].map(i => i.value); await saveClass(c, { canva: { ...(c.canva || {}), all: $('#cv-all').checked, personal: $('#cv-per').checked, uids } }); audit('Cấp quyền trình chiếu Canva', c.name); return toast('Đã lưu quyền trình chiếu.'); }
+      case 'share-item': return shareItemForm(c, sec, (sec.items || []).find(i => i.id === iid));
       case 'item-add': return itemForm(c, sid);
       case 'item-edit': return itemForm(c, sid, (sec.items || []).find(i => i.id === iid));
       case 'item-q': return itemQForm(c, sid, (sec.items || []).find(i => i.id === iid));

@@ -4641,7 +4641,7 @@ function cxArenaSets(c, el) {
   el.querySelector('#as-save').onclick = async () => {
     const title = el.querySelector('#as-t').value.trim() || 'Bộ câu ' + new Date().toLocaleDateString('vi-VN');
     const r = parseBank(el.querySelector('#as-s').value);
-    const qs = r.qs.filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0).map(q => ({ q: q.q, o: q.o, a: q.a }));
+    const qs = r.qs.filter(q => Array.isArray(q.o) && q.o.length >= 2 && q.a >= 0).map(q => ({ q: q.q, o: q.o, a: q.a, e: q.e || '' }));
     if (!qs.length) return toast('Chưa đọc được câu trắc nghiệm nào. Mỗi câu cần đủ A, B và dòng Đáp án.', 'warn');
     try { await api.add('arenaSets', { classId: c.id, title, qs, createdBy: (S.user || {}).email || '', atMs: Date.now() }); toast('Đã lưu bộ câu (' + qs.length + ' câu).', 'ok'); }
     catch (er) { toast('Không lưu được: ' + er.message, 'bad'); }
@@ -4717,6 +4717,19 @@ function printReport(c, comment) {
   w.document.write(`<html><head><meta charset="utf-8"><title>Phiếu báo cáo ${esc(c.name)}</title><style>body{font-family:Inter,Arial,sans-serif;padding:32px;color:#1F2A37}h1{color:#B10B32;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border-bottom:1px solid #E6E8EC;padding:8px;text-align:left}th{background:#F9FAFB;font-size:12px;text-transform:uppercase;color:#6B7480}.note{margin-top:18px;padding:12px;background:#F5F7FA;border-radius:10px}</style></head><body><h1>Phiếu báo cáo học tập</h1><div>Lớp ${esc(c.name)} · ${fmtDue(todayStr())}</div><table><thead><tr><th>Học sinh</th><th>XP</th><th>Chuỗi học</th><th>Điểm kiểm tra TB</th><th>Bài đã nộp</th></tr></thead><tbody>${rows}</tbody></table><div class="note"><b>Nhận xét của cô:</b> ${esc(comment)}</div><script>window.onload=function(){window.print()}<\/script></body></html>`);
   w.document.close();
 }
+function actChartHTML() {
+  const wk = Date.now() - 7 * 864e5;
+  const rows = (S.classes || []).filter(c => !c.archived).map(c => ({
+    n: c.name || 'Lớp', m: (c.members || []).length,
+    s: (S.classSubs || []).filter(x => x.classId === c.id && (x.atMs || 0) >= wk).length
+  }));
+  if (!rows.length) return '';
+  const max = Math.max(1, ...rows.map(r => Math.max(r.m, r.s)));
+  return `<div class="card" style="margin-bottom:16px"><h3>Hoạt động theo lớp (7 ngày qua)</h3>
+    <div class="ac-leg"><span><i class="ac-m"></i>Số học sinh</span><span><i class="ac-s"></i>Bài đã nộp tuần này</span></div>
+    ${rows.map(r => `<div class="ac-row"><div class="ac-n">${esc(r.n)}</div><div class="ac-bars"><div class="ac-b ac-m" style="width:${Math.round(r.m / max * 100)}%"><span>${r.m}</span></div><div class="ac-b ac-s" style="width:${Math.round(r.s / max * 100)}%"><span>${r.s}</span></div></div></div>`).join('')}
+  </div>`;
+}
 function vToday() {
   const today = todayStr(), rows = calRows().filter(r => r.it.due <= today && r.done < r.n);
   const idle = S.users.filter(u => !u.disabled && u.className && (u.lastDay || '') !== today);
@@ -4727,6 +4740,7 @@ function vToday() {
   $('#content').innerHTML = `<h2>Việc hôm nay</h2>
     <div class="hint">Những việc cô cần xử lý trong ngày. Bấm vào từng phần để đi tới đúng chỗ.</div>
     <div class="stats">${card(rows.length, 'Bài đến hạn hoặc trễ', 'c')}${card(idle.length, 'Học sinh chưa học hôm nay', 'b')}${card(chats.length, 'Tin nhắn học sinh chưa trả lời', 'a')}${card(pend, 'Thành viên chờ duyệt', 'd')}</div>
+    ${actChartHTML()}
     <div class="card" style="margin-bottom:16px"><h3>Bài cần chú ý</h3>${rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Hạn</th><th>Lớp</th><th>Bài tập</th><th>Đã nộp</th><th></th></tr></thead><tbody>${rows.slice(0, 12).map(r => `<tr><td>${fmtDue(r.it.due)}</td><td>${esc(r.c.name)}</td><td>${esc(r.it.title || 'Bài tập')}</td><td>${r.done}/${r.n}</td><td><button class="btn soft sm" data-tcls="${esc(r.c.id)}">Mở lớp</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Không có bài nào đến hạn hoặc trễ.</div>'}</div>
     <div class="card" style="margin-bottom:16px"><h3>Học sinh chưa học hôm nay</h3>${idle.length ? `<p class="muted" style="margin-top:0">${idle.slice(0, 8).map(u => esc(u.name || 'Học sinh')).join(', ')}${idle.length > 8 ? ' và ' + (idle.length - 8) + ' bạn khác' : ''}</p><div class="row"><button class="btn" id="td-nudge">Gửi nhắc cho ${idle.length} bạn</button></div>` : '<div class="empty">Hôm nay cả lớp đã học rồi.</div>'}</div>
     <div class="card"><h3>Phiếu báo cáo để in</h3><p class="muted" style="margin-top:0">Chọn lớp, viết nhận xét, rồi bấm In. Phiếu gồm XP, chuỗi học, điểm kiểm tra trung bình và số bài đã nộp của từng học sinh.</p>
@@ -5857,5 +5871,6 @@ addEventListener('unhandledrejection',function(e){setTimeout(function(){show('L�
   document.addEventListener('keydown', e => { if (e.key === 'Escape') ov.classList.remove('on'); });
 })();
 </script>
+<style id="v-actchart">.ac-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:.84rem;color:#6B7480;margin:4px 0 10px}.ac-leg i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:middle}.ac-row{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:12px;align-items:center;margin:8px 0}.ac-n{font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ac-bars{display:flex;flex-direction:column;gap:5px}.ac-b{height:18px;border-radius:999px;min-width:28px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:#fff;font-size:.74rem;font-weight:700;transition:width .6s}.ac-b.ac-m{background:linear-gradient(90deg,#94a3b8,#64748b)}.ac-b.ac-s{background:linear-gradient(90deg,#60a5fa,#1d4ed8)}.ac-leg i.ac-m{background:#64748b}.ac-leg i.ac-s{background:#1d4ed8}</style>
 </body>
 </html>

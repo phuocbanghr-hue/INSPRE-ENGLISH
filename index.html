@@ -7612,6 +7612,8 @@ function renderArena(st) {
 }
 function renderArenaInner(st) {
   const body = document.getElementById('ar-body'); if (!body) return;
+  // Bấm trong trận không được lan lên trang lớp (tránh bị đẩy về tab Nội dung)
+  if (!body._noBubble) { body._noBubble = true; body.addEventListener('click', e => e.stopPropagation()); }
   const now = arNow();
   if (!st.code) { const r = st.list.filter(x => x.startAtMs + AR.N * AR.PERQ > now).sort((a, b) => b.startAtMs - a.startAtMs)[0]; body.innerHTML = r ? `<div class="ar-note">Có trận đang mở: <b>${esc(r.title || '')}</b>. Bấm “Vào trận đang mở”.</div>` : '<div class="empty">Chưa có trận nào. Bấm Tạo trận mới để mở.</div>'; return; }
   if (!st.room) { body.innerHTML = '<div class="muted">Đang tải trận…</div>'; return; }

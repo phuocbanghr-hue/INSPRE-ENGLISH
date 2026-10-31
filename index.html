@@ -6725,7 +6725,17 @@ const normAns = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const qOk = q => q.order ? q.built.length === q.words.length && normSent(q.built.map(i => q.words[i]).join(' ')) === normSent(q.ans) : q.color ? true : q.match ? (q.pairs || []).length > 0 && q.pairs.every((p, i) => q.sel && q.sel[i] >= 0 && q.rights[q.sel[i]] === p[1]) : q.typed ? normAns(q.txt).length > 0 && (q.acc || []).some(a => normAns(a) === normAns(q.txt)) : (q.pick >= 0 && !!q.opts[q.pick].ok);
 const qShow = q => q.order ? (q.built.length ? esc(q.built.map(i => q.words[i]).join(' ')) : 'chưa trả lời') : q.pick < 0 ? 'chưa trả lời' : q.match ? q.pairs.map((p, i) => lbl(p[0]) + ' → ' + (q.sel[i] >= 0 ? lbl(q.rights[q.sel[i]]) : '—')).join('; ') : q.typed ? esc(q.txt) : String.fromCharCode(65 + q.pick) + '. ' + lbl(q.opts[q.pick].t);
 const qRight = q => q.order ? esc(q.ans) : q.color ? '' : q.match ? q.pairs.map(p => lbl(p[0]) + ' → ' + lbl(p[1])).join('; ') : q.typed ? esc((q.acc || []).join(' hoặc ')) : String.fromCharCode(65 + q.opts.findIndex(o => o.ok)) + '. ' + lbl((q.opts[q.opts.findIndex(o => o.ok)] || {}).t);
-const audioHTML = u => /^https:\/\//i.test(u || '') ? `<audio controls preload="none" class="qaudio" src="${esc(u)}"></audio>` : '';
+const audioHTML = u => {
+  u = String(u || '').trim();
+  if (!/^https:\/\//i.test(u)) return '';
+  let m;
+  /* Link Google Drive (…/file/d/ID/view, open?id=ID, uc?id=ID): thẻ <audio> không phát được trang xem Drive, nên nhúng trình phát Drive */
+  if ((m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/)) || (m = u.match(/drive\.google\.com\/(?:open|uc)\?(?:.*&)?id=([\w-]+)/)))
+    return `<div class="qaudio-fr"><iframe src="https://drive.google.com/file/d/${m[1]}/preview" allow="autoplay" loading="lazy" title="Bài nghe"></iframe></div><a class="qaudio-open" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Không nghe được? Mở file nghe ở tab mới</a>`;
+  /* Link Dropbox: đổi sang link tải trực tiếp */
+  if (/^https:\/\/(www\.)?dropbox\.com\//i.test(u)) u = u.replace(/^https:\/\/(www\.)?dropbox\.com/i, 'https://dl.dropboxusercontent.com').replace(/([?&])dl=0/, '$1dl=1');
+  return `<audio controls preload="metadata" class="qaudio" src="${esc(u)}" onerror="this.insertAdjacentHTML('afterend','<div class=&quot;qaudio-err&quot;>Không tải được file nghe. Em thử tải lại trang hoặc báo thầy cô kiểm tra link nhé.</div>');this.onerror=null"></audio><a class="qaudio-open" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở file nghe ở tab mới</a>`;
+};
 const normSent = s => String(s || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
 const orderHTML = (qi, q) => `<div class="ordbox" data-oq="${qi}"><div class="ord-ans">${q.built.length ? q.built.map((wi, p) => `<button type="button" class="owb" data-owb="${p}" data-oq="${qi}" ${q.locked ? 'disabled' : ''}>${esc(q.words[wi])}</button>`).join('') : '<span class="muted">Bấm các từ bên dưới để xếp thành câu đúng</span>'}</div><div class="ord-pool">${q.words.map((w, wi) => `<button type="button" class="ow" data-ow="${wi}" data-oq="${qi}" ${q.built.includes(wi) || q.locked ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div></div>`;
 const handleOrder = (e, Qa) => {
@@ -9345,6 +9355,10 @@ else {
 .fillin:focus{outline:none;border-color:#0084FF}
 .fillin:disabled{background:#F3F4F6}
 .qaudio{width:100%;margin:8px 0}
+.qaudio-fr{width:100%;height:90px;margin:8px 0;border-radius:10px;overflow:hidden;background:#000}
+.qaudio-fr iframe{width:100%;height:100%;border:0}
+.qaudio-open{display:inline-block;margin:0 0 8px;font-size:.84rem;color:var(--brand,#8B1A2B);text-decoration:underline}
+.qaudio-err{margin:0 0 8px;font-size:.88rem;color:#c0233a}
 
 .mbox{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .mrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #E4E6EB;border-radius:12px;padding:10px 12px}

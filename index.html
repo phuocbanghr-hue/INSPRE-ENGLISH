@@ -1401,25 +1401,38 @@ function tone(freq, dur = .12, type = 'sine', vol = .08, delay = 0) {
   } catch {}
 }
 const sfx = { ok() { tone(660, .1); tone(880, .16, 'sine', .08, .09); }, no() { tone(180, .25, 'sawtooth', .05); }, win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .08, i * .1)); } };
-let _enVoice = null;
+let _enVoice = null, _ttsAudio = null;
 function pickEnVoice() {
   try {
     const vs = speechSynthesis.getVoices() || [];
-    _enVoice = vs.find(v => /^en[-_]US$/i.test(v.lang) && /samantha|google|aaron|nicky|alex|siri/i.test(v.name))
-      || vs.find(v => /^en[-_]US$/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    const en = vs.filter(v => /^en([-_]|$)/i.test(v.lang));
+    _enVoice = en.find(v => /^en[-_]US$/i.test(v.lang) && /samantha|google|aaron|nicky|alex|siri|microsoft/i.test(v.name))
+      || en.find(v => /^en[-_]US$/i.test(v.lang)) || en[0] || null;
   } catch {}
 }
 if ('speechSynthesis' in window) { pickEnVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickEnVoice); } catch {} }
-function speak(t) {
-  if (!('speechSynthesis' in window) || !t) return;
+// Phát bằng file âm thanh tiếng Anh khi thiết bị không có giọng đọc tiếng Anh (tránh bị đọc bằng giọng Việt)
+function speakAudio(t, rate) {
+  try {
+    if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
+    const a = new Audio('https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=en-US&q=' + encodeURIComponent(t));
+    a.playbackRate = Math.min(1.1, Math.max(.6, rate || .9)); _ttsAudio = a;
+    a.play().catch(() => {});
+  } catch {}
+}
+function speak(t, rate) {
+  if (!t) return; t = String(t); rate = rate || .9;
+  try { if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; } } catch {}
+  if (!('speechSynthesis' in window)) return speakAudio(t, rate);
   try {
     speechSynthesis.cancel();
     if (speechSynthesis.paused) speechSynthesis.resume();
     if (!_enVoice) pickEnVoice();
-    const u = new SpeechSynthesisUtterance(String(t));
-    u.lang = 'en-US'; if (_enVoice) u.voice = _enVoice; u.rate = .9;
+    if (!_enVoice) return speakAudio(t, rate);   // không có giọng EN -> không để máy đọc bằng giọng Việt
+    const u = new SpeechSynthesisUtterance(t);
+    u.voice = _enVoice; u.lang = _enVoice.lang || 'en-US'; u.rate = rate;
     setTimeout(() => { try { speechSynthesis.speak(u); } catch {} }, 60);
-  } catch {}
+  } catch { speakAudio(t, rate); }
 }
 function confetti() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -5919,7 +5932,7 @@ document.addEventListener('click', e => { if (e.target.closest('#tn-x')) api.upd
 /* ---------- Phòng luyện phát âm (chấm bằng nhận diện giọng nói của trình duyệt) ---------- */
 const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
 const wsim = (a, b) => Math.max(0, 1 - lev(a, b) / Math.max(a.length, b.length, 1));
-function sayTo(t, rate) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = rate; speechSynthesis.speak(u); } catch {} }
+function sayTo(t, rate) { speak(t, rate); }
 /* ============ PHÒNG PHÁT ÂM AI v2: trọng âm, chẩn đoán lỗi, đo nhấn âm ============ */
 const VOW = ['iː','ɑː','ɔː','uː','ɜː','eɪ','aɪ','ɔɪ','aʊ','əʊ','eə','ɪə','ʊə','ɪ','e','æ','ɒ','ʊ','ʌ','ə','i','u','ɔ','ɑ','ɜ','ɚ'];
 const IPA_TOK = /tʃ|dʒ|iː|ɑː|ɔː|uː|ɜː|eɪ|aɪ|ɔɪ|aʊ|əʊ|eə|ɪə|ʊə|[ˈˌ]|\s+|./g;
@@ -9414,7 +9427,7 @@ else {
   const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
   const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const beep = () => { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = .08; o.start(); o.stop(c.currentTime + .25); } catch {} };
-  const say = t => { if (!('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = .9; speechSynthesis.speak(u); } catch {} };
+  const say = t => speak(t, .9);
 
   const css = document.createElement('style');
   css.textContent = `
@@ -9861,7 +9874,7 @@ else {
       <div class="tl-row"><button class="tl-btn soft" id="ls-prev">Bài trước</button><button class="tl-btn soft" id="ls-next">Bài sau</button></div>`;
     const sp = body().querySelector('#ls-sp');
     sp.oninput = () => { rd.speed = +sp.value; body().querySelector('#ls-sv').textContent = rd.speed.toFixed(1); };
-    body().querySelector('#ls-play').onclick = () => { if (!('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(p.x); u.lang = 'en-US'; u.rate = rd.speed; speechSynthesis.speak(u); } catch {} };
+    body().querySelector('#ls-play').onclick = () => speak(p.x, rd.speed);
     body().querySelector('#ls-stop').onclick = () => { try { speechSynthesis.cancel(); } catch {} };
     body().querySelector('#ls-tr').onchange = e => { rd.show = e.target.checked; body().querySelector('#ls-t').hidden = !rd.show; };
     body().querySelector('#ls-prev').onclick = () => { rd.p = (rd.p + PASS.length - 1) % PASS.length; drawListen(); };

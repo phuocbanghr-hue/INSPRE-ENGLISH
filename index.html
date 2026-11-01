@@ -10597,6 +10597,26 @@ document.addEventListener('click', e => {
 .ar-card.ar-full .ar-o{grid-template-columns:1fr 1fr!important}
 @media (max-width:640px){.ar-card.ar-full .ar-o{grid-template-columns:1fr 1fr!important}}
 </style>
+<style id="nav-v2">
+/* ===== Thanh menu v2: dạng viên thuốc, mục đang chọn nổi bật ===== */
+.bar .nav{background:#F0F5FB;border:1px solid #DCE7F3;border-radius:999px;padding:4px;gap:2px;box-shadow:inset 0 1px 2px rgba(11,60,120,.06);align-items:center}
+.bar .nav .navb,.bar .nav .navb[data-go]{position:relative;border-radius:999px!important;padding:9px 16px!important;min-height:0;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#46688F;background:transparent!important;box-shadow:none;text-decoration:none;transition:background .18s,color .18s,box-shadow .18s,transform .18s}
+.bar .nav .navb::after{display:none!important}
+.bar .nav .navb:hover{background:#fff!important;color:#0B5CA8;text-decoration:none;box-shadow:0 1px 4px rgba(11,60,120,.12)}
+.bar .nav .navb:active{transform:scale(.97)}
+.bar .nav .navb.on,.bar .nav .navb.on[data-go]{background:linear-gradient(135deg,#0B5CA8,#2A86DB)!important;color:#fff!important;box-shadow:0 6px 14px -6px rgba(11,92,168,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.bar .nav .navb:focus-visible{outline:2px solid #2A86DB;outline-offset:2px}
+.bar .nav .navb .bdg-n{margin-left:7px;min-width:18px;padding:1px 6px;font-size:.68rem;letter-spacing:0;line-height:1.35;background:#D4143A;color:#fff;box-shadow:0 0 0 2px #F0F5FB}
+.bar .nav .navb.on .bdg-n{background:#fff;color:#0B5CA8;box-shadow:none}
+.bar .nav .more>.navb::before{margin:-3px 0 0 7px}
+.bar .menu{border:1px solid #DCE7F3;border-radius:16px!important;box-shadow:0 22px 44px -18px rgba(11,60,120,.35)}
+.bar .menu .mi:hover,.bar .menu .mi.on{background:#E8F1FA;color:#0B5CA8}
+@media(max-width:1180px){
+  .bar .nav{width:100%;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;mask-image:none;-webkit-mask-image:none;justify-content:flex-start}
+  .bar .nav .navb,.bar .nav .navb[data-go]{padding:9px 14px!important;flex:none;scroll-snap-align:start}
+}
+@media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
+</style>
 <script>
 /* Bật/tắt chế độ toàn màn hình cho Cyber Arena */
 (function () {

@@ -8124,8 +8124,8 @@ function drawLessonHead() {
       <h2>${esc(l.title)}</h2>${l.description ? `<p>${esc(l.description)}</p>` : ''}
       <div class="lh2-st"><span class="pl">${wc} từ vựng</span><span class="pl">${d}/${n} dạng bài</span><span class="pl ${stc}">${st}</span></div>
       </div>
-    <div class="lh2-go"><small>${d >= n ? 'ĐÃ XONG' : d > 0 ? 'LÀM TIẾP' : 'BẮT ĐẦU'}</small><b>${esc(goN)}</b><button class="btn" data-act="${go}" ${hasW ? '' : 'disabled'}>${d >= n ? 'Ôn lại từ vựng' : d > 0 ? 'Làm tiếp' : 'Bắt đầu học'}</button></div></div>`;
-  $('#lhead').onclick = e => { const c = e.target.closest('[data-act]'); if (c && !c.disabled) setTab(c.dataset.act); };
+    <div class="lh2-go"><small>${d >= n ? 'ĐÃ XONG' : d > 0 ? 'LÀM TIẾP' : 'BẮT ĐẦU'}</small><b>${esc(goN)}</b><button class="btn" data-act="${go}" ${hasW ? '' : 'disabled'}>${d >= n ? 'Ôn lại từ vựng' : d > 0 ? 'Làm tiếp' : 'Bắt đầu học'}</button><button class="btn soft sm" data-share="1" type="button" style="margin-top:8px">Chia sẻ để làm HW</button></div></div>`;
+  $('#lhead').onclick = e => { if (e.target.closest('[data-share]')) return openShareLesson(l); const c = e.target.closest('[data-act]'); if (c && !c.disabled) setTab(c.dataset.act); };
 }
 
 function setTab(k) { S.tab = k; if (k) store.set('last_' + S.user.uid, JSON.stringify([S.lesson.id, k])); drawLessonBody(); scrollTo(0, 0); }
@@ -9020,6 +9020,56 @@ function openShare(c, iid) {
   viewAuth = function () {
     _va();
     if (DEEP.d) { const b = main.querySelector('.auth-brand'); if (b) b.insertAdjacentHTML('afterend', '<p class="deep-note">Em đăng nhập (hoặc tạo tài khoản) xong, hệ thống sẽ đưa em thẳng tới bài thầy cô vừa gửi.</p>'); }
+  };
+}
+
+/* ===== Link chia sẻ bài học để làm HW: ?bai=<mã bài>[&mo=<dạng bài>] ===== */
+const DEEPL = (() => {
+  const SK = 'inspire_deepl', ID = /^[\w.-]{1,100}$/, MO = /^(list|flash|quiz|listen|fill|match|scramble|type|tf|hang|speak|test|gallery|pic|bookpic|book)$/; let d = null;
+  try {
+    const q = new URLSearchParams(location.search), id = q.get('bai'), mo = q.get('mo') || '';
+    if (id && ID.test(id)) { d = { id, mo: MO.test(mo) ? mo : '' }; sessionStorage.setItem(SK, JSON.stringify(d)); history.replaceState(null, '', location.pathname); }
+    else { const t = sessionStorage.getItem(SK); if (t) d = JSON.parse(t); }
+  } catch { }
+  return { d, SK, asked: false, n: 0, timer: 0 };
+})();
+function tryDeepLesson() {
+  const D = DEEPL; clearTimeout(D.timer); if (!D.d) return;
+  const again = () => { if (D.d && ++D.n < 400) D.timer = setTimeout(tryDeepLesson, 1000); };
+  if (!S.user || !S.profile || !S.enrolReady || !(S.allLessons || []).length || !['classes', 'home', 'class', 'course'].includes(S.view)) return again();
+  const l = S.allLessons.find(x => x.id === D.d.id);
+  if (!l) { if (D.n > 20) { D.d = null; try { sessionStorage.removeItem(D.SK); } catch { } toast('Bài này chưa mở hoặc đã bị gỡ. Em hỏi thầy cô nhé.', 'warn'); return; } return again(); }
+  const c = courseOf(l);
+  if (c && !isEnrolled(c.id)) { if (!D.asked) { D.asked = true; askKey(c); } return again(); }
+  const mo = D.d.mo; D.d = null; try { sessionStorage.removeItem(D.SK); } catch { }
+  openLesson(l.id, mo || null);
+}
+{ const _td = tryDeep; tryDeep = function () { _td(); tryDeepLesson(); }; setTimeout(tryDeepLesson, 800); }
+const lessonLink = (id, mo) => location.href.split(/[?#]/)[0] + '?bai=' + encodeURIComponent(id) + (mo ? '&mo=' + encodeURIComponent(mo) : '');
+function openShareLesson(l) {
+  const hasExs = (l.exs || []).length, hasPicEx = (l.exs || []).some(x => x.img), hasTxtEx = (l.exs || []).some(x => !x.img), imgW = (l.words || []).filter(w => w.img).length;
+  const opts = [['', 'Cả bài (em tự chọn dạng bài)'], ['quiz', 'Trắc nghiệm từ vựng'], ['flash', 'Thẻ nhớ'], ['listen', 'Nghe & chọn'], ['type', 'Nghe & gõ'], ['test', 'Bài kiểm tra']]
+    .concat(imgW >= 2 ? [['gallery', 'Xem hình']] : []).concat(imgW >= 4 ? [['pic', 'Nhìn hình chọn từ']] : [])
+    .concat(hasPicEx ? [['bookpic', 'Bài tập có hình ảnh']] : []).concat(hasTxtEx ? [['book', 'Bài tập từ vựng']] : []);
+  const o = document.createElement('div'); o.className = 'ovl';
+  o.innerHTML = `<div class="mdl" role="dialog" aria-modal="true" aria-label="Chia sẻ bài để làm HW"><h3>Chia sẻ để làm HW</h3>
+    <p class="muted" style="margin:6px 0 12px">Bạn nào bấm vào link sẽ được đưa thẳng tới <b>${esc(l.title)}</b>. Chưa vào khóa học thì hệ thống sẽ hỏi mật khẩu khóa, nhập xong là làm bài được.</p>
+    <label class="field"><span>Giao dạng bài</span><select id="shl-m">${opts.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+    <label class="field"><span>Link làm bài</span><input id="shl-l" type="text" readonly></label>
+    <div class="mdl-f"><button class="btn soft" data-x="1">Đóng</button><button class="btn soft" id="shl-n" hidden>Gửi qua…</button><button class="btn" id="shl-c">Sao chép link</button></div></div>`;
+  document.body.appendChild(o);
+  const L = o.querySelector('#shl-l'), M = o.querySelector('#shl-m'), draw = () => { L.value = lessonLink(l.id, M.value); }; draw(); M.onchange = draw;
+  const close = () => { o.remove(); document.removeEventListener('keydown', esc_); }, esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  if (navigator.share) o.querySelector('#shl-n').hidden = false;
+  const label = () => (opts.find(x => x[0] === M.value) || [])[1] || '';
+  o.onclick = async e => {
+    if (e.target === o || e.target.closest('[data-x]')) return close();
+    if (e.target.closest('#shl-n')) { try { await navigator.share({ title: l.title, text: 'Em làm bài "' + l.title + '"' + (M.value ? ' (' + label() + ')' : '') + ' nhé:', url: L.value }); } catch { } return; }
+    if (e.target.closest('#shl-c')) {
+      let ok = false; try { await navigator.clipboard.writeText(L.value); ok = true; } catch { try { L.select(); ok = document.execCommand('copy'); } catch { } }
+      if (ok) toast('Đã sao chép link làm bài.', 'ok'); else { L.select(); toast('Chưa tự sao chép được. Em bấm giữ vào ô link rồi chọn Sao chép nhé.', 'warn'); }
+    }
   };
 }
 

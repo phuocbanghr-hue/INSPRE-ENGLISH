@@ -8334,12 +8334,19 @@ function mountPic(el, c, mode = 'pic') {
 }
 const picAllWords = () => (S.allLessons || []).flatMap(l => (l.words || []).filter(w => w.img));
 function viewPicAll() {
-  const L = picAllWords();
-  main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Thử thách hình ảnh</h3></div><p class="muted">15 câu trộn nhiều dạng, lấy hình từ mọi unit. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;
+  const W = picAllWords(), X = (S.allLessons || []).flatMap(l => (l.exs || []).filter(x => x.img));
+  main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Tổng hợp bài tập hình ảnh</h3></div>
+    <p class="muted">Trộn tất cả dạng bài có hình của mọi unit: hình → từ, từ → hình, nghe → hình, gõ từ, đúng/sai và bài tập hình trong sách. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;
   $('#pa-b').onclick = () => go('picex');
-  const el = $('#pa'); if (L.length < 4) { el.innerHTML = empty('Chưa đủ hình để tạo thử thách.'); return; }
-  const ms = Object.keys(PICMODES);
-  runQuiz(el, { key: 'picall', noMist: true, xpEach: 10, build: () => take(L, 15).map(w => picQ(ms[Math.floor(Math.random() * ms.length)], w, L)) });
+  const el = $('#pa'); if (W.length < 4) { el.innerHTML = empty('Chưa đủ hình để tạo bài tổng hợp.'); return; }
+  const ms = Object.keys(PICMODES), total = W.length + X.length, sizes = [...new Set([15, 30, 50, 100].filter(n => n < total).concat([total]))];
+  const bookQ = x => ({ kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, img: x.img, sent: true }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') });
+  const intro = () => {
+    el.innerHTML = `<div class="bk-intro"><h3>Chọn số câu muốn làm</h3><p class="muted" style="margin:6px 0 14px">Có ${W.length} hình từ vựng và ${X.length} câu bài tập hình trong sách (tổng ${total} mục).</p><div class="row">${sizes.map(n => `<button class="btn ${n === sizes[0] ? '' : 'soft'}" data-n="${n}">${n === total ? 'Tất cả ' + n : n} câu</button>`).join('')}</div></div>`;
+    el.onclick = e => { const b = e.target.closest('[data-n]'); if (b) start(+b.dataset.n); };
+  };
+  const start = n => { el.onclick = null; runQuiz(el, { key: 'picall', noMist: true, xpEach: 10, build: () => take([...W.map(w => ({ w })), ...X.map(x => ({ x }))], n).map(it => it.x ? bookQ(it.x) : picQ(ms[Math.floor(Math.random() * ms.length)], it.w, W)), grid: intro }); };
+  intro();
 }
 function mountBook(el, c, withImg) {
   const L = (c.lesson.exs || []).filter(x => withImg ? !!x.img : !x.img);
@@ -9056,7 +9063,7 @@ function viewPicEx() {
     <div class="pxc-stat"><span>${nImg(l)} hình từ vựng</span><span>${nQ(l)} câu hỏi có hình</span></div>
     <div class="pxc-b">${nImg(l) >= 2 ? `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="gallery">Xem hình</button>` : ''}${nImg(l) >= 4 ? Object.entries(PICMODES).map(([k, t]) => `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="${k}">${t}</button>`).join('') : ''}${nQ(l) ? `<button class="btn sm" data-o="${esc(l.id)}" data-t="bookpic">Bài tập hình trong sách</button>` : ''}<button class="btn soft sm" data-sh="${esc(l.id)}">Chia sẻ HW</button></div></article>`;
   main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Bài tập hình ảnh</h2><p class="muted">Tất cả bài có hình minh họa: xem hình để nhớ từ, nhìn hình chọn từ và làm bài tập có hình trong sách. ${L.length ? `Có ${L.length} bài với ${total} hình.` : ''}</p>
-    ${total >= 4 ? '<div class="pxa"><div><b>Thử thách hình ảnh</b><small>15 câu trộn đủ dạng, hình lấy từ mọi unit</small></div><button class="btn" id="px-all">Chơi ngay</button></div>' : ''}
+    ${total >= 4 ? '<div class="pxa"><div><b>Tổng hợp bài tập hình ảnh</b><small>Trộn tất cả dạng bài có hình của mọi unit, chọn 15 đến tất cả câu</small></div><button class="btn" id="px-all">Làm bài tổng hợp</button></div>' : ''}
     ${L.length ? `<div class="pxg">${L.map(card).join('')}</div>` : empty('Chưa có bài nào có hình ảnh.')}<div style="height:50px"></div>`;
   main.onclick = e => {
     if (e.target.closest('#px-all')) return go('picall');

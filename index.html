@@ -5336,7 +5336,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && CH.open) t
 /* ============ v3: lộ trình cá nhân, nhắc lịch, kế hoạch, lịch, nhóm, tìm kiếm, mind map, thẻ tự tạo, kiểm tra hiểu bài ============ */
 const EXTRA = { mind: { ic: '', n: 'Sơ đồ kiến thức', d: 'Mind map tự tạo từ bài học' }, check: { ic: '', n: 'Kiểm tra hiểu bài', d: '6 câu nhanh, biết ngay chỗ còn yếu' },
   gallery: { ic: '', n: 'Xem hình', d: 'Xem hình ảnh từ vựng, bấm để nghe' },
-  pic: { ic: '', n: 'Nhìn hình chọn từ', d: 'Nhìn hình rồi chọn từ đúng' },
+  pic: { ic: '', n: 'Hình → từ', d: 'Nhìn hình rồi chọn từ đúng' },
+  picw: { ic: '', n: 'Từ → hình', d: 'Đọc từ rồi chọn hình đúng' },
+  picl: { ic: '', n: 'Nghe → hình', d: 'Nghe từ rồi chọn hình đúng' },
+  pict: { ic: '', n: 'Nhìn hình gõ từ', d: 'Nhìn hình rồi gõ từ tiếng Anh' },
+  pictf: { ic: '', n: 'Hình đúng hay sai', d: 'Phản xạ nhanh với hình' },
   bookpic: { ic: '', n: 'Bài tập có hình ảnh', d: 'Bài tập trong sách có hình minh họa' },
   book: { ic: '', n: 'Bài tập từ vựng', d: 'Chọn đáp án, tìm từ khác loại, ghép cụm' } };
 const IMGIC = '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/>', BOOKIC = '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 8h6M9 12h6"/>';
@@ -6952,7 +6956,7 @@ function go(v) {
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
-  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
+  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, picall: viewPicAll, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
   scrollTo(0, 0);
 }
 /* ===== Trò chơi luyện từ: link Blooket, Kahoot, Quizlet, Gimkit, Wordwall... do thầy cô gắn ===== */
@@ -8135,7 +8139,7 @@ function drawLessonBody() {
   const body = $('#lbody'), l = S.lesson, p = prog(l.id), hasW = S.words.length > 0, mats = (l.materials || []).length, imgW = S.words.filter(w => w.img).length, nEx = (l.exs || []).length;
   if (!S.tab) {
     const nextK = ACT_ORDER.find(k => k !== 'list' && !isDone(p, k));
-    const IC = { gallery: IMGIC, pic: IMGIC, bookpic: IMGIC, book: BOOKIC, list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', flash: '<rect x="2" y="6" width="15" height="12" rx="2"/><path d="M7 3h13a2 2 0 0 1 2 2v11"/>', mind: '<circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M6.5 6.5l3.3 3.3M17.5 6.5l-3.3 3.3M6.5 17.5l3.3-3.3M17.5 17.5l-3.3-3.3"/>', docs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>', quiz: '<path d="M9 11l3 3 9-9"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>', listen: '<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M3 14h4v6H5a2 2 0 0 1-2-2zM21 14h-4v6h2a2 2 0 0 0 2-2z"/>', fill: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>', match: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', scramble: '<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', type: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>', tf: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>', hang: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>', speak: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>', check: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4"/>', test: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>', review: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>' };
+    const IC = { gallery: IMGIC, pic: IMGIC, picw: IMGIC, picl: IMGIC, pict: IMGIC, pictf: IMGIC, bookpic: IMGIC, book: BOOKIC, list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', flash: '<rect x="2" y="6" width="15" height="12" rx="2"/><path d="M7 3h13a2 2 0 0 1 2 2v11"/>', mind: '<circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M6.5 6.5l3.3 3.3M17.5 6.5l-3.3 3.3M6.5 17.5l3.3-3.3M17.5 17.5l-3.3-3.3"/>', docs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>', quiz: '<path d="M9 11l3 3 9-9"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>', listen: '<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M3 14h4v6H5a2 2 0 0 1-2-2zM21 14h-4v6h2a2 2 0 0 0 2-2z"/>', fill: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>', match: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', scramble: '<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>', type: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>', tf: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>', hang: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>', speak: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>', check: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4"/>', test: '<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>', review: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>' };
     const row = k => {
       const a = ACTS[k] || EXTRA[k] || (k === 'list' ? { n: 'Danh sách từ', d: 'Xem từ, nghĩa, phát âm' } : k === 'docs' ? { n: 'Tài liệu', d: 'Slide, video, PDF từ giáo viên' } : { n: 'Ôn từ sai', d: `${mist(l.id).length} từ cần ôn` });
       const dis = (k === 'docs' ? !mats : !hasW), v = p[k], sc = typeof v === 'number' && !['flash', 'match'].includes(k) ? ' ' + v + '%' : '', nx = k === nextK && !dis, dn = isDone(p, k);
@@ -8145,7 +8149,8 @@ function drawLessonBody() {
       return `<section class="ls"><div class="ls-h"><h3>${t}</h3>${cnt.length ? `<span class="${dn === cnt.length ? 'ok' : ''}">${dn}/${cnt.length}</span>` : ''}</div><div class="ls-b">${keys.map(row).join('')}</div></section>`; };
     body.innerHTML = `${hasW ? '' : '<div class="note">Bài này chưa có từ vựng. Cô/thầy đang cập nhật nhé!</div>'}
       ${sec('Học từ', ['list', 'flash', 'mind', 'docs'].concat(imgW >= 2 ? ['gallery'] : []))}
-      ${sec('Luyện tập', ['quiz', 'listen', 'fill', 'match', 'scramble', 'type', 'tf', 'hang', 'speak'].concat(imgW >= 4 ? ['pic'] : []))}
+      ${sec('Luyện tập', ['quiz', 'listen', 'fill', 'match', 'scramble', 'type', 'tf', 'hang', 'speak'])}
+      ${imgW >= 4 ? sec('Luyện tập với hình ảnh', ['pic', 'picw', 'picl', 'pict', 'pictf']) : ''}
       ${nEx ? sec('Bài tập từ sách (Workbook)', [(l.exs || []).some(x => x.img) ? 'bookpic' : null, (l.exs || []).some(x => !x.img) ? 'book' : null].filter(Boolean)) : ''}
       ${sec('Kiểm tra', ['check', 'test'].concat(mist(l.id).length ? ['review'] : []))}<div style="height:50px"></div>`;
     body.onclick = e => { const c = e.target.closest('.lr'); if (c && !c.disabled) setTab(c.dataset.act); };
@@ -8159,7 +8164,7 @@ function drawLessonBody() {
   const ctx = { lesson: l, words: S.words, grid: () => setTab(null), next: nk ? { label: (ACTS[nk]?.n || 'Tiếp theo'), go: () => setTab(nk) } : null };
   const el = $('#panel');
   if (S.tab !== 'docs' && !S.words.length) { el.innerHTML = empty('Bài này chưa có từ vựng.'); return; }
-  ({ gallery: mountGallery, pic: mountPic, bookpic: (e, c) => mountBook(e, c, true), book: (e, c) => mountBook(e, c, false), mind: mountMind, check: mountCheck, list: mountList, flash: mountFlash, quiz: mountQuiz, listen: mountListen, fill: mountFill, match: mountMatch, scramble: mountScramble, type: mountType, tf: mountTF, hang: mountHang, speak: mountSpeak, test: mountTest, docs: mountDocs, review: mountLessonReview })[S.tab](el, ctx);
+  ({ gallery: mountGallery, pic: (e, c) => mountPic(e, c, 'pic'), picw: (e, c) => mountPic(e, c, 'picw'), picl: (e, c) => mountPic(e, c, 'picl'), pict: (e, c) => mountPic(e, c, 'pict'), pictf: (e, c) => mountPic(e, c, 'pictf'), bookpic: (e, c) => mountBook(e, c, true), book: (e, c) => mountBook(e, c, false), mind: mountMind, check: mountCheck, list: mountList, flash: mountFlash, quiz: mountQuiz, listen: mountListen, fill: mountFill, match: mountMatch, scramble: mountScramble, type: mountType, tf: mountTF, hang: mountHang, speak: mountSpeak, test: mountTest, docs: mountDocs, review: mountLessonReview })[S.tab](el, ctx);
 }
 
 /* ---------- Danh sách từ ---------- */
@@ -8237,22 +8242,22 @@ function runQuiz(el, o) {
   function showMC(q) {
     const p = q.prompt;
     el.innerHTML = head() + `${p.img ? `<img class="qimg" src="${esc(p.img)}" alt="" onerror="this.remove()">` : ''}<div class="q-prompt ${p.sent ? 'sent' : ''}">${p.text ? `<span>${esc(p.text)}</span>` : ''}${p.speak ? `<button class="spk" id="sp" style="${p.text ? '' : 'width:72px;height:72px;font-size:1.8rem'}" aria-label="Nghe"></button>` : ''}</div>
-      ${p.sub ? `<div class="q-sub">${esc(p.sub)}</div>` : ''}<div class="opts" id="opts">${q.options.map(t => `<button class="opt">${esc(t)}</button>`).join('')}</div>`;
+      ${p.sub ? `<div class="q-sub">${esc(p.sub)}</div>` : ''}<div class="opts ${q.imgOpts ? 'oimgs' : ''}" id="opts">${q.options.map(t => q.imgOpts ? `<button class="opt oimg" data-v="${esc(t)}"><img src="${esc(t)}" alt=""></button>` : `<button class="opt">${esc(t)}</button>`).join('')}</div>`;
     if (p.speak) { $('#sp', el).onclick = () => speak(p.speak); if (p.auto) setTimeout(() => el.isConnected && speak(p.speak), 250); }
     $('#opts', el).onclick = e => {
       const b = e.target.closest('.opt'); if (!b) return; $('#opts', el).classList.add('lock');
-      const ok = b.textContent === q.answer; answered(q, ok); b.classList.add(ok ? 'ok' : 'bad');
-      if (!ok) [...el.querySelectorAll('.opt')].find(x => x.textContent === q.answer)?.classList.add('ok');
+      const val = b.dataset.v ?? b.textContent, ok = val === q.answer; answered(q, ok); b.classList.add(ok ? 'ok' : 'bad');
+      if (!ok) [...el.querySelectorAll('.opt')].find(x => (x.dataset.v ?? x.textContent) === q.answer)?.classList.add('ok');
       if (ok && q.say) speak(q.say);
-      el.insertAdjacentHTML('beforeend', `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Giải thích' : 'Vì sao chưa đúng?'}</b><p>${explainQ(q, b.textContent)}</p>${ok ? '' : '<button class="btn sm" id="xn">Tiếp tục</button>'}</div>`);
+      el.insertAdjacentHTML('beforeend', `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Giải thích' : 'Vì sao chưa đúng?'}</b><p>${explainQ(q, val)}</p>${ok ? '' : '<button class="btn sm" id="xn">Tiếp tục</button>'}</div>`);
       if (ok) next(1900); else $('#xn', el).onclick = () => { if (el.isConnected) { i++; show(); } };
     };
   }
   function showTF(q) {
-    el.innerHTML = head() + (o.timer ? `<div class="tbar"><i id="tb"></i></div>` : '') + `<div class="q-sub">Cặp từ và nghĩa này đúng hay sai?</div><div class="tfbox"><div>${esc(q.a)}</div><span>=</span><div>${esc(q.b)}</div></div>
+    el.innerHTML = head() + (o.timer ? `<div class="tbar"><i id="tb"></i></div>` : '') + (q.img ? `<img class="qimg" src="${esc(q.img)}" alt=""><div class="q-sub">Từ này có đúng với hình không?</div><div class="tfbox"><div>${esc(q.a)}</div></div>` : `<div class="q-sub">Cặp từ và nghĩa này đúng hay sai?</div><div class="tfbox"><div>${esc(q.a)}</div><span>=</span><div>${esc(q.b)}</div></div>`) + `
       <div class="fc-actions"><button class="btn mint" data-v="1">✔ Đúng</button><button class="btn soft" data-v="0">✘ Sai</button></div>`;
     const fin = v => { if (el.dataset.lock === String(i)) return; el.dataset.lock = String(i); const ok = v === q.answer; answered(q, ok); el.querySelectorAll('[data-v]').forEach(b => b.disabled = true); if (ok) { next(600); return; }
-      const w = q.w, why = q.answer ? `<b>${esc(q.a)}</b> có nghĩa là <b>${esc(q.b)}</b>, nên cặp này đúng.` : `Cặp này sai. <b>${esc(q.a)}</b> có nghĩa là <b>${esc(w.vi)}</b>, còn "${esc(q.b)}" là nghĩa của một từ khác.`;
+      const w = q.w, why = q.img ? `Hình này là <b>${esc(w.en)}</b> (${esc(w.vi)}).` : q.answer ? `<b>${esc(q.a)}</b> có nghĩa là <b>${esc(q.b)}</b>, nên cặp này đúng.` : `Cặp này sai. <b>${esc(q.a)}</b> có nghĩa là <b>${esc(w.vi)}</b>, còn "${esc(q.b)}" là nghĩa của một từ khác.`;
       el.insertAdjacentHTML('beforeend', `<div class="expl bad"><b>${v === null ? 'Hết giờ rồi' : 'Vì sao chưa đúng?'}</b><p>${why}${w.ex ? `<br>Ví dụ: <i>${esc(w.ex)}</i>` : ''}</p><button class="btn sm" id="xn">Tiếp tục</button></div>`);
       $('#xn', el).onclick = () => { if (el.isConnected) { i++; show(); } }; };
     el.querySelectorAll('[data-v]').forEach(b => b.onclick = () => fin(b.dataset.v === '1'));
@@ -8261,7 +8266,7 @@ function runQuiz(el, o) {
   function showType(q) {
     const w = q.w; let tries = 0;
     const blank = w.en.split(' ').map(p => '_ '.repeat(p.length).trim()).join('   ');
-    el.innerHTML = head() + `<div class="q-prompt"><button class="spk" id="sp" style="width:64px;height:64px;font-size:1.6rem" aria-label="Nghe lại"></button></div>
+    el.innerHTML = head() + `${q.pic && w.img ? `<img class="qimg" src="${esc(w.img)}" alt="">` : ''}<div class="q-prompt"><button class="spk" id="sp" style="width:64px;height:64px;font-size:1.6rem" aria-label="Nghe lại"></button></div>
       <p style="text-align:center">Nghĩa: <b>${esc(w.vi)}</b></p><div class="t-blank">${esc(blank)}</div>
       <input class="t-input" id="ti" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gõ từ tiếng Anh"><div class="t-fb" id="fb"></div>
       <div class="fc-actions"><button class="btn soft" id="skip">Bỏ qua</button><button class="btn" id="chk">Kiểm tra</button></div>`;
@@ -8313,9 +8318,28 @@ function mountGallery(el, { words }) {
   el.innerHTML = `<p class="muted" style="margin:0 0 10px">Bấm vào hình để nghe phát âm. ${L.length} hình.</p><div class="gal">${L.map((w, i) => `<button class="gcard" data-i="${i}" type="button"><img src="${esc(w.img)}" alt="${esc(w.en)}" loading="lazy" onerror="this.closest('.gcard').remove()"><b>${esc(w.en)}</b><small>${esc(w.vi)}</small></button>`).join('')}</div>`;
   el.onclick = e => { const b = e.target.closest('.gcard'); if (b) { speak(L[+b.dataset.i].en); b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 600); } };
 }
-function mountPic(el, c) {
+const picDist = (pool, w, n = 3) => shuffle(pool.filter(x => x.img !== w.img && x.en !== w.en)).slice(0, n);
+function picQ(mode, w, pool) {
+  const ex = '<b>' + esc(w.en) + '</b> = ' + esc(w.vi);
+  if (mode === 'pic') return { ...mcQ(w, pool, 'vi2en'), prompt: { img: w.img, sub: 'Hình này là gì?' } };
+  if (mode === 'picw' || mode === 'picl') return { kind: 'mc', w, imgOpts: true, prompt: mode === 'picw' ? { text: w.en, speak: w.en, sub: 'Chọn hình đúng' } : { speak: w.en, auto: true, sub: 'Nghe và chọn hình đúng' }, options: shuffle([w.img, ...picDist(pool, w).map(x => x.img)]), answer: w.img, expl: ex };
+  if (mode === 'pict') return { ...typeQ(w), pic: true };
+  const t = Math.random() < .5, o = picDist(pool, w, 1)[0];
+  return { kind: 'tf', w, img: w.img, a: t || !o ? w.en : o.en, b: '', answer: t || !o };
+}
+const PICMODES = { pic: 'Hình → từ', picw: 'Từ → hình', picl: 'Nghe → hình', pict: 'Nhìn hình gõ từ', pictf: 'Hình đúng hay sai' };
+function mountPic(el, c, mode = 'pic') {
   const L = c.words.filter(w => w.img); if (L.length < 4) return void (el.innerHTML = empty('Cần ít nhất 4 từ có hình để chơi.'));
-  runQuiz(el, { ...c, key: 'pic', build: () => take(L, 10).map(w => ({ ...mcQ(w, L, 'vi2en'), prompt: { img: w.img, sub: 'Hình này là gì?' } })) });
+  runQuiz(el, { ...c, key: mode, timer: mode === 'pictf' ? 6 : 0, xpEach: mode === 'pictf' ? 8 : 10, noMist: false, build: () => take(L, 10).map(w => picQ(mode, w, L)) });
+}
+const picAllWords = () => (S.allLessons || []).flatMap(l => (l.words || []).filter(w => w.img));
+function viewPicAll() {
+  const L = picAllWords();
+  main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Thử thách hình ảnh</h3></div><p class="muted">15 câu trộn nhiều dạng, lấy hình từ mọi unit. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;
+  $('#pa-b').onclick = () => go('picex');
+  const el = $('#pa'); if (L.length < 4) { el.innerHTML = empty('Chưa đủ hình để tạo thử thách.'); return; }
+  const ms = Object.keys(PICMODES);
+  runQuiz(el, { key: 'picall', noMist: true, xpEach: 10, build: () => take(L, 15).map(w => picQ(ms[Math.floor(Math.random() * ms.length)], w, L)) });
 }
 function mountBook(el, c, withImg) {
   const L = (c.lesson.exs || []).filter(x => withImg ? !!x.img : !x.img);
@@ -9030,10 +9054,12 @@ function viewPicEx() {
   const total = L.reduce((a, l) => a + nImg(l), 0);
   const card = l => `<article class="card pxc"><div class="pxc-h"><span class="lgt">${esc(l.topic || '')}</span><h3>${esc(l.title)}</h3><p class="muted">${esc(l.description || '')}</p></div>
     <div class="pxc-stat"><span>${nImg(l)} hình từ vựng</span><span>${nQ(l)} câu hỏi có hình</span></div>
-    <div class="pxc-b">${nImg(l) >= 2 ? `<button class="btn soft" data-o="${esc(l.id)}" data-t="gallery">Xem hình</button>` : ''}${nImg(l) >= 4 ? `<button class="btn soft" data-o="${esc(l.id)}" data-t="pic">Nhìn hình chọn từ</button>` : ''}${nQ(l) ? `<button class="btn" data-o="${esc(l.id)}" data-t="bookpic">Làm bài tập hình</button>` : ''}<button class="btn soft sm" data-sh="${esc(l.id)}">Chia sẻ HW</button></div></article>`;
+    <div class="pxc-b">${nImg(l) >= 2 ? `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="gallery">Xem hình</button>` : ''}${nImg(l) >= 4 ? Object.entries(PICMODES).map(([k, t]) => `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="${k}">${t}</button>`).join('') : ''}${nQ(l) ? `<button class="btn sm" data-o="${esc(l.id)}" data-t="bookpic">Bài tập hình trong sách</button>` : ''}<button class="btn soft sm" data-sh="${esc(l.id)}">Chia sẻ HW</button></div></article>`;
   main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Bài tập hình ảnh</h2><p class="muted">Tất cả bài có hình minh họa: xem hình để nhớ từ, nhìn hình chọn từ và làm bài tập có hình trong sách. ${L.length ? `Có ${L.length} bài với ${total} hình.` : ''}</p>
+    ${total >= 4 ? '<div class="pxa"><div><b>Thử thách hình ảnh</b><small>15 câu trộn đủ dạng, hình lấy từ mọi unit</small></div><button class="btn" id="px-all">Chơi ngay</button></div>' : ''}
     ${L.length ? `<div class="pxg">${L.map(card).join('')}</div>` : empty('Chưa có bài nào có hình ảnh.')}<div style="height:50px"></div>`;
   main.onclick = e => {
+    if (e.target.closest('#px-all')) return go('picall');
     const o = e.target.closest('[data-o]'); if (o) return openLesson(o.dataset.o, o.dataset.t);
     const sh = e.target.closest('[data-sh]'); if (sh) { const l = L.find(x => x.id === sh.dataset.sh); if (l) openShareLesson(l); }
   };
@@ -10690,6 +10716,8 @@ document.addEventListener('click', e => {
 @media (max-width:640px){.ar-card.ar-full .ar-o{grid-template-columns:1fr 1fr!important}}
 </style>
 <style id="wb-css">
+.pxa{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#0B5CA8,#2A86DB);color:#fff}.pxa b{display:block;font-size:1.1rem}.pxa small{opacity:.9}.pxa .btn{background:#fff;color:#0B5CA8}
+.opts.oimgs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}.opts.oimgs .opt.oimg{display:block!important;height:auto!important;min-height:0!important;padding:6px!important;line-height:0}.opts.oimgs .opt.oimg img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block;background:#F0F5FB}
 .pxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-top:18px}
 .pxc{display:flex;flex-direction:column;gap:10px}.pxc h3{margin:4px 0 2px;color:#0B5CA8}.pxc p{margin:0}
 .pxc-stat{display:flex;flex-wrap:wrap;gap:8px}.pxc-stat span{background:#EAF3FC;color:#0B5CA8;border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:600}

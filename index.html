@@ -6952,7 +6952,7 @@ function go(v) {
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
-  ({ loading: viewLoading, auth: viewAuth, home: viewHome, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
+  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
   scrollTo(0, 0);
 }
 /* ===== Trò chơi luyện từ: link Blooket, Kahoot, Quizlet, Gimkit, Wordwall... do thầy cô gắn ===== */
@@ -7217,8 +7217,8 @@ function renderTop() {
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
   if (!S.user) { topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}</div></div><div class="wrap bar">${brandHTML(false)}</div>`; return; }
   const p = S.profile || {}, v = S.view;
-  const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
-  const MAIN = N.slice(0, 7), MORE = N.slice(7), mon = MORE.some(x => x[2]);
+  const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
+  const MAIN = N.slice(0, 8), MORE = N.slice(8), mon = MORE.some(x => x[2]);
   const nb = ([g, n, on], c = '') => `<button class="navb ${c} ${on ? 'on' : ''}" data-go="${g}">${n}</button>`;
   topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}
     <div class="stats"><span class="stat" title="Số ngày học liên tiếp">Chuỗi ${p.streak || 0} ngày</span><span class="stat" title="Điểm XP">XP ${p.xp || 0}</span>
@@ -9023,6 +9023,22 @@ function openShare(c, iid) {
   };
 }
 
+/* ===== Trang riêng: Bài tập hình ảnh (gom từ mọi bài có hình) ===== */
+function viewPicEx() {
+  const L = (S.allLessons || []).filter(l => (l.words || []).some(w => w.img) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const nImg = l => (l.words || []).filter(w => w.img).length, nQ = l => (l.exs || []).filter(x => x.img).length;
+  const total = L.reduce((a, l) => a + nImg(l), 0);
+  const card = l => `<article class="card pxc"><div class="pxc-h"><span class="lgt">${esc(l.topic || '')}</span><h3>${esc(l.title)}</h3><p class="muted">${esc(l.description || '')}</p></div>
+    <div class="pxc-stat"><span>${nImg(l)} hình từ vựng</span><span>${nQ(l)} câu hỏi có hình</span></div>
+    <div class="pxc-b">${nImg(l) >= 2 ? `<button class="btn soft" data-o="${esc(l.id)}" data-t="gallery">Xem hình</button>` : ''}${nImg(l) >= 4 ? `<button class="btn soft" data-o="${esc(l.id)}" data-t="pic">Nhìn hình chọn từ</button>` : ''}${nQ(l) ? `<button class="btn" data-o="${esc(l.id)}" data-t="bookpic">Làm bài tập hình</button>` : ''}<button class="btn soft sm" data-sh="${esc(l.id)}">Chia sẻ HW</button></div></article>`;
+  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Bài tập hình ảnh</h2><p class="muted">Tất cả bài có hình minh họa: xem hình để nhớ từ, nhìn hình chọn từ và làm bài tập có hình trong sách. ${L.length ? `Có ${L.length} bài với ${total} hình.` : ''}</p>
+    ${L.length ? `<div class="pxg">${L.map(card).join('')}</div>` : empty('Chưa có bài nào có hình ảnh.')}<div style="height:50px"></div>`;
+  main.onclick = e => {
+    const o = e.target.closest('[data-o]'); if (o) return openLesson(o.dataset.o, o.dataset.t);
+    const sh = e.target.closest('[data-sh]'); if (sh) { const l = L.find(x => x.id === sh.dataset.sh); if (l) openShareLesson(l); }
+  };
+}
+
 /* ===== Link chia sẻ bài học để làm HW: ?bai=<mã bài>[&mo=<dạng bài>] ===== */
 const DEEPL = (() => {
   const SK = 'inspire_deepl', ID = /^[\w.-]{1,100}$/, MO = /^(list|flash|quiz|listen|fill|match|scramble|type|tf|hang|speak|test|gallery|pic|bookpic|book)$/; let d = null;
@@ -10674,6 +10690,10 @@ document.addEventListener('click', e => {
 @media (max-width:640px){.ar-card.ar-full .ar-o{grid-template-columns:1fr 1fr!important}}
 </style>
 <style id="wb-css">
+.pxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-top:18px}
+.pxc{display:flex;flex-direction:column;gap:10px}.pxc h3{margin:4px 0 2px;color:#0B5CA8}.pxc p{margin:0}
+.pxc-stat{display:flex;flex-wrap:wrap;gap:8px}.pxc-stat span{background:#EAF3FC;color:#0B5CA8;border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:600}
+.pxc-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
 .qimg{display:block;width:auto;max-width:min(440px,94%);max-height:260px;object-fit:contain;margin:0 auto 12px!important;border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(11,60,120,.12)}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .gcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;border:1px solid #DCE7F3;border-radius:14px;background:#fff;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s}

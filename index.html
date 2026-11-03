@@ -8551,7 +8551,7 @@ function mountDocs(el, { lesson }) {
   const mats = lesson.materials || [];
   if (!mats.length) return void (el.innerHTML = empty('Bài này chưa có tài liệu đính kèm.'));
   el.innerHTML = `<div class="docs-list">${mats.map((m, i) => { const dr = /drive\.google|docs\.google/.test(m.url); return `<button class="dtile ${i === 0 ? 'on' : ''}" data-i="${i}"><span class="vic ${dr ? 'dr' : 'vd'}">${dr ? 'Drive' : 'Link'}</span><b>${esc(m.title || 'Tài liệu ' + (i + 1))}</b></button>`; }).join('')}</div>
-    <div class="vid"><div class="vtool"><h4 id="dt"></h4><span class="vbtn"><button class="btn soft sm" data-fs>Phóng to toàn màn hình</button><a class="btn sm" id="open" target="_blank" rel="noopener">Mở trong Drive</a></span></div>
+    <div class="vid"><div class="vtool"><h4 id="dt"></h4><span class="vbtn"><button class="btn soft sm" data-fs>Phóng to toàn màn hình</button><a class="btn sm" id="open" target="_blank" rel="noopener">Mở tài liệu (dễ đọc hơn)</a></span></div>
     <div class="vframe tall"><iframe class="docs-frame" id="fr" title="Tài liệu bài học" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>`;
   const sel = i => { $('#fr', el).src = embedUrl(mats[i].url); $('#open', el).href = mats[i].url; $('#dt', el).textContent = mats[i].title || 'Tài liệu ' + (i + 1); el.querySelectorAll('.dtile').forEach((b, k) => b.classList.toggle('on', k === i)); };
   el.querySelector('.docs-list').onclick = e => { const b = e.target.closest('.dtile'); if (b) sel(+b.dataset.i); };
@@ -10911,6 +10911,28 @@ document.addEventListener('click', e => {
   .qrow{flex-wrap:wrap}
   .opt{min-width:44px;min-height:44px}
   .cdoc{font-size:1rem;line-height:1.7}
+  /* v3: tài liệu đính kèm */
+  .docs-list{flex-wrap:nowrap!important;overflow-x:auto;gap:8px!important;scrollbar-width:none;margin:0 -14px 12px!important;padding:2px 14px;scroll-snap-type:x proximity}
+  .dtile{flex:none;min-width:0!important;max-width:72vw;padding:10px 14px!important;scroll-snap-align:start}
+  .dtile b{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vtool{flex-direction:column;align-items:stretch!important;gap:8px}
+  .vtool h4{min-width:0!important;font-size:1rem!important}
+  .vbtn{display:grid!important;grid-template-columns:1fr;gap:8px}
+  .vbtn .btn{width:100%;text-align:center}
+  .vbtn [data-fs]{display:none!important}
+  #open{order:-1;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+  .vframe.tall{height:calc(100dvh - 250px)!important;min-height:380px!important;border-radius:12px!important}
+  .docs-frame{background:#fff}
+  .cdoc{overflow-wrap:anywhere;word-break:break-word}
+  .cdoc img,.cdoc video,.cdoc iframe{max-width:100%!important;height:auto}
+  .cdoc iframe{width:100%!important;aspect-ratio:16/9}
+  .cdoc table{font-size:.9rem;-webkit-overflow-scrolling:touch}
+  .cdoc th,.cdoc td{min-width:70px;padding:6px 8px}
+  .cdoc pre{white-space:pre-wrap;overflow-x:auto}
+  .cdoc h1,.cdoc h2{font-size:1.25rem!important}
+  .cdoc h3{font-size:1.1rem!important}
+  .cdoc ul,.cdoc ol{padding-left:1.2em}
+  .cdoc a{overflow-wrap:anywhere}
 }
 </style>
 

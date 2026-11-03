@@ -10933,6 +10933,71 @@ document.addEventListener('click', e => {
   .cdoc h3{font-size:1.1rem!important}
   .cdoc ul,.cdoc ol{padding-left:1.2em}
   .cdoc a{overflow-wrap:anywhere}
+  /* v4 */
+  html{overflow-x:clip}
+  .bong-fly{display:none!important}
+  .toasts{top:auto!important;bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;left:12px!important;right:12px!important;width:auto!important;translate:none!important;transform:none!important;align-items:stretch}
+  .toast{font-size:.95rem;border-radius:14px}
+  .tabs,.chips{scrollbar-width:none}
+  .ovl{padding:0!important}
+  .mdl .row,.mdl .fc-actions{flex-wrap:wrap}
+  .mdl .btn{min-height:46px}
+  a,button,summary,[role=button]{-webkit-tap-highlight-color:rgba(11,92,168,.12);touch-action:manipulation}
+  .btn:active,.opt:active,.lr:active,.lrow:active,.tile:active,.navb:active{transform:scale(.97);transition:transform .08s}
+  .opts .opt:active{background:#E8F1FA}
+  .fc{min-height:260px}
+  .fc-word{font-size:2rem!important}
+  .result .row{flex-direction:column}
+  .result .row .btn{width:100%}
+  .tfbox{font-size:1.4rem}
+  .scramble .chip,.sc-tile{min-height:44px}
+  .t-input{min-height:52px}
+  .panel .q-sub{font-size:.95rem}
+  .qimg{max-height:34vh;object-fit:contain}
+  img{max-width:100%}
+  .rank-row,.rk{padding:10px 8px}
+  /* v4: thân thiện hơn */
+  body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
+  .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}
+  .hm-t,.sec,h2.sec{letter-spacing:-.01em}
+  .btn{border-radius:999px!important;font-weight:700;box-shadow:0 8px 16px -12px rgba(177,11,50,.6)}
+  .btn.soft{box-shadow:none}
+  .opts .opt{border-radius:18px!important;border:2px solid #F0DDE1!important;background:#fff!important;box-shadow:0 4px 0 #F0DDE1;transition:transform .08s,box-shadow .08s}
+  .opts .opt:active{transform:translateY(3px);box-shadow:0 1px 0 #F0DDE1}
+  .opts .opt.ok{border-color:#2BB673!important;background:#E8F8F0!important;box-shadow:0 4px 0 #2BB673}
+  .opts .opt.bad{border-color:#E5484D!important;background:#FDECEC!important;box-shadow:0 4px 0 #E5484D}
+  .prog{height:12px!important;border-radius:99px!important;background:#F3E3E6!important;overflow:hidden}
+  .prog i{border-radius:99px!important;background:linear-gradient(90deg,#FFB400,#F26B1D,#B10B32)!important}
+  .q-head{font-weight:700;color:#7A4A55}
+  .expl{border-radius:18px!important;padding:14px 16px!important}
+  .expl.ok{background:#E8F8F0!important;border:1px solid #BFE9D3!important}
+  .expl.bad{background:#FFF1F0!important;border:1px solid #F5C6C6!important}
+  .result{border-radius:24px!important;background:linear-gradient(180deg,#FFF3E0,#fff)!important;border:1px solid #FFE0B2!important;padding:26px 18px!important}
+  .result .stars{font-size:2.4rem;letter-spacing:6px}
+  .result h3{font-size:1.5rem!important}
+  .lr{border-radius:18px!important;border:1px solid #F0DDE1!important;box-shadow:0 6px 16px -14px rgba(60,20,40,.5)}
+  .lr .lr-i{border-radius:14px!important}
+  .lr.next{border:2px solid #F26B1D!important;background:#FFF7EF!important}
+  .lrow{border-radius:14px}
+  .lrow:active{background:#FFF1F3!important}
+  .fc{border-radius:26px!important;box-shadow:0 18px 34px -22px rgba(177,11,50,.55)!important}
+  .fchip{border-radius:99px!important;font-weight:700}
+  .bar .nav{border-radius:22px 22px 0 0!important;box-shadow:0 -10px 30px -14px rgba(177,11,50,.3)!important}
+  .bar .nav .navb.on,.bar .nav .navb.on[data-go]{background:#FFE9EC!important;color:#B10B32!important}
+  .bar .nav .navb{color:#8A7A80}
+  .bar .nav .navb::before{transition:transform .15s}
+  .bar .nav .navb.on::before{transform:scale(1.12)!important}
+  .ts .stat{background:#FFF1E0!important;color:#C2560A!important;border-radius:99px!important}
+  .tl-go{background:linear-gradient(135deg,#F26B1D,#B10B32)!important}
+  .chat-fab{box-shadow:0 10px 20px -8px rgba(177,11,50,.6)}
+  .crumb2 h3{font-size:1.05rem!important}
+  input[type=search],input[type=text],input[type=password],input[type=email],select,textarea{border-radius:14px!important;border:2px solid #F0DDE1!important;background:#fff}
+  input:focus,select:focus,textarea:focus{border-color:#F26B1D!important;outline:0!important;box-shadow:0 0 0 4px rgba(242,107,29,.15)}
+  .tg{border-radius:99px!important;font-weight:700}
+  .mdl{background:#fff}
+  @keyframes popin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .lr,.lrow,.card,.opts .opt{animation:popin .25s ease both}
+  @media(prefers-reduced-motion:reduce){.lr,.lrow,.card,.opts .opt{animation:none}}
 }
 </style>
 

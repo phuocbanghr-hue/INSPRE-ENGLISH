@@ -5837,7 +5837,7 @@ function runSeq(el, qs, done, each) {
   const fin = () => { if (over) return; over = true; done(ok, wr); };
   const nxt = () => { if (over) return; if (i >= qs.length) return fin(); const q = qs[i]; ask(el, q, `Câu ${i + 1}/${qs.length}`, r => { r ? ok++ : wr.push(q); each && each(r, i, q); i++; nxt(); }); };
   nxt();
-  return { stop() { wr = wr.concat(qs.slice(i)); fin(); } };
+  return { stop() { wr = wr.concat(qs.slice(i)); xp = 0; fin(true); } };
 }
 async function vidRight(d, vi, qi, ok) {
   const k = d.n + '_' + vi + '_' + qi, cur = (S.profile.cdv || {})[k];
@@ -6821,12 +6821,12 @@ function initColor(root, onSubmit) {
   if (img.complete) size(); else img.onload = size;
   const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
   const dot = p => { ctx.globalCompositeOperation = C.erase ? 'destination-out' : 'source-over'; ctx.fillStyle = C.col; ctx.beginPath(); ctx.arc(p[0], p[1], C.w / 2, 0, Math.PI * 2); ctx.fill(); };
-  cv.onpointerdown = e => { drawing = true; drew = true; cv.setPointerCapture(e.pointerId); last = pos(e); dot(last); };
+  cv.onpointerdown = e => { drawing = true; drew = true; cv.dataset.drew = '1'; cv.setPointerCapture(e.pointerId); last = pos(e); dot(last); };
   cv.onpointermove = e => { if (!drawing) return; const p = pos(e); ctx.globalCompositeOperation = C.erase ? 'destination-out' : 'source-over'; ctx.strokeStyle = C.col; ctx.lineWidth = C.w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); last = p; };
   cv.onpointerup = cv.onpointercancel = () => { drawing = false; };
   root.querySelectorAll('[data-col]').forEach(b => { b.onclick = () => { C.col = b.dataset.col; C.erase = false; root.querySelectorAll('[data-col],[data-erase]').forEach(x => x.classList.toggle('on', x === b)); }; });
   const er = root.querySelector('[data-erase]'); if (er) er.onclick = () => { C.erase = !C.erase; er.classList.toggle('on', C.erase); };
-  const cl = root.querySelector('[data-clear]'); if (cl) cl.onclick = () => { ctx.clearRect(0, 0, cv.width, cv.height); drew = false; };
+  const cl = root.querySelector('[data-clear]'); if (cl) cl.onclick = () => { ctx.clearRect(0, 0, cv.width, cv.height); drew = false; delete cv.dataset.drew; };
   const sb = root.querySelector('[data-submit]');
   if (sb) sb.onclick = () => {
     if (!drew || !cv.width) return onSubmit && onSubmit(null);
@@ -8023,7 +8023,7 @@ function runBank(el, b) {
     el.onchange = e => { const s = e.target.closest('.mselect'); if (s && !q.locked) q.sel[+s.dataset.m] = +s.value; };
     el.onclick = e => {
       if (handleOrder(e, Q)) return;
-      if (e.target.closest('#chk') && q.color && !q.locked) { q.locked = true; score++; xp += 10; sfx.ok(); $('#bx', el).innerHTML = `<div class="expl ok"><b>Đã tô màu xong</b><p>Em làm tốt lắm!</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
+      if (e.target.closest('#chk') && q.color && !q.locked) { const cvs = $('.cpaint', el); if (!cvs || !cvs.dataset.drew) return toast('Em tô màu bức tranh trước khi bấm hoàn thành nhé.', 'bad'); q.locked = true; score++; xp += 10; sfx.ok(); $('#bx', el).innerHTML = `<div class="expl ok"><b>Đã tô màu xong</b><p>Em làm tốt lắm!</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
       if (e.target.closest('#chk') && (q.typed || q.match || q.order) && !q.locked) { const inp = $('#fillin', el); if (q.typed) q.txt = inp ? inp.value : ''; if (q.order ? q.built.length < q.words.length : q.match ? q.sel.some(v => v < 0) : !normAns(q.txt)) return toast(q.order ? 'Em xếp hết các từ trước khi kiểm tra nhé.' : q.match ? 'Em nối hết các cặp trước khi kiểm tra nhé.' : 'Nhập đáp án trước khi kiểm tra nhé.', 'warn'); q.locked = true; const ok = qOk(q); if (inp) inp.disabled = true; el.querySelectorAll('.mselect').forEach(s => { s.disabled = true; }); const ck = $('#chk', el); if (ck) ck.disabled = true; if (ok) { score++; xp += 10; sfx.ok(); } else { wrong.push({ q, right: -1 }); sfx.no(); } $('#bx', el).innerHTML = `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Chính xác' : 'Chưa đúng'}</b><p>Đáp án đúng: <b>${qRight(q)}</b>${q.e ? '<br>' + esc(q.e) : ''}</p><button class="btn sm" id="nx">${i + 1 >= Q.length ? 'Xem kết quả' : 'Câu tiếp'}</button></div>`; return; }
       const ob = e.target.closest('.opt'), box = $('#opts', el);
       if (ob && box && !box.classList.contains('lock')) {
@@ -8040,7 +8040,7 @@ function runBank(el, b) {
     recordQStats(b, Q.filter(q => !q.color).map(q => ({ q, w: !qOk(q) })));
     const N = Q.length, pct = Math.round(score / N * 100), grade = pct >= 90 ? 'Xuất sắc!' : pct >= 70 ? 'Làm tốt lắm!' : pct >= 50 ? 'Khá ổn, cố thêm chút nữa!' : 'Chưa sao, xem lại rồi làm lại nhé!';
     if (pct >= 80) { sfx.win(); confetti(); }
-    el.innerHTML = `<div class="result"><h3>${grade}</h3><p>Đúng ${score}/${N} câu (${pct}%) · +${xp} XP</p>${pct >= 80 ? '<div class="gift"><button class="btn" id="gbtn" type="button">Mở hộp quà</button><div class="gift-r" id="grw" hidden></div></div>' : ''}${wrong.length ? `<div class="wronglist" style="display:block"><b>Các câu cần xem lại:</b>${wrong.map(w => `<div style="display:block;text-align:left;padding:8px 0;border-top:1px solid var(--line-s)"><b>${esc(w.q.q)}</b><br><span>Đáp án: ${w.q.typed ? qRight(w.q) : LET[w.right] + '. ' + esc(w.q.opts[w.right].t)}</span>${w.q.e ? `<br><small class="muted">${esc(w.q.e)}</small>` : ''}</div>`).join('')}</div>` : ''}<div class="row"><button class="btn soft" id="again">Làm lại</button><button class="btn" id="gr">Về khoá học</button></div></div>`;
+    el.innerHTML = `<div class="result"><h3>${grade}</h3><p>Đúng ${score}/${N} câu (${pct}%) · ${xp > 0 ? '+' + xp + ' XP' : 'chưa hoàn thành nên chưa nhận XP'}</p>${pct >= 80 && xp > 0 ? '<div class="gift"><button class="btn" id="gbtn" type="button">Mở hộp quà</button><div class="gift-r" id="grw" hidden></div></div>' : ''}${wrong.length ? `<div class="wronglist" style="display:block"><b>Các câu cần xem lại:</b>${wrong.map(w => `<div style="display:block;text-align:left;padding:8px 0;border-top:1px solid var(--line-s)"><b>${esc(w.q.q)}</b><br><span>Đáp án: ${w.q.typed ? qRight(w.q) : LET[w.right] + '. ' + esc(w.q.opts[w.right].t)}</span>${w.q.e ? `<br><small class="muted">${esc(w.q.e)}</small>` : ''}</div>`).join('')}</div>` : ''}<div class="row"><button class="btn soft" id="again">Làm lại</button><button class="btn" id="gr">Về khoá học</button></div></div>`;
     el.onclick = e => { if (e.target.closest('#gbtn')) { const g = $('#gbtn', el), r = $('#grw', el), v = 5 + Math.floor(Math.random() * 26); if (g) g.disabled = true; if (r) { r.hidden = false; r.textContent = '+' + v + ' XP!'; } sfx.win(); award(null, v, {}, 'bonus'); return; } if (e.target.closest('#again')) intro(); else if (e.target.closest('#gr')) go('course'); };
     award(null, xp, {}, 'bank'); const old = (S.profile?.bankbest || {})[b.id]; const up = { ['bankat.' + b.id]: Date.now() }; if (old == null || pct > old) up['bankbest.' + b.id] = pct; api.updateMe(up).catch(() => {});
   }

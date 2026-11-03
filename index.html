@@ -10839,9 +10839,9 @@ document.addEventListener('click', e => {
   .chat-fab{bottom:calc(146px + env(safe-area-inset-bottom,0px))!important;right:12px!important}
   .chat-panel{bottom:calc(146px + env(safe-area-inset-bottom,0px))!important}
   input,select,textarea,.t-input{font-size:16px!important}
-  .btn,.opt,.tile,.lr{min-height:46px}
+  .btn,.opts .opt,.tile,.lr{min-height:46px}
   .opts{gap:10px}
-  .opt{padding:14px 14px;font-size:1rem;text-align:left}
+  .opts .opt{padding:14px 14px;font-size:1rem;text-align:left}
   .lr{padding:12px}
   .q-prompt{font-size:1.15rem}
   .panel{padding:14px 12px;border-radius:16px}
@@ -10889,6 +10889,28 @@ document.addEventListener('click', e => {
   .panel .opts{grid-template-columns:1fr!important}
   .btn{border-radius:14px}
   html{scroll-padding-top:64px}
+  /* v3: xem video & trả lời câu hỏi */
+  .vovl{position:fixed!important;inset:auto 0 0 0!important;top:auto!important;max-height:78vh;border-radius:22px 22px 0 0!important;z-index:120;align-items:flex-start!important;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -18px 50px -10px rgba(0,0,0,.45)}
+  .vovl::before{content:'';position:absolute;top:7px;left:50%;width:42px;height:4px;margin-left:-21px;border-radius:4px;background:#D5DCE5}
+  .vovl .ask{padding-top:8px}
+  .vovl .ask h4,.ask h4{font-size:1.1rem!important;line-height:1.4;margin:4px 0 12px}
+  .aopt{min-height:54px;padding:12px 14px!important;font-size:1rem;border-radius:14px!important}
+  .aopt b{width:32px;height:32px}
+  .aopts{gap:10px}
+  .afb .btn{width:100%}
+  .vframe{border-radius:12px!important}
+  .vframe.tall{height:min(78vh,720px)!important}
+  .vid h4{font-size:1rem}
+  .vq{flex-direction:column;align-items:stretch;text-align:left}
+  .vq .btn{width:100%}
+  .cdtabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;gap:6px;margin-right:-14px;padding-right:14px}
+  .cdtabs .btn{flex:none;white-space:nowrap}
+  .cdnav{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom,0px));background:#fff;padding:8px 0;margin:12px 0 20px;z-index:4}
+  .cdnav .btn{flex:1}
+  .sheet{grid-template-columns:repeat(2,1fr)!important}
+  .qrow{flex-wrap:wrap}
+  .opt{min-width:44px;min-height:44px}
+  .cdoc{font-size:1rem;line-height:1.7}
 }
 </style>
 

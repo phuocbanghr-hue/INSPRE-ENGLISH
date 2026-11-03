@@ -7910,6 +7910,13 @@ function viewHome() {
       <h2 class="sec" id="lsec">Bài học của em</h2>
       <div class="flt"><input id="q" type="search" placeholder="Tìm bài học tại đây…" value="${esc(S.q)}" aria-label="Tìm bài học"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${(S.flt || 'all') === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
       <div id="courses"></div></div><aside class="hm-r" id="dash" hidden></aside></div>`;
+  if (isMob() && S.profile) {
+    const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
+    let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
+    const ls = last && (S.lessons || []).find(l => l.id === last[0]);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi},</small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s"><i>${p.xp || 0}</i><small>XP</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section>`);
+    const hb = $('#hero-go'); if (hb) hb.onclick = () => openLesson(last[0], last[1]);
+  }
   const wl = $('.welcome'); if (wl) wl.onclick = e => { const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; } const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); };
   $('#q').oninput = e => { S.q = e.target.value; drawCourses(); };
   bindClassStrip();
@@ -10956,6 +10963,18 @@ document.addEventListener('click', e => {
   .qimg{max-height:34vh;object-fit:contain}
   img{max-width:100%}
   .rank-row,.rk{padding:10px 8px}
+  .hero-m{display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;margin:4px 0 14px;padding:16px;border-radius:24px;background:linear-gradient(135deg,#F26B1D,#B10B32);color:#fff;box-shadow:0 18px 30px -18px rgba(177,11,50,.7)}
+  .hero-t small{display:block;opacity:.9;font-size:.9rem}
+  .hero-t b{display:block;font-size:1.6rem;line-height:1.15;margin:2px 0 4px}
+  .hero-t span{font-size:.92rem;opacity:.95}
+  .hero-s{background:rgba(255,255,255,.2);border-radius:18px;padding:10px 14px;text-align:center}
+  .hero-s i{display:block;font-style:normal;font-weight:800;font-size:1.5rem;line-height:1}
+  .hero-s small{font-size:.75rem;opacity:.9}
+  .hero-b{grid-column:1/-1;background:#fff!important;color:#B10B32!important;box-shadow:none!important;white-space:normal;line-height:1.25}
+  .crumbs{display:none}
+  .hm-t{display:none}
+  .hm-s{margin-top:0!important}
+  .loading,.empty{padding:28px 16px;text-align:center;border-radius:20px;background:#fff;border:2px dashed #F0DDE1}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

@@ -8232,6 +8232,12 @@ function mountFlash(el, { lesson, words, next, grid }) {
     $('#fc', el).onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } };
     $('#sp', el).onclick = e => { e.stopPropagation(); speak(w.en); };
     $('#no', el).onclick = () => mark(false); $('#yes', el).onclick = () => mark(true);
+    const fcEl = $('#fc', el); let sx = 0, sy = 0, dx = 0, sw = false;
+    fcEl.addEventListener('touchstart', e => { const t0 = e.touches[0]; sx = t0.clientX; sy = t0.clientY; dx = 0; sw = false; fcEl.style.transition = 'none'; }, { passive: true });
+    fcEl.addEventListener('touchmove', e => { const t0 = e.touches[0]; dx = t0.clientX - sx; if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(t0.clientY - sy)) { sw = true; fcEl.style.transform = 'translateX(' + dx + 'px) rotate(' + dx / 25 + 'deg)'; fcEl.style.opacity = String(1 - Math.min(.5, Math.abs(dx) / 400)); } }, { passive: true });
+    fcEl.addEventListener('touchend', () => { fcEl.style.transition = 'transform .18s,opacity .18s'; if (sw && Math.abs(dx) > 90) { fcEl.style.transform = 'translateX(' + (dx > 0 ? 500 : -500) + 'px)'; fcEl.style.opacity = '0'; const ok = dx > 0; setTimeout(() => { if (el.isConnected) mark(ok); }, 160); } else { fcEl.style.transform = ''; fcEl.style.opacity = ''; } if (sw) setTimeout(() => { sw = false; }, 50); });
+    fcEl.addEventListener('click', e => { if (sw) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    if (isMob() && !el.dataset.swHint) { el.dataset.swHint = '1'; el.insertAdjacentHTML('beforeend', '<p class="muted" style="text-align:center;font-size:.82rem;margin-top:8px">Vuốt phải = đã thuộc · vuốt trái = chưa thuộc</p>'); }
   }
   const flip = () => { flipped = !flipped; $('#fc', el).classList.toggle('flip', flipped); };
   function mark(ok) { const w = queue.shift(); flipped = false; if (ok) { known++; sfx.ok(); } else { unsure.set(w.en, w); queue.push(w); sfx.no(); } draw(); }
@@ -8287,6 +8293,7 @@ function runQuiz(el, o) {
       if (!ok) [...el.querySelectorAll('.opt')].find(x => (x.dataset.v ?? x.textContent) === q.answer)?.classList.add('ok');
       if (ok && q.say) speak(q.say);
       el.insertAdjacentHTML('beforeend', `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Giải thích' : 'Vì sao chưa đúng?'}</b><p>${explainQ(q, val)}</p>${ok ? '' : '<button class="btn sm" id="xn">Tiếp tục</button>'}</div>`);
+      const xe = el.querySelector('.expl'); if (xe && isMob()) setTimeout(() => { try { xe.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch { } }, 60);
       if (ok) next(1900); else $('#xn', el).onclick = () => { if (el.isConnected) { i++; show(); } };
     };
   }
@@ -11055,6 +11062,8 @@ document.addEventListener('click', e => {
   .psg-bar .btn{min-height:46px;padding:0 20px}
   .q-prompt.sent{font-size:1.18rem;line-height:1.45}
   .q-prompt.sent span{overflow-wrap:anywhere}
+  .fc{touch-action:pan-y;will-change:transform}
+  .expl .btn{width:100%;margin-top:8px}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

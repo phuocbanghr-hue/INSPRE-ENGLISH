@@ -6589,7 +6589,7 @@ function itemCard(c, it) {
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${linkM(it.text)}</div></div>`;
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
   const open = `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">`;
-  if (it.type === 'drive') return isMob() ? row('Tài liệu Google Drive', `<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tài liệu</a>`, `<details class="cxl-det"><summary>Xem nhanh tại đây</summary>${fr(embedUrl(u), 'tall cxl-doc')}</details>`) : row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
+  if (it.type === 'drive') return isMob() ? row('Tài liệu Google Drive', `<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tài liệu</a>`, `<details class="cxl-det" open><summary>Tài liệu (bấm để thu gọn)</summary>${fr(embedUrl(u), 'tall cxl-doc')}</details>`) : row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
   if (it.type === 'folder') return row('Thư mục Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'cxl-doc'));
   if (it.type === 'youtube') { const tq = YT_RE.test(u) && (it.qs || []).some(q => q.t != null);
     return row('Video bài giảng', `${open}Mở YouTube</a>`, tq ? `<div class="vframe cxl-vid"><div id="cyt-${esc(it.id)}" style="position:absolute;inset:0"></div><div class="vovl" id="cov-${esc(it.id)}" hidden></div></div>` : fr(vidEmbed(u), 'cxl-vid')); }
@@ -9171,6 +9171,25 @@ function openShareLesson(l) {
   };
 }
 
+
+/* Xem tài liệu Drive trên điện thoại: thu nhỏ để thấy trọn trang, có nút phóng to / thu nhỏ */
+(function () {
+  const init = box => {
+    if (box.dataset.z || !isMob()) return;
+    const fr = box.querySelector('iframe'); if (!fr) return;
+    box.dataset.z = '1'; let z = 1.7;
+    const bar = document.createElement('div'); bar.className = 'dz-bar';
+    bar.innerHTML = '<button type="button" data-d="-1">THU NHỎ −</button><span class="dz-t">Chụm 2 ngón để phóng to</span><button type="button" data-d="1">PHÓNG TO +</button>';
+    box.parentNode.insertBefore(bar, box);
+    const apply = () => { const w = box.clientWidth, h = box.clientHeight; if (!w) return; const s = (k, v) => fr.style.setProperty(k, v, 'important');
+      s('position', 'absolute'); s('left', '0'); s('top', '0'); s('inset', 'auto'); s('width', Math.round(w * z) + 'px'); s('height', Math.round(h * z) + 'px'); s('max-width', 'none'); s('transform', 'scale(' + (1 / z) + ')'); s('transform-origin', '0 0'); };
+    bar.onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; z = Math.min(3, Math.max(1, +(z + (+b.dataset.d) * -0.35).toFixed(2))); apply(); };
+    apply(); addEventListener('resize', apply);
+  };
+  const scan = () => document.querySelectorAll('.vframe.cxl-doc, .vframe.tall:has(> iframe.docs-frame)').forEach(init);
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); scan();
+})();
+
 /* ---------- khởi động ---------- */
 if (LOAD_ERR) { go('loading'); }
 else {
@@ -11020,6 +11039,11 @@ document.addEventListener('click', e => {
   .bar .nav .navb,.bar .nav .navb[data-go],.bar .nav #more{text-transform:uppercase!important;font-size:.6rem!important;font-weight:800!important;letter-spacing:.01em!important}
   .fchip,.cdtabs .btn,.cxl-nb,.flt .fchip,.tabs button,.chips button{text-transform:uppercase;font-size:.78rem!important;letter-spacing:.02em;font-weight:800!important}
   .ls-h h3,.sec,h2.sec{text-transform:uppercase;letter-spacing:.02em}
+  .dz-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}
+  .dz-bar button{flex:none;min-height:44px;padding:0 14px;border:0;border-radius:999px;background:#FFF1E0;color:#C2560A;font-weight:800;font-size:.75rem}
+  .dz-bar button:active{background:#FFD9B0}
+  .dz-t{font-size:.72rem;color:#8A7A80;text-align:center;line-height:1.2}
+  .cxl-emb .vframe.tall,.cxl-emb .vframe.cxl-doc,.vframe.tall{height:min(74dvh,620px)!important;overflow:hidden}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

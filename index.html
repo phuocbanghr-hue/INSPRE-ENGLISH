@@ -7916,7 +7916,7 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi},</small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section>`);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section>`);
     const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
   const wl = $('.welcome'); if (wl) wl.onclick = e => { const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; } const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); };
@@ -9195,6 +9195,15 @@ function openShareLesson(l) {
   };
   const scan = () => document.querySelectorAll('.vframe.cxl-doc, .vframe.tall:has(> iframe.docs-frame)').forEach(init);
   new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); scan();
+})();
+
+
+/* Thanh menu dưới tự ẩn khi cuộn xuống, hiện lại khi cuộn lên */
+(function () {
+  let ly = scrollY, tk = false;
+  addEventListener('scroll', () => { if (tk) return; tk = true; requestAnimationFrame(() => { tk = false; const y = scrollY, d = y - ly; if (!isMob()) { document.body.classList.remove('nav-hide'); ly = y; return; }
+    const menuOpen = document.getElementById('menu') && !document.getElementById('menu').hidden;
+    if (menuOpen || y < 120 || d < -8) document.body.classList.remove('nav-hide'); else if (d > 14) document.body.classList.add('nav-hide'); if (Math.abs(d) > 8) ly = y; }); }, { passive: true });
 })();
 
 /* ---------- khởi động ---------- */
@@ -11077,6 +11086,13 @@ document.addEventListener('click', e => {
   .btn:not(.soft):not(.sm){background-image:linear-gradient(135deg,#F26B1D,#B10B32)!important;color:#fff!important}
   .opt.ok::after{content:'✓';margin-left:8px;font-weight:900;color:#2BB673}
   .opt.bad::after{content:'✗';margin-left:8px;font-weight:900;color:#E5484D}
+  .lv-chip{font-style:normal;background:rgba(255,255,255,.22);border-radius:99px;padding:2px 10px;font-size:.74rem;font-weight:800;margin-left:4px;text-transform:uppercase;letter-spacing:.03em}
+  .bar .nav{transition:transform .25s ease}
+  body.nav-hide .bar .nav{transform:translateY(110%)!important}
+  body.nav-hide .tl-go,body.nav-hide .bong,body.nav-hide .cxl-fab{transform:translateY(60px)}
+  body.nav-hide .chat-fab{transform:translateY(60px)}
+  .tl-go,.bong,.cxl-fab,.chat-fab{transition:transform .25s ease}
+  body.nav-hide{padding-bottom:20px!important}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

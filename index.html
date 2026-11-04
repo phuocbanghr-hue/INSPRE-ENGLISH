@@ -7916,8 +7916,8 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi},</small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s"><i>${p.xp || 0}</i><small>XP</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section>`);
-    const hb = $('#hero-go'); if (hb) hb.onclick = () => openLesson(last[0], last[1]);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi},</small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section>`);
+    const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
   const wl = $('.welcome'); if (wl) wl.onclick = e => { const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; } const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); };
   $('#q').oninput = e => { S.q = e.target.value; drawCourses(); };
@@ -11064,6 +11064,19 @@ document.addEventListener('click', e => {
   .q-prompt.sent span{overflow-wrap:anywhere}
   .fc{touch-action:pan-y;will-change:transform}
   .expl .btn{width:100%;margin-top:8px}
+  .hero-ring{position:relative;width:92px;height:92px;border-radius:50%!important;padding:0!important;display:grid;place-items:center;align-content:center;background:conic-gradient(#FFD54A calc(var(--p)*1%),rgba(255,255,255,.25) 0)!important}
+  .hero-ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:#C8142D}
+  .hero-ring i,.hero-ring small{position:relative;z-index:1}
+  .hero-ring small{font-size:.58rem;line-height:1.1;max-width:60px}
+  .loading{position:relative;overflow:hidden;color:transparent!important;min-height:90px}
+  .loading::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(242,107,29,.14) 50%,transparent 80%);animation:shim 1.1s infinite}
+  @keyframes shim{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+  #main{animation:pgin .28s ease both}
+  @keyframes pgin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){#main,.loading::after{animation:none}}
+  .btn:not(.soft):not(.sm){background-image:linear-gradient(135deg,#F26B1D,#B10B32)!important;color:#fff!important}
+  .opt.ok::after{content:'✓';margin-left:8px;font-weight:900;color:#2BB673}
+  .opt.bad::after{content:'✗';margin-left:8px;font-weight:900;color:#E5484D}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

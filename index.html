@@ -9209,6 +9209,7 @@ function openShareLesson(l) {
 
 
 /* ===== Nhắc nhở ôn tập ===== */
+const FCM_VAPID = '';  // dán khoá Web Push (VAPID) của Firebase vào đây để bật thông báo đẩy khi đóng web
 function reminderList() {
   const p = S.profile || {}, out = [], h = new Date().getHours(), today = (p.daily || {})[dayKey()] || 0;
   let nSrs = 0; try { nSrs = srsDue().length; } catch { }
@@ -9231,7 +9232,17 @@ async function enableReminders() {
   try {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { toast('Em chưa cho phép thông báo. Vào Cài đặt của điện thoại để bật lại nhé.', 'bad'); return; }
-    await navigator.serviceWorker.register('sw.js'); store.set('remind_on', '1'); toast('Đã bật nhắc ôn tập lúc 19:00 mỗi ngày.', 'ok');
+    await navigator.serviceWorker.register('sw.js'); store.set('remind_on', '1');
+    let pushed = false;
+    if (FCM_VAPID && MODE === 'firebase' && S.user) {
+      try {
+        const m = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
+        const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+        const tok = await m.getToken(m.getMessaging(FB.getApp()), { vapidKey: FCM_VAPID, serviceWorkerRegistration: reg });
+        if (tok) { await FB.updateDoc(FB.doc(db, 'users', S.user.uid), { fcmTokens: FB.arrayUnion(tok), remindOn: true }); pushed = true; }
+      } catch (e) { console.warn('fcm', e); }
+    }
+    toast(pushed ? 'Đã bật nhắc ôn tập. Em sẽ nhận thông báo lúc 19:00 mỗi ngày, kể cả khi đóng web.' : 'Đã bật nhắc ôn tập lúc 19:00 mỗi ngày (khi web đang mở).', 'ok');
     notifyNow(true);
   } catch (e) { toast('Máy này chưa hỗ trợ thông báo. Em thêm web vào màn hình chính rồi thử lại nhé.', 'bad'); }
 }

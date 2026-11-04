@@ -11044,6 +11044,17 @@ document.addEventListener('click', e => {
   .dz-bar button:active{background:#FFD9B0}
   .dz-t{font-size:.72rem;color:#8A7A80;text-align:center;line-height:1.2}
   .cxl-emb .vframe.tall,.cxl-emb .vframe.cxl-doc,.vframe.tall{height:min(74dvh,620px)!important;overflow:hidden}
+  /* v8: chân trang gọn, đoạn văn dễ đọc */
+  .sfoot{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin-top:30px!important;padding:14px 16px!important;border-radius:22px 22px 0 0}
+  .sfoot>b{flex:1 1 100%;font-size:.95rem!important}
+  .sfoot>span:not(:nth-last-child(-n+2)){display:none}
+  .sfoot .soc{margin:0 6px 0 0!important;padding:6px 14px!important;border-radius:99px!important;font-weight:700}
+  .psg{background:#FFFBF3!important;border-color:#FFE0B2!important}
+  .psg summary{min-height:40px;display:flex;align-items:center}
+  .psg-t{max-height:42vh;font-size:1.02rem;line-height:1.75;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+  .psg-bar .btn{min-height:46px;padding:0 20px}
+  .q-prompt.sent{font-size:1.18rem;line-height:1.45}
+  .q-prompt.sent span{overflow-wrap:anywhere}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

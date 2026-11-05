@@ -7483,10 +7483,17 @@ function weekXp(p) {
   for (let i = 0; i < 7; i++) { const dt = new Date(); dt.setDate(dt.getDate() - i); s += +(d[dayKey(dt)] || 0); }
   return s;
 }
+/* Top 1 XP tuần của từng lớp được tặng trà sữa */
+function bobaSet(list) {
+  const best = {};
+  (list || []).forEach(p => { const k = norm(p.className || ''); if (!k) return; const w = weekXp(p); if (w <= 0) return; const b = best[k]; if (!b || w > b.w || (w === b.w && (p.xp || 0) > (b.p.xp || 0))) best[k] = { w, p }; });
+  return new Set(Object.values(best).map(b => b.p.id || b.p.uid));
+}
+const BOBA = '<span class="boba" title="Top 1 tuần của lớp: được tặng trà sữa!">🧋</span>';
 function renderWeek(list) {
   const el = document.getElementById('ar-week'); if (!el) return;
-  const top = list.map(p => ({ n: p.name || p.displayName || 'Học sinh', v: weekXp(p) })).filter(r => r.v > 0).sort((a, b) => b.v - a.v).slice(0, 5);
-  el.innerHTML = '<b>Bảng vinh danh tuần này</b>' + (top.length ? top.map((r, i) => `<div class="ar-wk-r"><span>${i + 1}</span><b>${esc(r.n)}</b><em>${r.v} XP</em></div>`).join('') : '<div class="muted">Chưa có ai nhận XP trong tuần này.</div>');
+  const bb = bobaSet(list), top = list.map(p => ({ id: p.id || p.uid, n: p.name || p.displayName || 'Học sinh', v: weekXp(p) })).filter(r => r.v > 0).sort((a, b) => b.v - a.v).slice(0, 5);
+  el.innerHTML = '<b>Bảng vinh danh tuần này</b>' + (top.length ? top.map((r, i) => `<div class="ar-wk-r"><span>${i + 1}</span><b>${esc(r.n)}${bb.has(r.id) ? ' ' + BOBA : ''}</b><em>${r.v} XP</em></div>`).join('') : '<div class="muted">Chưa có ai nhận XP trong tuần này.</div>');
 }
 function mountArena(c) {
   // Đang trong trận của lớp này: giữ nguyên kết nối và trạng thái, chỉ vẽ lại màn hình.
@@ -8110,13 +8117,13 @@ function viewCourse() {
 function viewRank() {
   main.innerHTML = `<h2 style="margin:26px 0 12px;font-size:2.2rem">Bảng xếp hạng</h2>
     <div class="rank-tabs"><button class="btn sm ${S.rankFilter === 'all' ? '' : 'soft'}" data-f="all">Toàn trường</button><button class="btn sm ${S.rankFilter === 'class' ? '' : 'soft'}" data-f="class">Lớp của em</button></div>
-    <div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
+    <p class="boba-note">🧋 = Top 1 XP tuần này của lớp. Cuối tuần bạn nào giữ 🧋 sẽ được tặng trà sữa!</p><div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
   main.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { S.rankFilter = b.dataset.f; viewRank(); });
   rankUnsub = api.watchTop(50, list => {
-    const medals = ['', '', ''], me = S.profile?.className;
+    const medals = ['', '', ''], me = S.profile?.className; const bb = bobaSet(list);
     let rows = list; if (S.rankFilter === 'class') rows = list.filter(u => me && norm(u.className) === norm(me));
     $('#rk').innerHTML = rows.map((u, i) => `<div class="rank-row ${u.id === S.user.uid ? 'me' : ''}"><span class="rank-n">${medals[i] || i + 1}</span><span class="rank-av">${avHTML(u)}</span>
-      <span class="rank-name">${esc(u.name || 'Học sinh')}<small>${esc(u.className || '')} · ${levelInfo(u.xp).name}</small></span><span> ${u.streak || 0}</span><b> ${u.xp || 0}</b></div>`).join('') || empty(S.rankFilter === 'class' ? 'Em chưa có lớp hoặc lớp chưa có bạn nào. Thêm tên lớp ở mục Hồ sơ nhé.' : 'Chưa có ai trên bảng.');
+      <span class="rank-name">${esc(u.name || 'Học sinh')}${bb.has(u.id) ? ' ' + BOBA : ''}<small>${esc(u.className || '')} · ${levelInfo(u.xp).name}</small></span><span> ${u.streak || 0}</span><b> ${u.xp || 0}</b></div>`).join('') || empty(S.rankFilter === 'class' ? 'Em chưa có lớp hoặc lớp chưa có bạn nào. Thêm tên lớp ở mục Hồ sơ nhé.' : 'Chưa có ai trên bảng.');
   }, err => toast('Không tải được bảng xếp hạng: ' + err.message, 'bad'));
 }
 
@@ -10972,6 +10979,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
+<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
 <style id="emo-css">
 .q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
 .fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}

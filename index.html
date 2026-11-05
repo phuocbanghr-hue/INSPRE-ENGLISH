@@ -5914,12 +5914,19 @@ function weekInfo(ts = Date.now()) {
   const sh = new Date(ts - 10 * 3600e3), dow = (sh.getUTCDay() + 6) % 7;
   const s = Date.UTC(sh.getUTCFullYear(), sh.getUTCMonth(), sh.getUTCDate() - dow), d = new Date(s), st = s + 10 * 3600e3;
   const id = 'w' + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
-  // Đặt lại tay tuần thi đua: từ mốc WEEK_RESET trở đi (trong cùng tuần) tính như một tuần mới, XP tuần cũ bị bỏ
-  if (id === WEEK_RESET.week) return ts >= WEEK_RESET.at ? { id: id + 'r', start: WEEK_RESET.at, end: st + 7 * 864e5 } : { id, start: st, end: WEEK_RESET.at };
+  // Đặt lại tay tuần thi đua: mỗi mốc trong WEEK_RESETS mở một tuần mới (XP tuần cũ không tính tiếp)
+  if (id === WEEK_BASE) {
+    const rs = WEEK_RESETS.filter(r => ts >= r.at), cur = rs[rs.length - 1], nx = WEEK_RESETS.find(r => r.at > ts);
+    if (!cur) return { id, start: st, end: WEEK_RESETS[0].at };
+    return { id: cur.id, start: cur.at, end: nx ? nx.at : st + 7 * 864e5 };
+  }
   return { id, start: st, end: st + 7 * 864e5 };
 }
-const WEEK_RESET = { week: 'w20261102', at: Date.parse('2026-11-05T17:45:00+07:00') };
-const WEEK_VOID = new Set(['w20261102']);
+const WEEK_BASE = 'w20261102';
+const WEEK_RESETS = [{ id: 'w20261102r', at: Date.parse('2026-11-05T17:45:00+07:00') }, { id: 'w20261102r2', at: Date.parse('2026-11-05T17:55:00+07:00') }];
+// Tuần chốt tay: người được tặng trà sữa do giáo viên quyết định
+const MANUAL_BOBA = { w20261102r: { label: 'Tuần 02/11 → 05/11 (chốt sớm)', winners: [{ uid: 'm_henry', name: 'Henry', className: '', xp: 0 }, { uid: 'm_khoa', name: 'Khoa', className: '', xp: 0 }] } };
+const WEEK_VOID = new Set(['w20261102', 'w20261102r']);
 const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); }; return f(w.start) + ' → ' + f(w.end); };
 /* ---------- ghi điểm & từ sai ---------- */
 async function award(lid, xp, extra = {}, src = '') {
@@ -8132,7 +8139,7 @@ async function maybeArchiveBoba(all) {
     if ((S.site.boba || {})[prev.id] || _bobaTried === prev.id) return;
     const winners = weekWinners(all, prev.id); if (!winners.length) return;
     _bobaTried = prev.id;
-    const boba = { ...(S.site.boba || {}), [prev.id]: { winners, at: Date.now() } };
+    const boba = { ...(S.site.boba || {}), [prev.id]: { winners, at: Date.now(), start: prev.start, end: prev.end } };
     if (MODE === 'firebase' && FB && db) await FB.setDoc(FB.doc(db, 'config', 'site'), { boba, updatedAt: NOW() }, { merge: true });
     else store.set('inspire_site', JSON.stringify({ ...(S.site || {}), boba }));
     S.site = { ...S.site, boba };
@@ -8148,8 +8155,8 @@ function viewRank() {
     const cur = weekInfo(), prev = weekInfo(cur.start - 1), rows = weekWinners(all, cur.id);
     window.__iHaveBoba = rows.some(r => r.uid === S.user.uid);
     maybeArchiveBoba(all);
-    const arch = (S.site && S.site.boba) || {}, hist = { ...arch };
-    if (!hist[prev.id]) { const pw = weekWinners(all, prev.id); if (pw.length) hist[prev.id] = { winners: pw }; }
+    const arch = (S.site && S.site.boba) || {}, hist = { ...arch, ...MANUAL_BOBA };
+    if (!hist[prev.id]) { const pw = weekWinners(all, prev.id); if (pw.length) hist[prev.id] = { winners: pw, start: prev.start, end: prev.end }; }
     const left = Math.max(0, cur.end - Date.now()), dd = Math.floor(left / 864e5), hh = Math.floor(left % 864e5 / 36e5);
     const tally = {}; Object.values(hist).forEach(h => (h.winners || []).forEach(w => { const k = w.uid; (tally[k] ||= { n: w.name, c: w.className, k: 0 }).k++; }));
     const medal = Object.values(tally).sort((a, b) => b.k - a.k).slice(0, 5);
@@ -8157,8 +8164,8 @@ function viewRank() {
     el.innerHTML = `<b style="font-size:1.05rem">🧋 Top 1 tuần này của từng lớp</b><div class="bb-cd">⏳ Chốt tuần lúc 17:00 thứ Hai (còn ${dd} ngày ${hh} giờ). Sau đó XP tuần về 0 và người dẫn đầu được ghi vào bảng nhận trà sữa.</div>`
       + (rows.length ? rows.map(wr).join('') : '<div class="muted" style="margin:6px 0">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>')
       + `<details class="bb-h" open><summary>🧋 Bảng tổng hợp bạn được tặng trà sữa</summary>`
-      + (Object.keys(hist).length ? Object.keys(hist).sort().reverse().map(id => { const h = hist[id], st = id.slice(1), ts = id === WEEK_RESET.week + 'r' ? WEEK_RESET.at : Date.UTC(+st.slice(0, 4), +st.slice(4, 6) - 1, +st.slice(6, 8)) + 10 * 3600e3; return `<div class="bb-wk"><b>Tuần ${weekLabel({ start: ts, end: id === WEEK_RESET.week + 'r' ? Date.UTC(2026, 10, 9) + 10 * 3600e3 : ts + 7 * 864e5 })}</b>${(h.winners || []).map(w => `<div class="bb-w2"><span>${BOBA} <b>${esc(w.name)}</b> · ${esc(w.className)}</span><em>${w.xp} XP</em></div>`).join('') || '<div class="muted">Không có ai.</div>'}</div>`; }).join('') : '<div class="muted" style="margin:6px 0">Chưa có tuần nào được chốt. Tuần đầu tiên sẽ chốt vào 17:00 thứ Hai tới.</div>')
-      + (medal.length ? `<div class="bb-wk"><b>Nhận nhiều trà sữa nhất</b>${medal.map(m => `<div class="bb-w2"><span><b>${esc(m.n)}</b> · ${esc(m.c)}</span><em>${m.k} ${BOBA}</em></div>`).join('')}</div>` : '')
+      + (Object.keys(hist).length ? Object.keys(hist).sort().reverse().map(id => { const h = hist[id]; return `<div class="bb-wk"><b>${h.label || 'Tuần ' + weekLabel(h.start ? { start: h.start, end: h.end } : { start: Date.UTC(+id.slice(1, 5), +id.slice(5, 7) - 1, +id.slice(7, 9)) + 10 * 3600e3, end: Date.UTC(+id.slice(1, 5), +id.slice(5, 7) - 1, +id.slice(7, 9)) + 10 * 3600e3 + 7 * 864e5 })}</b>${(h.winners || []).map(w => `<div class="bb-w2"><span>${BOBA} <b>${esc(w.name)}</b>${w.className ? ' · ' + esc(w.className) : ''}</span>${w.xp ? `<em>${w.xp} XP</em>` : ''}</div>`).join('') || '<div class="muted">Không có ai.</div>'}</div>`; }).join('') : '<div class="muted" style="margin:6px 0">Chưa có tuần nào được chốt. Tuần đầu tiên sẽ chốt vào 17:00 thứ Hai tới.</div>')
+      + (medal.length ? `<div class="bb-wk"><b>Nhận nhiều trà sữa nhất</b>${medal.map(m => `<div class="bb-w2"><span><b>${esc(m.n)}</b>${m.c ? ' · ' + esc(m.c) : ''}</span><em>${m.k} ${BOBA}</em></div>`).join('')}</div>` : '')
       + '</details>';
   }, () => { const el = $('#bb-board'); if (el) el.remove(); });
   stopBoard(); window.__unBoard = unBoard;

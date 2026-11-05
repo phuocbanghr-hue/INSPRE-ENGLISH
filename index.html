@@ -8143,9 +8143,11 @@ function viewProfile() {
 
 /* ---------- bài học ---------- */
 const wordsCache = new Map();
+const EMO = {"artisan":"🧑‍🎨","craft village":"🏘️","delivery person":"📦","electrician":"🔌","firefighter":"🧑‍🚒","garbage collector":"🗑️","handicraft":"🧶","pottery":"🏺","police officer":"👮","police oﬀicer":"👮","suburb":"🏡","tourist attraction":"🎡","art gallery":"🖼️","artwork":"🎨","bike rack":"🚲","cliff":"🧗","concrete":"🧱","skate park":"🛹","construction site":"🏗️","downtown":"🏙️","concrete jungle":"🌆","metro":"🚇","sky train":"🚝","tram":"🚋","underground":"🚇","canal":"🛶","laundry":"🧺","rush hour":"🚦","itchy":"😖","leftover":"🍲","come down with":"🤧","anxiety":"😰","stressed out":"😫","deadline":"⏰","due date":"📅","mood":"😊","optimistic":"😄","mental":"🧠","physical":"💪","counsellor":"🗣️","assignment":"📝","fattening":"🍔","well-balanced":"⚖️","castle":"🏰","ancient":"🏛️","anniversary":"🎂","barefoot":"🦶","monument":"🗿","takeaway":"🥡","fish and chips":"🍟","bandage":"🩹","gasoline":"⛽","gramophone":"📻","sculpture":"🗿","campus":"🏫","coral reef":"🪸","coral":"🪸","eco-tour":"🌿","snorkelling":"🤿","seabed":"🌊","fauna":"🦌","flora":"🌺","tribal dance":"💃","seasick":"🤢","take a holiday":"🏖️","democratic":"🗳️","household":"🏠","monk":"🧘","nuclear":"👨‍👩‍👧‍👦","take notes":"📓","trend":"📈","dye":"🎨","ecosystem":"🌳","majestic":"🏔️","paradise":"🏝️","peak":"⛰️","lightning":"⚡","thunder":"⛈️","freezing cold":"🥶","icy":"🧊","path":"🥾","survivor":"🛟","brochure":"📰","homestay":"🏡","graveyard":"🪦","loft":"🏠","agent":"🕴️","package holiday":"🧳","itinerary":"🗺️","hop-on hop-off":"🚌","bilingual":"🗣️","translate":"🌐","immigrant":"🛂","look up":"🔍","exchange student":"🎒","climate change":"🌡️","fertilizer":"🌱","food chain":"🐟","grassland":"🌾","habitat":"🦎","landform":"⛰️","nature reserve":"🦌","orbit":"🛰️","outer space":"🚀","pesticide":"🧪","pole":"🐧","3d printer":"🖨️","aluminium":"🥫","camcorder":"📹","cardboard":"📦","copper":"🪙","e-reader":"📖","leaflet":"📄","plastic":"🧴","portable music player":"🎧","robotic vacuum cleaner":"🤖","rubber":"🛞","self-portrait":"🤳","smartwatch":"⌚","steel":"🔩","touchscreen":"👆","virtual":"🥽","window shade":"🪟","wireless":"📶","agriculture engineering":"🚜","assembly worker":"🏭","bartender":"🍸","cashier":"💵","garment worker":"🧵","mechanic":"🔧","sew":"🧵","software engineer":"💻","surgeon":"🩺","beautician":"💅","estate agent":"🏘️","journalist":"📰","interpreter":"🎙️","lifeguard":"🏊","fabric":"🧶","career":"💼","hands-on":"✋","well-paid":"💰","community":"👥","community helper":"🤝","fragrance":"🌸","preserve":"🫙","speciality":"⭐","breath-taking":"😮","miserable":"😢","futuristic":"🚀","bustling":"🚶","congested":"🚗","hygiene":"🧼","pricey":"💸","elegant":"👗","fashionable":"👚","stylish":"😎","spacious":"🛋️","property":"🏠","delay":"⌛","distraction":"📱","embarrassing":"😳","exhilarating":"🎢","thrilling":"🎢","touching":"🥹","relaxing":"🧖","shallow":"🏊","modest":"🙂","opportunity":"🚪","privacy":"🔒","promise":"🤞","gap":"↔️","memorise":"🧠","brilliant":"💡","experience":"🎒","explore":"🧭","performance":"🎭","a sweet tooth":"🍬","a wolf in sheep's clothing":"🐺","a streak of luck":"🍀","apples and oranges":"🍎","back the wrong horse":"🐴","bachelor party":"🎉","be fresh as a daisy":"🌼","bare one's teeth":"😬","a slap on the wrist":"🖐️","work like a beaver":"🦫","a month of sundays":"📆","be in the dark":"🌑","a breath for fresh air":"🌬️"};
+const emoOf = w => w.emo || EMO[norm(w.en).replace(/\s*\(.*?\)\s*/g, ' ').trim()] || EMO[norm(w.en)] || '';
 async function loadWords(l) {
   if (l.sheetUrl) { try { const w = await fetchSheetWords(l.sheetUrl); if (w.length) return w; } catch (e) { console.warn(e); } }
-  return l.words || [];
+  return (l.words || []).map(w => (w.img || w.emo) ? w : (emoOf(w) ? { ...w, emo: emoOf(w) } : w));
 }
 function openLesson(id, act = null) {
   const l = S.lessons.find(x => x.id === id);
@@ -8219,7 +8221,7 @@ function mountList(el, { words }) {
   const draw = () => {
     const q = norm($('#ls', el).value), arr = words.map((w, i) => [w, i]).filter(([w]) => !q || norm(w.en + ' ' + w.vi).includes(q));
     $('#lt', el).innerHTML = `<table class="wtable"><tbody>${arr.map(([w, i]) => `<tr><td style="width:50px"><button class="spk" data-i="${i}" aria-label="Nghe phát âm ${esc(w.en)}"></button></td>
-      <td>${w.img ? `<img class="wimg" src="${esc(w.img)}" alt="" loading="lazy">` : ''}<div class="w-en">${esc(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}</td><td class="w-vi">${esc(w.vi)}${w.ex ? `<div class="w-ex">${esc(w.ex)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
+      <td>${w.img ? `<img class="wimg" src="${esc(w.img)}" alt="" loading="lazy">` : ''}<div class="w-en">${w.emo ? `<span class="w-emo">${w.emo}</span>` : ''}${esc(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}</td><td class="w-vi">${esc(w.vi)}${w.ex ? `<div class="w-ex">${esc(w.ex)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
   };
   $('#ls', el).oninput = draw; draw();
   $('#hide', el).onclick = () => { const t = $('#lt', el); t.classList.toggle('blur'); };
@@ -8235,7 +8237,7 @@ function mountFlash(el, { lesson, words, next, grid }) {
     const w = queue[0];
     el.innerHTML = `<div class="fc-count"><span>Đã thuộc ${known}/${total}</span><div class="prog"><i style="width:${known / total * 100}%"></i></div></div>
       <div class="fc ${flipped ? 'flip' : ''}" id="fc" role="button" tabindex="0" aria-label="Lật thẻ"><div class="fc-in">
-        <div class="fc-face">${w.img ? `<img class="fcimg" src="${esc(w.img)}" alt="" loading="lazy">` : ''}<div class="fc-word">${esc(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}<button class="spk" id="sp" aria-label="Nghe phát âm"></button><div class="fc-hint">Bấm để lật thẻ</div></div>
+        <div class="fc-face">${w.img ? `<img class="fcimg" src="${esc(w.img)}" alt="" loading="lazy">` : w.emo ? `<div class="fc-emo">${w.emo}</div>` : ''}<div class="fc-word">${esc(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}<button class="spk" id="sp" aria-label="Nghe phát âm"></button><div class="fc-hint">Bấm để lật thẻ</div></div>
         <div class="fc-face fc-back"><div class="fc-word" style="font-size:2.1rem">${esc(w.vi)}</div>${w.ex ? `<div class="w-ex">${esc(w.ex)}</div>` : ''}</div></div></div>
       <div class="fc-actions"><button class="btn soft" id="no">Chưa thuộc</button><button class="btn" id="yes">Đã thuộc</button></div>`;
     $('#fc', el).onclick = e => { if (e.target.closest('#sp')) return; flip(); };
@@ -8264,7 +8266,7 @@ function mountFlash(el, { lesson, words, next, grid }) {
 
 /* ---------- Bộ máy câu hỏi (trắc nghiệm, nghe, điền, đúng/sai, gõ, kiểm tra, ôn tập) ---------- */
 const distract = (pool, w, field, n = 3) => [...new Set(shuffle(pool).filter(x => x !== w).map(x => x[field]).filter(t => t && t !== w[field]))].slice(0, n);
-const mcQ = (w, pool, mode) => ({ ...mcQ0(w, pool, mode), pool });
+const mcQ = (w, pool, mode) => { const q = { ...mcQ0(w, pool, mode), pool }; if (w.emo && !w.img && q.prompt) q.prompt = { ...q.prompt, emo: w.emo }; return q; };
 function mcQ0(w, pool, mode) {
   const en = () => shuffle([w.en, ...distract(pool, w, 'en')]), vi = () => shuffle([w.vi, ...distract(pool, w, 'vi')]);
   if (mode === 'en2vi') return { kind: 'mc', w, prompt: { text: w.en, speak: w.en }, options: vi(), answer: w.vi };
@@ -8293,7 +8295,7 @@ function runQuiz(el, o) {
   const next = d => setTimeout(() => { if (el.isConnected) { i++; show(); } }, d);
   function showMC(q) {
     const p = q.prompt;
-    el.innerHTML = head() + `${p.audio ? `<div class="psg-bar"><button class="btn sm" id="pl">▶ Nghe bài</button><button class="btn soft sm" id="ps">■ Dừng</button></div>` : ''}${p.ctx ? `<details class="psg" ${p.audio ? '' : 'open'}><summary>${p.audio ? 'Xem lời thoại (script)' : 'Đoạn văn'}</summary><div class="psg-t">${esc(p.ctx)}</div></details>` : ''}${p.img ? `<img class="qimg" src="${esc(p.img)}" alt="" onerror="this.remove()">` : ''}<div class="q-prompt ${p.sent ? 'sent' : ''}">${p.text ? `<span>${esc(p.text)}</span>` : ''}${p.speak ? `<button class="spk" id="sp" style="${p.text ? '' : 'width:72px;height:72px;font-size:1.8rem'}" aria-label="Nghe"></button>` : ''}</div>
+    el.innerHTML = head() + `${p.emo ? `<div class="q-emo" aria-hidden="true">${p.emo}</div>` : ''}${p.drive ? `<iframe class="drv" src="${esc(p.drive)}" allow="autoplay" title="Audio"></iframe>` : ''}${p.audio ? `<div class="psg-bar"><button class="btn sm" id="pl">▶ Nghe bài</button><button class="btn soft sm" id="ps">■ Dừng</button></div>` : ''}${p.ctx ? `<details class="psg" ${p.audio ? '' : 'open'}><summary>${p.audio ? 'Xem lời thoại (script)' : 'Đoạn văn'}</summary><div class="psg-t">${esc(p.ctx)}</div></details>` : ''}${p.img ? `<img class="qimg" src="${esc(p.img)}" alt="" onerror="this.remove()">` : ''}<div class="q-prompt ${p.sent ? 'sent' : ''}">${p.text ? `<span>${esc(p.text)}</span>` : ''}${p.speak ? `<button class="spk" id="sp" style="${p.text ? '' : 'width:72px;height:72px;font-size:1.8rem'}" aria-label="Nghe"></button>` : ''}</div>
       ${p.sub ? `<div class="q-sub">${esc(p.sub)}</div>` : ''}<div class="opts ${q.imgOpts ? 'oimgs' : ''}" id="opts">${q.options.map(t => q.imgOpts ? `<button class="opt oimg" data-v="${esc(t)}"><img src="${esc(t)}" alt=""></button>` : `<button class="opt">${esc(t)}</button>`).join('')}</div>`;
     if (p.audio) { $('#pl', el).onclick = () => speakLong(p.audio); $('#ps', el).onclick = () => { _longTok++; try { speechSynthesis.cancel(); if (_ttsAudio) _ttsAudio.pause(); } catch (e) { } }; }
     if (p.speak) { $('#sp', el).onclick = () => speak(p.speak); if (p.auto) setTimeout(() => el.isConnected && speak(p.speak), 250); }
@@ -8413,11 +8415,69 @@ function mountBook(el, c, withImg) {
   runQuiz(el, { ...c, key: withImg ? 'bookpic' : 'book', noMist: true, build: () => take(L, 15).map(x => ({ kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, img: x.img || '', sent: true }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') })) });
 }
 
+const driveId = u => { const m = String(u || '').match(/\/d\/([\w-]{10,})|[?&]id=([\w-]{10,})/); return m ? (m[1] || m[2]) : ''; };
+const drivePrev = u => { const id = driveId(u); return id ? 'https://drive.google.com/file/d/' + id + '/preview' : ''; };
+const audioLink = lid => (S.site && S.site.audio && S.site.audio[lid]) || '';
+const canEditAudio = () => S.role === 'admin' || S.role === 'teacher';
+async function saveAudioLink(lid, url) {
+  const audio = { ...((S.site && S.site.audio) || {}) }; if (url) audio[lid] = url; else delete audio[lid];
+  if (MODE === 'firebase' && FB && db) await FB.setDoc(FB.doc(db, 'config', 'site'), { audio, updatedAt: NOW() }, { merge: true });
+  else store.set('inspire_site', JSON.stringify({ ...(S.site || {}), audio }));
+  S.site = { ...(S.site || {}), audio };
+}
 function mountEx(el, c, k) {
-  const L = (c.lesson.exs || []).filter(x => x.k === k), P = c.lesson.psg || {};
+  const L = (c.lesson.exs || []).filter(x => x.k === k), P = c.lesson.psg || {}, lid = c.lesson.id, key = 'ex' + k;
   if (!L.length) return void (el.innerHTML = empty('Chưa có bài tập.'));
-  const key = 'ex' + k;
-  runQuiz(el, { ...c, key, noMist: true, build: () => (k === 'lis' || k === 'rea' ? L : take(L, 15)).map(x => { const ps = x.p && P[x.p]; return { kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, sent: true, ctx: ps ? ps.text : '', audio: ps && ps.audio ? ps.text : '' }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') }; }) });
+  const isL = k === 'lis';
+  const audioPanel = () => {
+    if (!isL) return '';
+    const u = audioLink(lid), pv = drivePrev(u);
+    const staff = canEditAudio() ? `<div class="exall-link"><b>Gắn file nghe từ Google Drive</b><small class="muted">Dán link chia sẻ của file audio (đặt quyền "Bất kỳ ai có đường liên kết").</small><input id="aud-url" type="url" inputmode="url" placeholder="https://drive.google.com/file/d/…" value="${esc(u)}"><div class="row"><button class="btn sm" id="aud-save">Lưu link</button>${u ? '<button class="btn soft sm" id="aud-del">Gỡ link</button>' : ''}</div></div>` : '';
+    return `${staff}<div class="exall-aud"><b>Nghe bài</b>${pv ? `<iframe class="drv" src="${esc(pv)}" allow="autoplay" title="File nghe"></iframe><div class="muted" style="font-size:.82rem;margin-top:4px">Bấm nút phát. Không nghe được thì <a href="${esc(u)}" target="_blank" rel="noopener">mở file trong Drive</a>.</div>` : '<div class="muted" style="margin:4px 0 8px">Thầy cô chưa gắn file nghe. Em dùng giọng đọc máy bên dưới nhé.</div>'}<div class="row" style="margin-top:8px"><button class="btn soft sm" id="tts-p">Nghe bằng giọng máy</button><button class="btn soft sm" id="tts-s">Dừng</button></div></div>`;
+  };
+  const ttsText = () => [...new Set(L.map(x => x.p))].map(p => P[p] && P[p].audio ? P[p].text : '').filter(Boolean).join('\n');
+  function home() {
+    el.innerHTML = `${audioPanel()}<div class="exall-modes"><button class="btn" id="m-all">Xem tất cả ${L.length} câu hỏi</button><button class="btn soft" id="m-one">Làm từng câu một</button></div><div id="qz"></div>`;
+    $('#m-all', el).onclick = startAll; $('#m-one', el).onclick = startOne;
+    const sv = $('#aud-save', el); if (sv) sv.onclick = async () => { const u = $('#aud-url', el).value.trim(); if (u && !driveId(u)) return toast('Link Drive chưa đúng. Em dán link dạng drive.google.com/file/d/…', 'bad'); try { await saveAudioLink(lid, u); toast('Đã lưu link nghe.', 'ok'); home(); } catch (e) { toast('Không lưu được: ' + e.message, 'bad'); } };
+    const dl = $('#aud-del', el); if (dl) dl.onclick = async () => { try { await saveAudioLink(lid, ''); toast('Đã gỡ link nghe.', 'ok'); home(); } catch (e) { toast('Không gỡ được: ' + e.message, 'bad'); } };
+    const tp = $('#tts-p', el); if (tp) { tp.onclick = () => { const x = ttsText(); if (x) speakLong(x); else toast('Bài này chưa có lời thoại để máy đọc.', 'bad'); }; $('#tts-s', el).onclick = () => { _longTok++; try { speechSynthesis.cancel(); if (_ttsAudio) _ttsAudio.pause(); } catch (e) { } }; }
+  }
+  function startOne() {
+    const box = $('#qz', el); $('.exall-modes', el).hidden = true;
+    runQuiz(box, { ...c, key, noMist: true, build: () => (isL || k === 'rea' ? L : take(L, 15)).map(x => { const ps = x.p && P[x.p]; return { kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, sent: true, ctx: ps ? ps.text : '', audio: ps && ps.audio && !drivePrev(audioLink(lid)) ? ps.text : '' }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') }; }) });
+  }
+  function startAll() {
+    const box = $('#qz', el); $('.exall-modes', el).hidden = true; const ans = {}; let graded = false, html = '', lastP = null;
+    const hasDrive = !!drivePrev(audioLink(lid));
+    L.forEach((x, i) => {
+      if (x.p !== lastP) { lastP = x.p; const ps = P[x.p]; if (ps) html += `<details class="psg" ${ps.audio ? '' : 'open'}><summary>${ps.audio ? 'Xem lời thoại (script)' : 'Đoạn văn'}</summary><div class="psg-t">${esc(ps.text)}</div></details>`; }
+      html += `<div class="exall-q" data-i="${i}"><h4>Câu ${i + 1}. ${esc(x.q)}</h4>${x.o.map((o, j) => `<button class="exall-o" data-j="${j}"><b>${'ABCDEF'[j]}</b><span>${esc(o)}</span></button>`).join('')}<div class="exall-ex" hidden></div></div>`;
+    });
+    html += `<div class="exall-bar" id="bar"><span id="cnt">Đã chọn 0/${L.length} câu</span><button class="btn" id="sub">Nộp bài</button></div>`;
+    box.innerHTML = html;
+    const upd = () => { const n = Object.keys(ans).length; $('#cnt', box).textContent = 'Đã chọn ' + n + '/' + L.length + ' câu'; };
+    box.onclick = e => {
+      const o = e.target.closest('.exall-o');
+      if (o && !graded) { const q = o.closest('.exall-q'), i = +q.dataset.i; ans[i] = +o.dataset.j; q.querySelectorAll('.exall-o').forEach(b => b.classList.toggle('on', b === o)); sfx.ok && 0; upd(); return; }
+      if (e.target.closest('#sub') && !graded) {
+        const miss = L.length - Object.keys(ans).length;
+        if (miss > 0) { const first = L.findIndex((x, i) => ans[i] == null); toast('Em còn ' + miss + ' câu chưa chọn. Làm hết rồi nộp bài nhé.', 'bad'); const q = box.querySelector('.exall-q[data-i="' + first + '"]'); if (q) q.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+        graded = true; let s = 0;
+        L.forEach((x, i) => { const q = box.querySelector('.exall-q[data-i="' + i + '"]'), ok = x.o[ans[i]] === x.a; if (ok) s++;
+          q.querySelectorAll('.exall-o').forEach((b, j) => { b.classList.remove('on'); if (x.o[j] === x.a) b.classList.add('ok'); else if (j === ans[i]) b.classList.add('bad'); });
+          const ex = q.querySelector('.exall-ex'); ex.hidden = false; ex.innerHTML = (ok ? '<b style="color:#2BB673">Đúng.</b> ' : '<b style="color:#E5484D">Chưa đúng.</b> Đáp án: <b>' + esc(x.a) + '</b>. ') + (x.e ? esc(x.e) : ''); });
+        const pct = Math.round(s / L.length * 100), xp = s * 10; if (pct >= 80) { sfx.win(); confetti(); } else sfx.ok();
+        award(lid, xp, { [key]: Math.max(pct, typeof prog(lid)[key] === 'number' ? prog(lid)[key] : 0) });
+        $('#bar', box).innerHTML = `<span><b>Đúng ${s}/${L.length} (${pct}%)</b> · +${xp} XP</span><span style="display:flex;gap:8px"><button class="btn soft sm" id="again">Làm lại</button>${c.grid ? '<button class="btn sm" id="gr">Các bài tập</button>' : ''}</span>`;
+        box.scrollIntoView({ block: 'start' }); window.scrollTo({ top: box.getBoundingClientRect().top + scrollY - 70, behavior: 'smooth' });
+        return;
+      }
+      if (e.target.closest('#again')) { startAll(); window.scrollTo(0, 0); }
+      if (e.target.closest('#gr') && c.grid) c.grid();
+    };
+  }
+  home();
 }
 
 /* ---------- Ôn tập toàn bộ từ sai ---------- */
@@ -10911,6 +10971,26 @@ document.addEventListener('click', e => {
   .bar .nav .navb,.bar .nav .navb[data-go]{padding:9px 14px!important;flex:none;scroll-snap-align:start}
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
+</style>
+<style id="emo-css">
+.q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
+.fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}
+.w-emo{font-size:1.5rem;margin-right:8px;vertical-align:middle}
+.drv{width:100%;height:150px;border:0;border-radius:14px;background:#f6f6f6;margin:0 0 10px}
+.exall-q{background:#fff;border:1px solid #F0DDE1;border-radius:18px;padding:14px;margin:0 0 12px}
+.exall-q h4{font-size:1.02rem;line-height:1.45;margin:0 0 10px}
+.exall-o{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;margin:0 0 8px;padding:11px 12px;border:2px solid #F0DDE1;border-radius:14px;background:#fff;font-size:1rem;line-height:1.35}
+.exall-o b{flex:none;width:30px;height:30px;border-radius:50%;background:#FFF1E0;color:#C2560A;display:grid;place-items:center;font-size:.85rem}
+.exall-o.on{border-color:#F26B1D;background:#FFF7EF}
+.exall-o.ok{border-color:#2BB673;background:#E8F8F0}.exall-o.bad{border-color:#E5484D;background:#FDECEC}
+.exall-bar{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;gap:10px;align-items:center;justify-content:space-between;background:#fff;border:1px solid #F0DDE1;border-radius:18px;padding:10px 12px;box-shadow:0 10px 24px -14px rgba(0,0,0,.4)}
+.exall-aud{position:sticky;top:60px;z-index:7;background:#FFFBF3;border:1px solid #FFE0B2;border-radius:16px;padding:10px;margin:0 0 12px}
+.exall-aud .drv{height:120px;margin:8px 0 0}
+.exall-link{display:grid;gap:8px;margin:0 0 12px;padding:12px;border:2px dashed #FFE0B2;border-radius:16px;background:#FFFBF3}
+.exall-link input{width:100%}
+.exall-modes{display:grid;gap:10px;margin:6px 0 14px}
+.exall-modes .btn{min-height:54px;font-size:1rem}
+.exall-ex{margin-top:8px;font-size:.92rem;color:#5A4A50}
 </style>
 <style id="cd-new">.lms{grid-template-columns:minmax(0,1fr)!important}
 .lms>*,.lbox,.cdoc{min-width:0;max-width:100%}

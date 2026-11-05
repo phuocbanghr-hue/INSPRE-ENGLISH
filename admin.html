@@ -4913,7 +4913,8 @@ const CAT_PROGS = ['Mầm non', 'Tiểu học', 'THCS', 'THPT', 'Cambridge', 'KE
 const CAT_GOALS = [['base', 'Làm quen và yêu thích tiếng Anh'], ['school', 'Học tốt trên lớp, tăng điểm số'], ['cam', 'Thi chứng chỉ Cambridge'], ['ielts', 'Luyện IELTS'], ['talk', 'Giao tiếp và phát âm']];
 const CAT_LVL = ['Mới bắt đầu', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const BASE_C = [
-  { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success|tiếng anh 9|tieng anh 9/.test(t) },
+  { id: 'gs6', name: 'TIẾNG ANH 6', sub: 'Global Success 6', program: 'Học đường', goal: 'school', ageMin: 11, ageMax: 12, level: 'Cơ bản', builtin: true, test: t => /global success\s*6|tiếng anh 6|tieng anh 6/.test(t) },
+  { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success(?!\s*6)|tiếng anh 9|tieng anh 9/.test(t) },
   { id: 'unlock7', name: 'UNLOCK 7', sub: 'Unlock', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /unlock\s*7/.test(t) }
 ];
 const SEED_C = [

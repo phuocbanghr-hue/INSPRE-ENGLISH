@@ -5827,12 +5827,18 @@ const YT_RE = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\
 const fmtT = t => Math.floor(t / 60) + ':' + pad(Math.max(0, t) % 60);
 let ytP = null;
 const ytReady = () => ytP || (ytP = new Promise(r => { if (window.YT && YT.Player) return r(); window.onYouTubeIframeAPIReady = r; const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc); }));
-function ask(el, q, label, cb) {
-  el.innerHTML = `<div class="ask"><small class="cdn">${esc(label)}${q.t != null ? ' · tại ' + fmtT(q.t) : ''}</small><h4>${esc(q.q)}</h4><div class="aopts">${q.o.map((o, k) => `<button class="aopt" data-k="${'ABCD'[k]}"><b>${'ABCD'[k]}</b><span>${esc(o)}</span></button>`).join('')}</div><div class="afb"></div></div>`;
+function ask(el, q, label, cb, canSkip) {
+  el.innerHTML = `<div class="ask">${canSkip ? '<button type="button" class="ask-x" aria-label="Đóng câu hỏi">×</button>' : ''}<small class="cdn">${esc(label)}${q.t != null ? ' · tại ' + fmtT(q.t) : ''}</small><h4>${esc(q.q)}</h4><div class="aopts">${q.o.map((o, k) => `<button class="aopt" data-k="${'ABCD'[k]}"><b>${'ABCD'[k]}</b><span>${esc(o)}</span></button>`).join('')}</div><div class="afb"></div></div>`;
   el.querySelector('.aopts').onclick = e => { const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const ok = b.dataset.k === q.a;
     el.querySelectorAll('.aopt').forEach(x => { x.disabled = true; if (x.dataset.k === q.a) x.classList.add('right'); }); if (!ok) b.classList.add('wrong'); ok ? sfx.ok() : sfx.no();
     el.querySelector('.afb').innerHTML = `<p class="${ok ? 'okx' : 'nox'}"><b>${ok ? 'Chính xác.' : 'Chưa đúng. Đáp án đúng là ' + q.a + '.'}</b> ${esc(q.e || '')}</p><button class="btn sm" id="nx2">Tiếp tục</button>`;
     $('#nx2', el).onclick = () => cb(ok); };
+  if (canSkip) {
+    const skip = () => cb(undefined, true);
+    el.querySelector('.ask-x').onclick = skip;
+    let y0 = null; el.ontouchstart = e => { y0 = el.scrollTop <= 0 ? e.touches[0].clientY : null; };
+    el.ontouchmove = e => { if (y0 != null && e.touches[0].clientY - y0 > 110) { y0 = null; skip(); } };
+  }
 }
 function runSeq(el, qs, done, each) {
   let i = 0, ok = 0, wr = [], over = false;
@@ -5851,7 +5857,7 @@ async function vidRight(d, vi, qi, ok) {
 async function mountYT(vi, id, all, d) {
   await ytReady(); const cps = all.filter(q => q.t != null), asked = new Set(); let timer, p;
   const tick = () => { const ov = $('#ov' + vi); if (!ov) return clearInterval(timer); const t = p.getCurrentTime(), q = cps.find(x => !asked.has(x) && t >= x.t && t < x.t + 8); if (!q) return;
-    asked.add(q); p.pauseVideo(); ov.hidden = false; ask(ov, q, 'Câu hỏi trong video', ok => { ov.hidden = true; vidRight(d, vi, all.indexOf(q), ok); p.playVideo(); }); };
+    asked.add(q); p.pauseVideo(); ov.hidden = false; ask(ov, q, 'Câu hỏi trong video', (ok, skipped) => { ov.hidden = true; if (!skipped) vidRight(d, vi, all.indexOf(q), ok); p.playVideo(); }, true); };
   p = new YT.Player('yt' + vi, { videoId: id, playerVars: { rel: 0, playsinline: 1 }, events: { onStateChange: e => { clearInterval(timer); if (e.data === 1) timer = setInterval(tick, 400); } } });
 }
 function practice(d) {
@@ -6576,7 +6582,7 @@ async function mountCYT(it) {
   const id = (String(it.url || '').match(YT_RE) || [])[1]; if (!id || !document.getElementById('cyt-' + it.id)) return;
   const qs = (it.qs || []).filter(q => q.t != null), asked = new Set(); let timer, p;
   const tick = () => { const ov = document.getElementById('cov-' + it.id); if (!ov) return clearInterval(timer); const t = p.getCurrentTime(), q = qs.find(x => !asked.has(x) && t >= x.t && t < x.t + 8); if (!q) return;
-    asked.add(q); p.pauseVideo(); ov.hidden = false; ask(ov, q, 'Câu hỏi trong video', () => { ov.hidden = true; p.playVideo(); }); };
+    asked.add(q); p.pauseVideo(); ov.hidden = false; ask(ov, q, 'Câu hỏi trong video', () => { ov.hidden = true; p.playVideo(); }, true); };
   await ytReady(); if (!document.getElementById('cyt-' + it.id)) return;
   p = new YT.Player('cyt-' + it.id, { videoId: id, playerVars: { rel: 0, playsinline: 1 }, events: { onStateChange: e => { clearInterval(timer); if (e.data === 1) timer = setInterval(tick, 400); } } });
 }
@@ -10903,6 +10909,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
+<style id="ask-x-css">.vovl .ask{position:relative}.ask-x{position:absolute;top:-4px;right:-4px;z-index:3;width:40px;height:40px;border:0;border-radius:50%;background:#F3E3E6;color:#B10B32;font-size:1.6rem;line-height:1;font-weight:700;cursor:pointer}</style>
 <style id="mob-land">
 /* Điện thoại xoay ngang: câu hỏi trong video cũng hiện dạng khung đáy */
 @media (max-height:500px) and (pointer:coarse){
@@ -11169,6 +11176,10 @@ document.addEventListener('click', e => {
   .rmd-t{flex:1;min-width:0}.rmd-t b{display:block;font-size:.98rem;line-height:1.25;color:#2B2B30}.rmd-t small{display:block;color:#8A7A80;margin-top:2px;font-size:.82rem}
   .rmd-go{color:#C2560A;font-size:1.4rem;font-weight:800}
   .rmd-on{background:linear-gradient(135deg,#FFF7EF,#FFEDE0);border-style:dashed}
+  .vovl{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;overflow-y:auto!important}
+  .vovl .ask{position:relative;width:100%}
+  .ask-x{position:absolute;top:-6px;right:-4px;z-index:3;width:44px;height:44px;border:0;border-radius:50%;background:#F3E3E6;color:#B10B32;font-size:1.7rem;line-height:1;font-weight:700}
+  .vovl .ask h4{padding-right:36px}
   /* v4: thân thiện hơn */
   body{background:linear-gradient(180deg,#FFF6F7 0,#F6F9FD 260px)!important}
   .card,.panel,.cgrp,.ls,.psg{border-radius:20px!important;box-shadow:0 10px 26px -18px rgba(60,20,40,.35)!important;border:1px solid #F0DDE1!important}

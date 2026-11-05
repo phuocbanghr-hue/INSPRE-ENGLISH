@@ -5913,8 +5913,13 @@ async function viewMock() {
 function weekInfo(ts = Date.now()) {
   const sh = new Date(ts - 10 * 3600e3), dow = (sh.getUTCDay() + 6) % 7;
   const s = Date.UTC(sh.getUTCFullYear(), sh.getUTCMonth(), sh.getUTCDate() - dow), d = new Date(s), st = s + 10 * 3600e3;
-  return { id: 'w' + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()), start: st, end: st + 7 * 864e5 };
+  const id = 'w' + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+  // Đặt lại tay tuần thi đua: từ mốc WEEK_RESET trở đi (trong cùng tuần) tính như một tuần mới, XP tuần cũ bị bỏ
+  if (id === WEEK_RESET.week) return ts >= WEEK_RESET.at ? { id: id + 'r', start: WEEK_RESET.at, end: st + 7 * 864e5 } : { id, start: st, end: WEEK_RESET.at };
+  return { id, start: st, end: st + 7 * 864e5 };
 }
+const WEEK_RESET = { week: 'w20261102', at: Date.parse('2026-11-05T17:45:00+07:00') };
+const WEEK_VOID = new Set(['w20261102']);
 const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); }; return f(w.start) + ' → ' + f(w.end); };
 /* ---------- ghi điểm & từ sai ---------- */
 async function award(lid, xp, extra = {}, src = '') {
@@ -7489,7 +7494,7 @@ function cxlArena(c) {
 function weekXp(p, wid) { return +((p.wxp || {})[wid || weekInfo().id] || 0); }
 /* Top 1 XP tuần của từng lớp được tặng trà sữa */
 function weekWinners(list, wid) {
-  const best = {};
+  const best = {}; if (WEEK_VOID.has(wid || weekInfo().id)) return [];
   (list || []).forEach(p => { const k = norm(p.className || ''); if (!k) return; const w = weekXp(p, wid); if (w <= 0) return; const b = best[k]; if (!b || w > b.w || (w === b.w && (p.xp || 0) > (b.p.xp || 0))) best[k] = { w, p }; });
   return Object.values(best).sort((a, b) => b.w - a.w).map(b => ({ uid: b.p.id || b.p.uid, name: b.p.name || 'Học sinh', className: b.p.className, xp: b.w, avatar: b.p.avatar || '' }));
 }
@@ -8152,7 +8157,7 @@ function viewRank() {
     el.innerHTML = `<b style="font-size:1.05rem">🧋 Top 1 tuần này của từng lớp</b><div class="bb-cd">⏳ Chốt tuần lúc 17:00 thứ Hai (còn ${dd} ngày ${hh} giờ). Sau đó XP tuần về 0 và người dẫn đầu được ghi vào bảng nhận trà sữa.</div>`
       + (rows.length ? rows.map(wr).join('') : '<div class="muted" style="margin:6px 0">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>')
       + `<details class="bb-h" open><summary>🧋 Bảng tổng hợp bạn được tặng trà sữa</summary>`
-      + (Object.keys(hist).length ? Object.keys(hist).sort().reverse().map(id => { const h = hist[id], st = id.slice(1), ts = Date.UTC(+st.slice(0, 4), +st.slice(4, 6) - 1, +st.slice(6, 8)) + 10 * 3600e3; return `<div class="bb-wk"><b>Tuần ${weekLabel({ start: ts, end: ts + 7 * 864e5 })}</b>${(h.winners || []).map(w => `<div class="bb-w2"><span>${BOBA} <b>${esc(w.name)}</b> · ${esc(w.className)}</span><em>${w.xp} XP</em></div>`).join('') || '<div class="muted">Không có ai.</div>'}</div>`; }).join('') : '<div class="muted" style="margin:6px 0">Chưa có tuần nào được chốt. Tuần đầu tiên sẽ chốt vào 17:00 thứ Hai tới.</div>')
+      + (Object.keys(hist).length ? Object.keys(hist).sort().reverse().map(id => { const h = hist[id], st = id.slice(1), ts = id === WEEK_RESET.week + 'r' ? WEEK_RESET.at : Date.UTC(+st.slice(0, 4), +st.slice(4, 6) - 1, +st.slice(6, 8)) + 10 * 3600e3; return `<div class="bb-wk"><b>Tuần ${weekLabel({ start: ts, end: id === WEEK_RESET.week + 'r' ? Date.UTC(2026, 10, 9) + 10 * 3600e3 : ts + 7 * 864e5 })}</b>${(h.winners || []).map(w => `<div class="bb-w2"><span>${BOBA} <b>${esc(w.name)}</b> · ${esc(w.className)}</span><em>${w.xp} XP</em></div>`).join('') || '<div class="muted">Không có ai.</div>'}</div>`; }).join('') : '<div class="muted" style="margin:6px 0">Chưa có tuần nào được chốt. Tuần đầu tiên sẽ chốt vào 17:00 thứ Hai tới.</div>')
       + (medal.length ? `<div class="bb-wk"><b>Nhận nhiều trà sữa nhất</b>${medal.map(m => `<div class="bb-w2"><span><b>${esc(m.n)}</b> · ${esc(m.c)}</span><em>${m.k} ${BOBA}</em></div>`).join('')}</div>` : '')
       + '</details>';
   }, () => { const el = $('#bb-board'); if (el) el.remove(); });

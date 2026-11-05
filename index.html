@@ -5909,13 +5909,20 @@ async function viewMock() {
   };
 }
 
+/* Tuần thi đua: từ 17:00 thứ Hai (giờ Việt Nam) đến 17:00 thứ Hai kế tiếp */
+function weekInfo(ts = Date.now()) {
+  const sh = new Date(ts - 10 * 3600e3), dow = (sh.getUTCDay() + 6) % 7;
+  const s = Date.UTC(sh.getUTCFullYear(), sh.getUTCMonth(), sh.getUTCDate() - dow), d = new Date(s), st = s + 10 * 3600e3;
+  return { id: 'w' + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()), start: st, end: st + 7 * 864e5 };
+}
+const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); }; return f(w.start) + ' → ' + f(w.end); };
 /* ---------- ghi điểm & từ sai ---------- */
 async function award(lid, xp, extra = {}, src = '') {
   // Hiệu ứng mỗi khi nhận XP: điểm bay lên và kim tuyến
   if (xp > 0 && window.fxXP) { try { window.fxXP(xp, innerWidth / 2, innerHeight * .35); } catch (e) {} }
   if (xp > 0 && window.arSfx) { try { window.arSfx.ok(); } catch (e) {} }
   const now = Date.now(), sk = String(src || (lid ? 'l_' + (Object.keys(extra || {})[0] || 'other') : 'other')).replace(/[^\w-]/g, '') || 'other';
-  const u = { xp: INC(xp), lastActive: NOW(), ['daily.' + dayKey()]: INC(xp), ['xpsrc.' + sk]: INC(xp) };
+  const u = { xp: INC(xp), lastActive: NOW(), ['daily.' + dayKey()]: INC(xp), ['wxp.' + weekInfo().id]: INC(xp), ['xpsrc.' + sk]: INC(xp) };
   if (lid) for (const [k, v] of Object.entries(extra)) { u[`progress.${lid}.${k}`] = v; u[`progress.${lid}.${k}At`] = now; }
   const oldXp = (S.profile && S.profile.xp) || 0;
   try { await api.updateMe(u); } catch (e) { toast('Không lưu được điểm: ' + e.message, 'bad'); }
@@ -7479,17 +7486,14 @@ function cxlArena(c) {
   <label class="ar-chk" style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:600"><input type="checkbox" id="ar-boss"> Chế độ Boss: cả lớp cùng đánh bại VIRUS-404</label><div class="row" style="margin-top:10px"><button class="btn" id="ar-new" type="button">Tạo trận mới</button><button class="btn soft" id="ar-join" type="button">Vào trận đang mở</button></div>
   <div id="ar-body" style="margin-top:14px"><div class="muted">Đang tìm trận…</div></div></section>`;
 }
-function weekXp(p) {
-  const d = p.daily || {}; let s = 0;
-  for (let i = 0; i < 7; i++) { const dt = new Date(); dt.setDate(dt.getDate() - i); s += +(d[dayKey(dt)] || 0); }
-  return s;
-}
+function weekXp(p, wid) { return +((p.wxp || {})[wid || weekInfo().id] || 0); }
 /* Top 1 XP tuần của từng lớp được tặng trà sữa */
-function bobaSet(list) {
+function weekWinners(list, wid) {
   const best = {};
-  (list || []).forEach(p => { const k = norm(p.className || ''); if (!k) return; const w = weekXp(p); if (w <= 0) return; const b = best[k]; if (!b || w > b.w || (w === b.w && (p.xp || 0) > (b.p.xp || 0))) best[k] = { w, p }; });
-  return new Set(Object.values(best).map(b => b.p.id || b.p.uid));
+  (list || []).forEach(p => { const k = norm(p.className || ''); if (!k) return; const w = weekXp(p, wid); if (w <= 0) return; const b = best[k]; if (!b || w > b.w || (w === b.w && (p.xp || 0) > (b.p.xp || 0))) best[k] = { w, p }; });
+  return Object.values(best).sort((a, b) => b.w - a.w).map(b => ({ uid: b.p.id || b.p.uid, name: b.p.name || 'Học sinh', className: b.p.className, xp: b.w, avatar: b.p.avatar || '' }));
 }
+function bobaSet(list) { return new Set(weekWinners(list).map(w => w.uid)); }
 const BOBA = '<span class="boba" title="Top 1 tuần của lớp: được tặng trà sữa!">🧋</span>';
 function renderWeek(list) {
   const el = document.getElementById('ar-week'); if (!el) return;
@@ -8115,18 +8119,42 @@ function viewCourse() {
   const qi = $('#cq'); if (qi) qi.oninput = e => { S.cq = e.target.value; const pos = e.target.selectionStart; viewCourse(); const n = $('#cq'); n.focus(); n.setSelectionRange(pos, pos); };
 }
 /* ---------- xếp hạng ---------- */
+let _bobaTried = '';
+async function maybeArchiveBoba(all) {
+  try {
+    if (!(S.role === 'admin' || S.role === 'teacher') || !S.site) return;
+    const prev = weekInfo(weekInfo().start - 1);
+    if ((S.site.boba || {})[prev.id] || _bobaTried === prev.id) return;
+    const winners = weekWinners(all, prev.id); if (!winners.length) return;
+    _bobaTried = prev.id;
+    const boba = { ...(S.site.boba || {}), [prev.id]: { winners, at: Date.now() } };
+    if (MODE === 'firebase' && FB && db) await FB.setDoc(FB.doc(db, 'config', 'site'), { boba, updatedAt: NOW() }, { merge: true });
+    else store.set('inspire_site', JSON.stringify({ ...(S.site || {}), boba }));
+    S.site = { ...S.site, boba };
+  } catch (e) { console.warn('boba', e); _bobaTried = ''; }
+}
 function viewRank() {
   main.innerHTML = `<h2 style="margin:26px 0 12px;font-size:2.2rem">Bảng xếp hạng</h2>
     <div class="rank-tabs"><button class="btn sm ${S.rankFilter === 'all' ? '' : 'soft'}" data-f="all">Toàn trường</button><button class="btn sm ${S.rankFilter === 'class' ? '' : 'soft'}" data-f="class">Lớp của em</button></div>
     <div class="card boba-board" id="bb-board" style="padding:12px 14px;margin-bottom:12px"><div class="loading">Đang tải…</div></div><p class="boba-note">🧋 = Top 1 XP tuần này của lớp. Cuối tuần bạn nào giữ 🧋 sẽ được tặng trà sữa!</p><div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
   main.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { S.rankFilter = b.dataset.f; viewRank(); });
-  const unBoard = api.watchTop(200, all => {
+  const unBoard = api.watchTop(300, all => {
     const el = $('#bb-board'); if (!el) return;
-    const best = {};
-    all.forEach(p => { const k = norm(p.className || ''); if (!k) return; const w = weekXp(p); if (w <= 0) return; const b = best[k]; if (!b || w > b.w || (w === b.w && (p.xp || 0) > (b.p.xp || 0))) best[k] = { w, p }; });
-    const rows = Object.values(best).sort((a, b) => b.w - a.w);
-    window.__iHaveBoba = rows.some(r => r.p.id === S.user.uid);
-    el.innerHTML = '<b style="font-size:1.05rem">🧋 Top 1 tuần của từng lớp</b>' + (rows.length ? rows.map(r => `<div class="bb-r ${r.p.id === S.user.uid ? 'me' : ''}"><span class="rank-av">${avHTML(r.p)}</span><span class="bb-n"><b>${esc(r.p.name || 'Học sinh')}</b><small>${esc(r.p.className)}</small></span><em>${r.w} XP</em>${BOBA}</div>`).join('') : '<div class="muted" style="margin-top:6px">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>');
+    const cur = weekInfo(), prev = weekInfo(cur.start - 1), rows = weekWinners(all, cur.id);
+    window.__iHaveBoba = rows.some(r => r.uid === S.user.uid);
+    maybeArchiveBoba(all);
+    const arch = (S.site && S.site.boba) || {}, hist = { ...arch };
+    if (!hist[prev.id]) { const pw = weekWinners(all, prev.id); if (pw.length) hist[prev.id] = { winners: pw }; }
+    const left = Math.max(0, cur.end - Date.now()), dd = Math.floor(left / 864e5), hh = Math.floor(left % 864e5 / 36e5);
+    const tally = {}; Object.values(hist).forEach(h => (h.winners || []).forEach(w => { const k = w.uid; (tally[k] ||= { n: w.name, c: w.className, k: 0 }).k++; }));
+    const medal = Object.values(tally).sort((a, b) => b.k - a.k).slice(0, 5);
+    const wr = w => `<div class="bb-r ${w.uid === S.user.uid ? 'me' : ''}"><span class="rank-av">${avHTML({ avatar: w.avatar, name: w.name })}</span><span class="bb-n"><b>${esc(w.name)}</b><small>${esc(w.className)}</small></span><em>${w.xp} XP</em>${BOBA}</div>`;
+    el.innerHTML = `<b style="font-size:1.05rem">🧋 Top 1 tuần này của từng lớp</b><div class="bb-cd">⏳ Chốt tuần lúc 17:00 thứ Hai (còn ${dd} ngày ${hh} giờ). Sau đó XP tuần về 0 và người dẫn đầu được ghi vào bảng nhận trà sữa.</div>`
+      + (rows.length ? rows.map(wr).join('') : '<div class="muted" style="margin:6px 0">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>')
+      + `<details class="bb-h" open><summary>🧋 Bảng tổng hợp bạn được tặng trà sữa</summary>`
+      + (Object.keys(hist).length ? Object.keys(hist).sort().reverse().map(id => { const h = hist[id], st = id.slice(1), ts = Date.UTC(+st.slice(0, 4), +st.slice(4, 6) - 1, +st.slice(6, 8)) + 10 * 3600e3; return `<div class="bb-wk"><b>Tuần ${weekLabel({ start: ts, end: ts + 7 * 864e5 })}</b>${(h.winners || []).map(w => `<div class="bb-w2"><span>${BOBA} <b>${esc(w.name)}</b> · ${esc(w.className)}</span><em>${w.xp} XP</em></div>`).join('') || '<div class="muted">Không có ai.</div>'}</div>`; }).join('') : '<div class="muted" style="margin:6px 0">Chưa có tuần nào được chốt. Tuần đầu tiên sẽ chốt vào 17:00 thứ Hai tới.</div>')
+      + (medal.length ? `<div class="bb-wk"><b>Nhận nhiều trà sữa nhất</b>${medal.map(m => `<div class="bb-w2"><span><b>${esc(m.n)}</b> · ${esc(m.c)}</span><em>${m.k} ${BOBA}</em></div>`).join('')}</div>` : '')
+      + '</details>';
   }, () => { const el = $('#bb-board'); if (el) el.remove(); });
   stopBoard(); window.__unBoard = unBoard;
   rankUnsub = api.watchTop(50, list => {
@@ -9352,6 +9380,7 @@ if (LOAD_ERR) { go('loading'); }
 else {
   let uP, uL, uA, uS, uE, uB, uC, uN;
   watchSite();
+  setInterval(() => { try { if ((S.role === 'admin' || S.role === 'teacher') && S.site && !((S.site.boba || {})[weekInfo(weekInfo().start - 1).id]) && _bobaTried !== weekInfo(weekInfo().start - 1).id) { const un = api.watchTop(300, l => { maybeArchiveBoba(l); try { un && un(); } catch (e) {} }, () => {}); } } catch (e) {} }, 90000);
   api.onAuth(u => {
     uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.banksReady = false; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
     S.user = u; S.profile = null; S.lessons = []; S.assignments = []; S.announce = null; S.streakChecked = false;
@@ -10989,7 +11018,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
-<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
+<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
 <style id="emo-css">
 .q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
 .fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}

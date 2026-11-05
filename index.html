@@ -8316,7 +8316,7 @@ function mountFlash(el, { lesson, words, next, grid }) {
 
 /* ---------- Bộ máy câu hỏi (trắc nghiệm, nghe, điền, đúng/sai, gõ, kiểm tra, ôn tập) ---------- */
 const distract = (pool, w, field, n = 3) => [...new Set(shuffle(pool).filter(x => x !== w).map(x => x[field]).filter(t => t && t !== w[field]))].slice(0, n);
-const mcQ = (w, pool, mode) => { const q = { ...mcQ0(w, pool, mode), pool }; if (w.emo && !w.img && q.prompt) q.prompt = { ...q.prompt, emo: w.emo }; return q; };
+const mcQ = (w, pool, mode) => { const q = { ...mcQ0(w, pool, mode), pool }; if (w.emo && !w.img && q.prompt && !q.prompt.auto) q.prompt = { ...q.prompt, emo: w.emo }; return q; };
 function mcQ0(w, pool, mode) {
   const en = () => shuffle([w.en, ...distract(pool, w, 'en')]), vi = () => shuffle([w.vi, ...distract(pool, w, 'vi')]);
   if (mode === 'en2vi') return { kind: 'mc', w, prompt: { text: w.en, speak: w.en }, options: vi(), answer: w.vi };
@@ -8336,6 +8336,43 @@ const typeQ = w => ({ kind: 'type', w });
 function runQuiz(el, o) {
   const lid = o.lesson?.id || null; let Q, i, score, combo, xp, wrongs, rights, timer;
   function start() {
+    if (!o.allOk || o.review) return begin();
+    el.innerHTML = `<div class="exall-modes"><button class="btn" id="qa-all">Xem tất cả câu hỏi</button><button class="btn soft" id="qa-one">Làm từng câu một</button><p class="muted" style="margin:8px 2px 0;font-size:.88rem">Xem tất cả: hiện hết câu hỏi trên một trang, trả lời xong bấm Nộp bài là biết kết quả.</p></div>`;
+    $('#qa-one', el).onclick = begin; $('#qa-all', el).onclick = showAll;
+  }
+  function showAll() {
+    const L = o.build().filter(q => q.kind === 'mc' || q.kind === 'tf'); if (!L.length) return begin();
+    const ans = {}; let graded = false, html = '';
+    L.forEach((q, n) => {
+      const p = q.kind === 'tf' ? { text: q.w.en + '  =  ' + q.w.vi + ' ?', speak: q.w.en } : q.prompt, opts = q.kind === 'tf' ? ['Đúng', 'Sai'] : q.options;
+      html += `<div class="exall-q" data-i="${n}"><h4>Câu ${n + 1}.${p.speak ? ` <button class="spk exall-sp" data-s="${esc(p.speak)}" aria-label="Nghe"></button>` : ''} ${p.emo ? `<span class="q-emo-s">${p.emo}</span> ` : ''}${p.text ? esc(p.text) : (p.sub ? '' : '')}</h4>${p.sub ? `<div class="q-sub" style="margin:-4px 0 8px">${esc(p.sub)}</div>` : ''}${opts.map((x, j) => `<button class="exall-o" data-j="${j}"><b>${'ABCDEF'[j]}</b><span>${esc(x)}</span></button>`).join('')}<div class="exall-ex" hidden></div></div>`;
+    });
+    html += `<div class="exall-bar" id="bar"><span id="cnt">Đã chọn 0/${L.length} câu</span><button class="btn" id="sub">Nộp bài</button></div>`;
+    el.innerHTML = html;
+    const optsOf = n => { const q = L[n]; return q.kind === 'tf' ? ['Đúng', 'Sai'] : q.options; }, corr = n => { const q = L[n]; return q.kind === 'tf' ? (q.answer ? 'Đúng' : 'Sai') : q.answer; };
+    const upd = () => { $('#cnt', el).textContent = 'Đã chọn ' + Object.keys(ans).length + '/' + L.length + ' câu'; };
+    el.onclick = e => {
+      const sp = e.target.closest('.exall-sp'); if (sp) return void speak(sp.dataset.s);
+      const b = e.target.closest('.exall-o');
+      if (b && !graded) { const q = b.closest('.exall-q'), n = +q.dataset.i; ans[n] = +b.dataset.j; q.querySelectorAll('.exall-o').forEach(x => x.classList.toggle('on', x === b)); upd(); return; }
+      if (e.target.closest('#sub') && !graded) {
+        const miss = L.length - Object.keys(ans).length;
+        if (miss > 0) { const f = L.findIndex((x, n) => ans[n] == null); toast('Em còn ' + miss + ' câu chưa chọn. Làm hết rồi nộp bài nhé.', 'bad'); const q = el.querySelector('.exall-q[data-i="' + f + '"]'); if (q) q.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+        graded = true; let s = 0; const wr = [];
+        L.forEach((q, n) => { const box = el.querySelector('.exall-q[data-i="' + n + '"]'), os = optsOf(n), val = os[ans[n]], ok = val === corr(n); if (ok) s++; else wr.push(q.w);
+          box.querySelectorAll('.exall-o').forEach((x, j) => { x.classList.remove('on'); if (os[j] === corr(n)) x.classList.add('ok'); else if (j === ans[n]) x.classList.add('bad'); });
+          const ex = box.querySelector('.exall-ex'); ex.hidden = false; ex.innerHTML = ok ? '<b style="color:#2BB673">Đúng.</b>' : '<b style="color:#E5484D">Chưa đúng.</b> Đáp án: <b>' + esc(corr(n)) + '</b>. ' + (q.kind === 'mc' ? explainQ(q, val) : esc(q.w.en + ' = ' + q.w.vi)); });
+        const pct = Math.round(s / L.length * 100), gx = s * (o.xpEach || 10); if (pct >= 80) { sfx.win(); confetti(); } else sfx.ok();
+        const extra = {}; if (o.key && lid) extra[o.key] = Math.max(pct, typeof prog(lid)[o.key] === 'number' ? prog(lid)[o.key] : 0);
+        award(lid, gx, extra); if (!o.noMist) saveMistakes(wr, [], lid);
+        $('#bar', el).innerHTML = `<span><b>Đúng ${s}/${L.length} (${pct}%)</b> · +${gx} XP</span><span style="display:flex;gap:8px"><button class="btn soft sm" id="again">Làm lại</button>${o.grid ? '<button class="btn sm" id="gr">Các bài tập</button>' : ''}</span>`;
+        window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 70, behavior: 'smooth' }); return;
+      }
+      if (e.target.closest('#again')) { el.onclick = null; start(); window.scrollTo(0, 0); }
+      if (e.target.closest('#gr') && o.grid) o.grid();
+    };
+  }
+  function begin() {
     Q = o.build(); if (!Q.length) { el.innerHTML = empty('Chưa đủ từ để tạo câu hỏi.'); return; }
     i = 0; score = 0; combo = 0; xp = 0; wrongs = []; rights = []; delete el.dataset.lock; show();
   }
@@ -8401,15 +8438,15 @@ function runQuiz(el, o) {
   start();
 }
 const take = (words, n) => shuffle(words).slice(0, Math.min(n, words.length));
-function mountQuiz(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, key: 'quiz', build: () => take(words, 10).map(w => mcQ(w, words, Math.random() < .5 ? 'en2vi' : 'vi2en')) }); }
-function mountListen(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, key: 'listen', build: () => take(words, 10).map(w => mcQ(w, words, Math.random() < .5 ? 'listen-vi' : 'listen-en')) }); }
-function mountFill(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, key: 'fill', build: () => take(words, 10).map(w => mcQ(w, words, 'fill')) }); }
-function mountTF(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, key: 'tf', timer: 6, xpEach: 8, build: () => take(words, 12).map(w => tfQ(w, words)) }); }
-function mountType(el, c) { runQuiz(el, { ...c, key: 'type', build: () => take(c.words, 10).map(typeQ) }); }
+function mountQuiz(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, allOk: true, key: 'quiz', build: () => take(words, 10).map(w => mcQ(w, words, Math.random() < .5 ? 'en2vi' : 'vi2en')) }); }
+function mountListen(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, allOk: true, key: 'listen', build: () => take(words, 10).map(w => mcQ(w, words, Math.random() < .5 ? 'listen-vi' : 'listen-en')) }); }
+function mountFill(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, allOk: true, key: 'fill', build: () => take(words, 10).map(w => mcQ(w, words, 'fill')) }); }
+function mountTF(el, c) { const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để chơi.')); runQuiz(el, { ...c, allOk: true, key: 'tf', timer: 6, xpEach: 8, build: () => take(words, 12).map(w => tfQ(w, words)) }); }
+function mountType(el, c) { runQuiz(el, { ...c, key: 'type', noAll: true, build: () => take(c.words, 10).map(typeQ) }); }
 function mountTest(el, c) {
   const { words } = c; if (words.length < 2) return void (el.innerHTML = empty('Cần ít nhất 2 từ để làm bài kiểm tra.'));
   const kinds = ['en2vi', 'vi2en', 'listen-vi', 'fill', 'tf', 'type', 'listen-en'];
-  runQuiz(el, { ...c, key: 'test', xpEach: 12, build: () => take(words, 15).map((w, k) => { const m = kinds[k % kinds.length]; return m === 'tf' ? tfQ(w, words) : m === 'type' ? typeQ(w) : mcQ(w, words, m); }) });
+  runQuiz(el, { ...c, allOk: true, key: 'test', xpEach: 12, build: () => take(words, 15).map((w, k) => { const m = kinds[k % kinds.length]; return m === 'tf' ? tfQ(w, words) : m === 'type' ? typeQ(w) : mcQ(w, words, m); }) });
 }
 function mountLessonReview(el, c) {
   const list = c.words.filter(w => mist(c.lesson.id).includes(norm(w.en)));
@@ -8495,7 +8532,7 @@ function mountEx(el, c, k) {
   }
   function startOne() {
     const box = $('#qz', el); $('.exall-modes', el).hidden = true;
-    runQuiz(box, { ...c, key, noMist: true, build: () => (isL || k === 'rea' ? L : take(L, 15)).map(x => { const ps = x.p && P[x.p]; return { kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, sent: true, ctx: ps ? ps.text : '', audio: ps && ps.audio && !drivePrev(audioLink(lid)) ? ps.text : '' }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') }; }) });
+    runQuiz(box, { ...c, key, noAll: true, noMist: true, build: () => (isL || k === 'rea' ? L : take(L, 15)).map(x => { const ps = x.p && P[x.p]; return { kind: 'mc', w: { en: x.a, vi: x.e || '', ex: '' }, prompt: { text: x.q, sent: true, ctx: ps ? ps.text : '', audio: ps && ps.audio && !drivePrev(audioLink(lid)) ? ps.text : '' }, options: shuffle([...x.o]), answer: x.a, expl: 'Đáp án đúng: <b>' + esc(x.a) + '</b>' + (x.e ? '<br>' + esc(x.e) : '') }; }) });
   }
   function startAll() {
     const box = $('#qz', el); $('.exall-modes', el).hidden = true; const ans = {}; let graded = false, html = '', lastP = null;
@@ -11023,7 +11060,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
-<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
+<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.q-emo-s{font-size:1.4em}.exall-modes{display:flex;flex-direction:column;gap:10px;margin:8px 0}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
 <style id="emo-css">
 .q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
 .fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}

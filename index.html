@@ -5136,7 +5136,7 @@ if (MODE === 'firebase' && FB) {
     watchAssignments: cb => FB.onSnapshot(FB.collection(db, 'assignments'), s => cb(list(s)), e => { console.error('assignments', e); toast('Không đọc được bài được giao: ' + e.message, 'bad'); }),
     watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), e => { console.error('chuyende', e); if (S.user) toast('Không đọc được chuyên đề (kiểm tra Firestore rules): ' + e.message, 'bad'); }),
     watchAnnounce: cb => FB.onSnapshot(FB.doc(db, 'config', 'announcement'), s => cb(s.exists() ? s.data() : null), e => console.error('announcement', e)),
-    watchTop: (n, cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n)), s => cb(list(s)), err),
+    watchTop: (n, cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n)), s => cb(list(s).map(normXp).sort((a, b) => b.xp - a.xp)), err),
     updateMe: f => FB.updateDoc(FB.doc(db, 'users', S.user.uid), f),
     createProfile: (uid, d) => FB.setDoc(FB.doc(db, 'users', uid), d),
     watchBanks: cb => FB.onSnapshot(FB.collection(db, 'banks'), sn => cb(sn.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('banks', e); cb([]); }),
@@ -5927,9 +5927,19 @@ const WEEK_RESETS = [{ id: 'w20261102r', at: Date.parse('2026-11-05T17:45:00+07:
 // Tuần chốt tay: người được tặng trà sữa do giáo viên quyết định
 const MANUAL_BOBA = { w20261102r: { label: 'Tuần 02/11 → 05/11 (chốt sớm)', winners: [{ uid: 'm_henry', name: 'Henry', className: '', xp: 0 }, { uid: 'm_khoa', name: 'Khoa', className: '', xp: 0 }] } };
 const WEEK_VOID = new Set(['w20261102', 'w20261102r']);
+/* XP về 0 mỗi tuần: xp chỉ có giá trị khi xpWeek trùng tuần hiện tại; hết tuần tự về 0 khi học sinh mở web hoặc nhận XP */
+const curXp = p => (p && p.xpWeek === weekInfo().id ? (p.xp || 0) : 0);
+const normXp = p => (p ? { ...p, xp: curXp(p) } : p);
+let _rolled = '';
+async function rollXp() {
+  const p = S.profile, wid = weekInfo().id; if (!p || !S.user || p.xpWeek === wid || _rolled === wid) return;
+  _rolled = wid; const prev = p.xp || 0; S.profile = { ...p, xp: 0, xpWeek: wid };
+  try { await api.updateMe({ xp: 0, xpWeek: wid, xpPrev: prev }); } catch (e) { _rolled = ''; console.warn('rollXp', e); }
+}
 const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); }; return f(w.start) + ' → ' + f(w.end); };
 /* ---------- ghi điểm & từ sai ---------- */
 async function award(lid, xp, extra = {}, src = '') {
+  await rollXp();
   // Hiệu ứng mỗi khi nhận XP: điểm bay lên và kim tuyến
   if (xp > 0 && window.fxXP) { try { window.fxXP(xp, innerWidth / 2, innerHeight * .35); } catch (e) {} }
   if (xp > 0 && window.arSfx) { try { window.arSfx.ok(); } catch (e) {} }
@@ -6279,7 +6289,7 @@ if (MODE === 'firebase' && FB) {
     submitArt: (cid, bid, qi, d) => FB.setDoc(FB.doc(db, 'artworks', cid + '_' + bid + '_' + qi + '_' + S.user.uid), { classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }),
     watchKudos: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'kudos'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => d.data())), e => { console.error('kudos', e); cb([]); }),
     giveKudos: (c, to) => FB.setDoc(FB.doc(db, 'kudos', S.user.uid + '_' + to + '_' + todayStr()), { from: S.user.uid, to, classId: c.id, day: todayStr(), atMs: Date.now() }),
-    watchClassmates: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.where('className', '==', c.name)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => (c.members || []).includes(u.id))), e => { console.error('board', e); cb([]); }),
+    watchClassmates: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.where('className', '==', c.name)), s => cb(s.docs.map(d => normXp({ id: d.id, ...d.data() })).filter(u => (c.members || []).includes(u.id))), e => { console.error('board', e); cb([]); }),
     watchDMs: (uid, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'dms'), FB.where('uids', 'array-contains', uid)), s => cb(lst(s)), e => { console.error('dms', e); cb([]); }),
     watchDM: (pid, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'dms', pid, 'messages'), FB.orderBy('atMs', 'asc'), FB.limitToLast(150)), s => cb(lst(s)), e => console.error('dm', e)),
     async sendDM(cls, other, otherName, text, reply) {
@@ -9429,6 +9439,7 @@ if (LOAD_ERR) { go('loading'); }
 else {
   let uP, uL, uA, uS, uE, uB, uC, uN;
   watchSite();
+  setInterval(() => { try { rollXp(); } catch (e) {} }, 60000);
   setInterval(() => { try { if ((S.role === 'admin' || S.role === 'teacher') && S.site && !((S.site.boba || {})[weekInfo(weekInfo().start - 1).id]) && _bobaTried !== weekInfo(weekInfo().start - 1).id) { const un = api.watchTop(300, l => { maybeArchiveBoba(l); try { un && un(); } catch (e) {} }, () => {}); } } catch (e) {} }, 90000);
   api.onAuth(u => {
     uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.banksReady = false; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
@@ -9451,7 +9462,7 @@ else {
     uP = api.watchProfile(u.uid, async p => {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
       if (p.disabled) { S.profile = null; api.signOut(); alert('Tài khoản đang bị tạm khoá. Em liên hệ trung tâm nhé.'); return; }
-      S.profile = p;
+      S.profile = normXp(p); rollXp();
       startContent();
       if (!S.streakChecked) {
         S.streakChecked = true; const t = todayStr();

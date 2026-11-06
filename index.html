@@ -7924,8 +7924,7 @@ function viewAuth() {
         <div class="ap" id="ap"><div class="ap-prev" id="ap-prev">${S.authAv ? `<img src="${S.authAv}" alt="Ảnh đại diện">` : '<span>👤</span>'}</div>
           <div class="ap-r"><b>Ảnh đại diện</b><small id="ap-hint">${S.authAv ? 'Đã có ảnh. Bấm để đổi nếu muốn.' : 'Không bắt buộc: có thể chụp hoặc tải ảnh lên sau.'}</small>
           <div class="ap-b"><button type="button" class="btn soft sm" id="ap-cam">📷 Chụp ảnh</button><label class="btn soft sm" for="ap-file">🖼️ Tải ảnh lên</label><input id="ap-file" type="file" accept="image/*" hidden></div></div></div>
-        ${reg ? `<label class="field"><span>Tên của em</span><input id="a-name" autocomplete="name" maxlength="40" required></label>
-        <label class="field"><span>Lớp của em</span><select id="a-class"><option value="">Chọn lớp</option><option>Ôn thi 9 lên 10</option><option>Unlock 7</option></select></label>` : ''}
+        ${reg ? `<label class="field"><span>Tên của em</span><input id="a-name" autocomplete="name" maxlength="40" required></label>` : ''}
         <label class="field"><span>Email</span><input id="a-email" type="email" autocomplete="email" required></label>
         <label class="field"><span>Mật khẩu</span><input id="a-pass" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}" minlength="6" required></label>
         <div class="msg" id="a-msg" role="alert"></div>
@@ -7948,7 +7947,7 @@ function viewAuth() {
     try {
       if (reg) {
         const name = $('#a-name').value.trim(); if (!name) { btn.disabled = false; return msg('Em nhập tên để cô/thầy nhận ra nhé.'); }
-        await api.register({ name, className: $('#a-class').value.trim(), email, pass, avatar: S.authAv });
+        await api.register({ name, className: '', email, pass, avatar: S.authAv });
       } else await api.signIn(email, pass, S.authAv);
     } catch (err) { msg(AUTH_ERR[err.code] || err.message); btn.disabled = false; }
   };

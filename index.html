@@ -5094,7 +5094,7 @@ function askKey(c) {
   o.querySelector('#ek').focus();
 }
 /* ---------- trạng thái ---------- */
-const SITE_DEF = { title: 'Tiếng Anh 9 và Unlock 7, học vui mỗi ngày.', sub: 'Lộ trình từ vựng, ngữ pháp và luyện đề rõ ràng, theo sát từng em. Phụ huynh yên tâm, học sinh hứng thú.', phone: '090 651 55 27', campuses: 'CS1: 153 Diên Hồng, Hòa Xuân\nCS2: 164 Phan Triêm, Hòa Xuân\nCS3: 134 Cao Hồng Lãnh, Ngũ Hành Sơn', maintenance: false };
+const SITE_DEF = { title: 'Tiếng Anh 7 và Tiếng Anh 9, học vui mỗi ngày.', sub: 'Lộ trình từ vựng, ngữ pháp và luyện đề rõ ràng, theo sát từng em. Phụ huynh yên tâm, học sinh hứng thú.', phone: '090 651 55 27', campuses: 'CS1: 153 Diên Hồng, Hòa Xuân\nCS2: 164 Phan Triêm, Hòa Xuân\nCS3: 134 Cao Hồng Lãnh, Ngũ Hành Sơn', maintenance: false };
 const photos = () => String(S.site.images || '').split('\n').map(x => x.trim()).filter(x => /^https?:\/\//.test(x));
 const imgT = u => `<img src="${esc(u)}" alt="Hoạt động tại Inspire" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`;
 const collage = () => { const p = photos().slice(0, 5); return p.length ? `<div class="collage">${p.map(imgT).join('')}</div>` : ''; };
@@ -8813,7 +8813,7 @@ const defined = o => Object.fromEntries(Object.entries(o || {}).filter(([, v]) =
 function setCatalog(docs) {
   S.cat = docs || [];
   const by = Object.fromEntries(S.cat.map(d => [d.id, d])), out = [];
-  BASE_COURSES.forEach(b => { const d = by[b.id]; if (d && d.published === false) return; out.push({ ...b, ...defined(d), id: b.id, test: b.test }); });
+  BASE_COURSES.forEach(b => { const d = by[b.id]; if (d && d.published === false) return; out.push({ ...b, ...defined(d), id: b.id, test: b.test, ...(b.id === 'unlock7' ? { name: b.name, sub: b.sub } : {}) }); });
   /* chỉ giữ 2 khoá gốc (TIẾNG ANH 9, UNLOCK 7); bỏ các khoá thêm từ admin */
   out.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
   COURSES.length = 0; COURSES.push(...out);

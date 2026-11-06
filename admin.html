@@ -4934,7 +4934,7 @@ const BASE_C = [
   { id: 'gs8', name: 'TIẾNG ANH 8', sub: 'Global Success 8', program: 'Học đường', goal: 'school', ageMin: 13, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /global success\s*8|tiếng anh 8|tieng anh 8/.test(t) },
   { id: 'gs6', name: 'TIẾNG ANH 6', sub: 'Global Success 6', program: 'Học đường', goal: 'school', ageMin: 11, ageMax: 12, level: 'Cơ bản', builtin: true, test: t => /global success\s*6|tiếng anh 6|tieng anh 6/.test(t) },
   { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success(?!\s*[678])|tiếng anh 9|tieng anh 9/.test(t) },
-  { id: 'unlock7', name: 'TIẾNG ANH 7', sub: 'Global Success 7', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /unlock\s*7|tiếng anh 7|tieng anh 7|global success\s*7/.test(t) }
+  { id: 'unlock7', name: 'TIẾNG ANH 7', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /unlock\s*7|tiếng anh 7|tieng anh 7|global success\s*7/.test(t) }
 ];
 const SEED_C = [
   { id: 'on910', name: 'ÔN TẬP LỚP 9 LÊN 10', sub: 'Vào lớp 10', program: 'THCS', goal: 'school', ageMin: 14, ageMax: 15, level: 'Trung cấp', key: 'ôn 9 lên 10', desc: 'Hệ thống ngữ pháp, từ vựng và đề luyện trọng tâm để vào lớp 10.', goals: 'Chắc ngữ pháp trọng tâm lớp 9\nLàm quen dạng đề thi vào 10\nTăng tốc độ và độ chính xác khi làm bài', order: 24 },
@@ -4951,7 +4951,7 @@ const coursesA = () => allCourses().map(c => [c.id, c.name]);
 const allCourses = () => {
   const by = Object.fromEntries((S.courses || []).map(d => [d.id, d])), out = [];
   const defd = o => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== '' && v != null));
-  BASE_C.forEach(b => out.push({ ...b, ...defd(by[b.id]), id: b.id, builtin: true, test: b.test }));
+  BASE_C.forEach(b => out.push({ ...b, ...defd(by[b.id]), id: b.id, builtin: true, test: b.test, ...(b.id === 'unlock7' ? { name: b.name, sub: b.sub } : {}) }));
   (S.courses || []).filter(d => !BASE_C.some(b => b.id === d.id)).forEach(d => { const k = String(d.key || '').toLowerCase().trim(); out.push({ ...d, test: k ? (t => new RegExp('(^|[^a-z0-9])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z0-9]|$)').test(t)) : (() => false) }); });
   return out.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
 };

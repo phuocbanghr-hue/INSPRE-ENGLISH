@@ -8237,8 +8237,11 @@ const EMO = {"artisan":"🧑‍🎨","craft village":"🏘️","delivery person"
 const emoOf = w => w.emo || EMO[norm(w.en).replace(/\s*\(.*?\)\s*/g, ' ').trim()] || EMO[norm(w.en)] || '';
 async function loadWords(l) {
   if (l.sheetUrl) { try { const w = await fetchSheetWords(l.sheetUrl); if (w.length) return w; } catch (e) { console.warn(e); } }
-  return (l.words || []).map(w => (w.img || w.emo) ? w : (emoOf(w) ? { ...w, emo: emoOf(w) } : w));
+  return (l.words || []).map(w => { if (w.img) return w; const e = w.emo || emoOf(w); return e ? { ...w, emo: e, img: emoImg(e), _emoPic: 1 } : w; });
 }
+/* Hình minh hoạ bằng emoji (dùng được ở mọi chế độ bài tập hình ảnh khi chưa có ảnh thật) */
+const emoImg = e => 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="20" fill="#EAF3FF"/><text x="60" y="64" font-size="70" text-anchor="middle" dominant-baseline="central">' + e + '</text></svg>');
+const hasPic = w => !!(w.img || w.emo || emoOf(w));
 function openLesson(id, act = null) {
   const l = S.lessons.find(x => x.id === id);
   if (!l) { const a = (S.allLessons || []).find(x => x.id === id), c = a && courseOf(a); if (c) askKey(c); return; }
@@ -9385,8 +9388,8 @@ function openShare(c, iid) {
 
 /* ===== Trang riêng: Bài tập hình ảnh (gom từ mọi bài có hình) ===== */
 function viewPicEx() {
-  const L = (S.allLessons || []).filter(l => (l.words || []).some(w => w.img) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-  const nImg = l => (l.words || []).filter(w => w.img).length, nQ = l => (l.exs || []).filter(x => x.img).length;
+  const L = (S.allLessons || []).filter(l => (l.words || []).some(hasPic) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const nImg = l => (l.words || []).filter(hasPic).length, nQ = l => (l.exs || []).filter(x => x.img).length;
   const total = L.reduce((a, l) => a + nImg(l), 0);
   const card = l => `<article class="card pxc"><div class="pxc-h"><span class="lgt">${esc(l.topic || '')}</span><h3>${esc(l.title)}</h3><p class="muted">${esc(l.description || '')}</p></div>
     <div class="pxc-stat"><span>${nImg(l)} hình từ vựng</span><span>${nQ(l)} câu hỏi có hình</span></div>

@@ -4933,8 +4933,8 @@ const CAT_LVL = ['Mới bắt đầu', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const BASE_C = [
   { id: 'gs8', name: 'TIẾNG ANH 8', sub: 'Global Success 8', program: 'Học đường', goal: 'school', ageMin: 13, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /global success\s*8|tiếng anh 8|tieng anh 8/.test(t) },
   { id: 'gs6', name: 'TIẾNG ANH 6', sub: 'Global Success 6', program: 'Học đường', goal: 'school', ageMin: 11, ageMax: 12, level: 'Cơ bản', builtin: true, test: t => /global success\s*6|tiếng anh 6|tieng anh 6/.test(t) },
-  { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success(?!\s*[68])|tiếng anh 9|tieng anh 9/.test(t) },
-  { id: 'unlock7', name: 'UNLOCK 7', sub: 'Unlock', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /unlock\s*7/.test(t) }
+  { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success(?!\s*[678])|tiếng anh 9|tieng anh 9/.test(t) },
+  { id: 'unlock7', name: 'TIẾNG ANH 7', sub: 'Global Success 7', program: 'Học đường', goal: 'school', ageMin: 12, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /unlock\s*7|tiếng anh 7|tieng anh 7|global success\s*7/.test(t) }
 ];
 const SEED_C = [
   { id: 'on910', name: 'ÔN TẬP LỚP 9 LÊN 10', sub: 'Vào lớp 10', program: 'THCS', goal: 'school', ageMin: 14, ageMax: 15, level: 'Trung cấp', key: 'ôn 9 lên 10', desc: 'Hệ thống ngữ pháp, từ vựng và đề luyện trọng tâm để vào lớp 10.', goals: 'Chắc ngữ pháp trọng tâm lớp 9\nLàm quen dạng đề thi vào 10\nTăng tốc độ và độ chính xác khi làm bài', order: 24 },
@@ -5034,6 +5034,7 @@ function vCourses() {
         ${(c.resources || []).map((r, i) => `<div class="row" style="padding:6px 0;border-top:1px solid #eee;margin:0;align-items:center"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${r.type === 'video' ? 'Video' : 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a> ${classTags(r.classes)}</span><button class="btn soft sm" data-rup="${esc(c.id)}|${i}" title="Lên">↑</button><button class="btn soft sm" data-rdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('')}
         <div class="row" style="margin:8px 0 14px;align-items:flex-end"><label class="field" style="width:120px;margin:0"><span>Loại</span><select id="rt-${esc(c.id)}"><option value="video">Video</option><option value="doc">Tài liệu</option></select></label><label class="field" style="flex:1;min-width:140px;margin:0"><span>Tiêu đề</span><input id="rn-${esc(c.id)}" maxlength="100" placeholder="VD: Bài giảng thì hiện tại hoàn thành"></label><label class="field" style="width:150px;margin:0"><span>Dành cho lớp</span><select id="rc-${esc(c.id)}"><option value="">Mọi lớp</option>${classList().map(x => `<option>${esc(x)}</option>`).join('')}</select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Link Google Drive (hoặc YouTube)</span><input id="ru-${esc(c.id)}" placeholder="https://drive.google.com/file/d/..."></label><button class="btn" data-radd="${esc(c.id)}">Đăng</button><button class="btn soft" data-rbulk="${esc(c.id)}">Dán nhiều link</button></div>
         <p class="muted" style="margin:-8px 0 12px;font-size:.82rem">Trên Drive, nhớ chia sẻ file là "Bất kỳ ai có đường liên kết" thì học sinh mới xem được.</p>
+        ${audBlock(c)}
         <p style="font-weight:700;margin:6px 0">Đã ghi danh: ${L.length} học sinh</p>
         ${L.length ? L.map(e => { const u = who(e.uid); return `<div class="row" style="padding:6px 0;border-top:1px solid #eee;margin:0"><span class="grow">${esc(u ? u.name : e.uid)} <span class="muted">${esc(u ? (u.className || u.email || '') : '')}</span></span><button class="btn soft sm" data-rm="${esc(e.id)}">Gỡ</button></div>`; }).join('') : '<p class="muted">Chưa có học sinh nào.</p>'}</div>`; }).join('');
   $('#content').onclick = async e => {
@@ -5042,6 +5043,12 @@ function vCourses() {
       if (e.target.closest('[data-newc]')) return courseForm(null);
       const tcb = e.target.closest('[data-tc]'); if (tcb) return teacherCoursePicker(tcb.dataset.tc);
       const ra = e.target.closest('[data-radd]'), rd = e.target.closest('[data-rdel]'), ru = e.target.closest('[data-rup]');
+      const as = e.target.closest('[data-ausave]'), ax = e.target.closest('[data-audel]');
+      if (as || ax) { let id, lid, url = '';
+        if (as) { id = as.dataset.ausave; lid = $('#au-l-' + id).value; url = $('#au-u-' + id).value.trim(); if (!/^https:\/\/(drive|docs)\.google\.com\//.test(url)) return toast('Dán link Google Drive (bắt đầu bằng https://drive.google.com/…).', 'bad'); }
+        else { if (!confirm('Gỡ file nghe này?')) return; [id, lid] = ax.dataset.audel.split('|'); }
+        const c = allCourses().find(x => x.id === id), audio = { ...(c.audio || {}), [lid]: url };
+        await api.set('courses', id, { audio, updatedAt: NOW() }); toast(as ? 'Đã gắn file nghe. Học sinh nghe được ngay.' : 'Đã gỡ.'); return; }
       if (ra) { const id = ra.dataset.radd, url = $('#ru-' + id).value.trim(), title = $('#rn-' + id).value.trim(), type = $('#rt-' + id).value;
         if (!/^https:\/\/[^\s]+$/.test(url)) return toast('Link phải bắt đầu bằng https://', 'bad'); if (!title) return toast('Nhập tiêu đề cho học sinh dễ tìm.', 'bad');
         const c = allCourses().find(x => x.id === id), cl = $('#rc-' + id).value, list = [...(c.resources || []), { type, title, url, classes: cl ? [cl] : [], at: Date.now() }];

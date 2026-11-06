@@ -4251,6 +4251,14 @@ function teacherCoursePicker(id) {
     catch (er) { toast(er.message, 'bad'); }
   };
 }
+const AUD_LIST = {"unlock7":[["ul7_lis1a","Listening Test 1 · Phần 1 (câu 1–5)"],["ul7_lis1b","Listening Test 1 · Phần 2 (câu 6–10)"],["ul7_lis2a","Listening Test 2 · Phần 1 (câu 1–4)"],["ul7_lis2b","Listening Test 2 · Phần 2 (câu 5–10)"],["ul7_lis3a","Listening Test 3 · Phần 1 (câu 1–5)"],["ul7_lis3b","Listening Test 3 · Phần 2 (câu 6–10)"],["ul7_lis4a","Listening Test 4 · Phần 1 (câu 1–5)"],["ul7_lis4b","Listening Test 4 · Phần 2 (câu 6–10)"],["ul7_lis5a","Listening Test 5 · Phần 1 (câu 1–5)"],["ul7_lis5b","Listening Test 5 · Phần 2 (câu 6–10)"],["ul7_lis6a","Listening Test 6 · Phần 1 (câu 1–5)"],["ul7_lis6b","Listening Test 6 · Phần 2 (câu 6–10)"],["ul7_lis7a","Listening Test 7 · Phần 1 (câu 1–5)"],["ul7_lis7b","Listening Test 7 · Phần 2 (câu 6–10)"],["ul7_lis8a","Listening Test 8 · Phần 1 (câu 1–5)"],["ul7_lis8b","Listening Test 8 · Phần 2 (câu 6–10)"],["ul7_lis9a","Listening Test 9 · Phần 1 (câu 1–5)"],["ul7_lis9b","Listening Test 9 · Phần 2 (câu 6–10)"],["ul7_lis10a","Listening Test 10 · Phần 1 (câu 1–5)"],["ul7_lis10b","Listening Test 10 · Phần 2 (câu 6–10)"]],"gs8":[["gs8_t3a","15 phút số 3 · Listening"],["gs8_t5a","Giữa kỳ 1 · Listening – Task 1"],["gs8_t5b","Giữa kỳ 1 · Listening – Task 2"],["gs8_t6a","Cuối kỳ 1 · Listening – Task 1"],["gs8_t6b","Cuối kỳ 1 · Listening – Task 2"]],"gs9":[["gs9_u1","Unit 1 · Nghe hiểu"],["gs9_u2","Unit 2 · Nghe hiểu"],["gs9_u3","Unit 3 · Nghe hiểu"],["gs9_u4","Unit 4 · Nghe hiểu"],["gs9_u5","Unit 5 · Nghe hiểu"],["gs9_u6","Unit 6 · Nghe hiểu"],["gs9_u7","Unit 7 · Nghe hiểu"],["gs9_u8","Unit 8 · Nghe hiểu"],["gs9_u9","Unit 9 · Nghe hiểu"],["gs9_u10","Unit 10 · Nghe hiểu"],["gs9_u11","Unit 11 · Nghe hiểu"],["gs9_u12","Unit 12 · Nghe hiểu"]]};
+function audBlock(c) {
+  const ls = AUD_LIST[c.id]; if (!ls) return '';
+  const cur = Object.entries(c.audio || {}).filter(([, u]) => u), nm = id => (ls.find(x => x[0] === id) || [id, id])[1];
+  return `<div style="margin-top:16px;padding-top:14px;border-top:2px solid #e3ecf8"><h4 style="margin:0 0 4px">Gắn file nghe (audio) cho bài nghe</h4><div class="hint" style="margin:0 0 10px">Chọn bài nghe, dán link Google Drive của file audio (đặt quyền “Bất kỳ ai có đường liên kết”), bấm Lưu. Học sinh nghe được ngay trong bài.</div>
+    <div class="row" style="align-items:flex-end"><label class="field" style="flex:2;min-width:200px;margin:0"><span>Bài nghe</span><select id="au-l-${esc(c.id)}">${ls.map(x => `<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('')}</select></label><label class="field" style="flex:3;min-width:240px;margin:0"><span>Link Drive</span><input id="au-u-${esc(c.id)}" placeholder="https://drive.google.com/file/d/…"></label><button class="btn" data-ausave="${esc(c.id)}">Lưu</button></div>
+    <div style="margin-top:10px">${cur.map(([id, u]) => `<div class="row" style="padding:8px 0;border-top:1px solid #eee;margin:0"><span class="tag ok">Đã gắn</span><span class="grow"><b>${esc(nm(id))}</b> · <a href="${esc(u)}" target="_blank" rel="noopener">mở file</a></span><button class="btn danger sm" data-audel="${esc(c.id)}|${esc(id)}">Gỡ</button></div>`).join('') || '<p class="muted">Chưa gắn file nghe nào.</p>'}</div></div>`;
+}
 function vTCourses() {
   if (!TEACHER()) { S.view = 'courses'; return draw(); }
   const mine = (S.courses || []).filter(c => (c.teacherUids || []).includes(myUid()));
@@ -4261,11 +4269,21 @@ function vTCourses() {
       <div class="row"><button class="btn soft sm" data-tcsave="${esc(c.id)}">Lưu mô tả</button></div>
       <div class="hint" style="margin:8px 0 12px">Dán link bắt đầu bằng https://. Link Drive phải để “Bất kỳ ai có đường liên kết”.</div>
       <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:140px;margin:0"><span>Loại</span><select id="tr-t-${esc(c.id)}"><option value="doc">Tài liệu</option><option value="video">Video</option></select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Tiêu đề</span><input id="tr-n-${esc(c.id)}" maxlength="120"></label><label class="field" style="flex:3;min-width:240px;margin:0"><span>Link</span><input id="tr-u-${esc(c.id)}" placeholder="https://"></label><button class="btn" data-tradd="${esc(c.id)}">Đăng</button></div>
-      <div style="margin-top:12px">${(c.resources || []).map((r, i) => `<div class="row" style="padding:9px 0;border-top:1px solid #eee;margin:0"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${TYPE[r.type] || 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a></span><button class="btn danger sm" data-trdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('') || '<p class="muted">Chưa có tài liệu.</p>'}</div></section>`).join('')
+      <div style="margin-top:12px">${(c.resources || []).map((r, i) => `<div class="row" style="padding:9px 0;border-top:1px solid #eee;margin:0"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${TYPE[r.type] || 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a></span><button class="btn danger sm" data-trdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('') || '<p class="muted">Chưa có tài liệu.</p>'}</div>${audBlock(c)}</section>`).join('')
       : '<div class="card empty">Admin chưa gán khoá học nào cho bạn. Nhờ admin vào “Khoá học & mật khẩu”, bấm “Giáo viên” ở khoá cần phụ trách.</div>'}`;
   $('#content').onclick = async e => {
-    const sv = e.target.closest('[data-tcsave]'), ad = e.target.closest('[data-tradd]'), dl = e.target.closest('[data-trdel]');
+    const sv = e.target.closest('[data-tcsave]'), ad = e.target.closest('[data-tradd]'), dl = e.target.closest('[data-trdel]'), as = e.target.closest('[data-ausave]'), ax = e.target.closest('[data-audel]');
     try {
+      if (as) {
+        const id = as.dataset.ausave, lid = $('#au-l-' + id).value, url = $('#au-u-' + id).value.trim();
+        if (!/^https:\/\/(drive|docs)\.google\.com\//.test(url)) return toast('Dán link Google Drive (bắt đầu bằng https://drive.google.com/…).', 'bad');
+        if (!can('content')) return toast('Bạn chưa được admin cấp quyền sửa nội dung.', 'warn');
+        await api.update('courses', id, { ['audio.' + lid]: url, updatedAt: NOW() }); audit('Gắn file nghe', lid); return toast('Đã gắn file nghe. Học sinh nghe được ngay.');
+      }
+      if (ax) {
+        if (!confirm('Gỡ file nghe này?')) return;
+        const [id, lid] = ax.dataset.audel.split('|'); await api.update('courses', id, { ['audio.' + lid]: '', updatedAt: NOW() }); audit('Gỡ file nghe', lid); return toast('Đã gỡ.');
+      }
       if (sv) { const id = sv.dataset.tcsave; if (!can('content')) return toast('Bạn chưa được admin cấp quyền sửa nội dung.', 'warn'); await api.update('courses', id, { desc: $('#tc-d-' + id).value.trim(), updatedAt: NOW() }); audit('Sửa mô tả khoá', (mine.find(x => x.id === id) || {}).name || id); return toast('Đã lưu mô tả.'); }
       if (ad) {
         const id = ad.dataset.tradd, url = $('#tr-u-' + id).value.trim(), title = $('#tr-n-' + id).value.trim(), type = $('#tr-t-' + id).value, c = mine.find(x => x.id === id);

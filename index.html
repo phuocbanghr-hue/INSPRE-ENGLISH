@@ -8542,10 +8542,16 @@ function mountBook(el, c, withImg) {
 
 const driveId = u => { const m = String(u || '').match(/\/d\/([\w-]{10,})|[?&]id=([\w-]{10,})/); return m ? (m[1] || m[2]) : ''; };
 const drivePrev = u => { const id = driveId(u); return id ? 'https://drive.google.com/file/d/' + id + '/preview' : ''; };
-const audioLink = lid => (S.site && S.site.audio && S.site.audio[lid]) || '';
+const audioLink = lid => {
+  const s = S.site && S.site.audio && S.site.audio[lid]; if (s) return s;
+  const l = (S.allLessons || []).find(x => x.id === lid), c = l && courseOf(l), d = c && COURSES.find(x => x.id === c.id);
+  return (d && d.audio && d.audio[lid]) || '';
+};
 const canEditAudio = () => S.role === 'admin' || S.role === 'teacher';
 async function saveAudioLink(lid, url) {
   const audio = { ...((S.site && S.site.audio) || {}) }; if (url) audio[lid] = url; else delete audio[lid];
+  const l = (S.allLessons || []).find(x => x.id === lid), cc = l && courseOf(l);
+  if (MODE === 'firebase' && FB && db && cc) { try { await FB.updateDoc(FB.doc(db, 'courses', cc.id), { ['audio.' + lid]: url || '', updatedAt: NOW() }); const d = COURSES.find(x => x.id === cc.id); if (d) d.audio = { ...(d.audio || {}), [lid]: url || '' }; S.site = { ...(S.site || {}), audio }; return; } catch (e) { console.warn('audio→courses', e); } }
   if (MODE === 'firebase' && FB && db) await FB.setDoc(FB.doc(db, 'config', 'site'), { audio, updatedAt: NOW() }, { merge: true });
   else store.set('inspire_site', JSON.stringify({ ...(S.site || {}), audio }));
   S.site = { ...(S.site || {}), audio };

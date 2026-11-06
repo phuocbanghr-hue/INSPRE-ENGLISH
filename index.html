@@ -1311,6 +1311,56 @@ body:has(.auth){overflow-x:hidden}
 .rb-note{background:#EAF2FB;border-color:#0B5CA8}.rb-tip{background:#E9F7EF;border-color:#17803D}.rb-warn{background:#FDECEE;border-color:#D61F3A}
 .rt-p{color:#7048E8;font-weight:600}
 .rt-b{color:#0B5CA8;font-weight:600}.rt-o{color:#E8590C;font-weight:600}.rt-g{color:#17803D;font-weight:600}
+/* ===== IELTS exam mode ===== */
+.ie{position:fixed;inset:0;z-index:99999;background:#e9edf2;color:#1b2430;display:flex;flex-direction:column;font-size:var(--fs,16px);font-family:Arial,Helvetica,"Segoe UI",sans-serif}
+.ie *{box-sizing:border-box}
+.ie-h{display:flex;align-items:center;gap:18px;background:#1c2b45;color:#fff;padding:8px 18px;min-height:56px}
+.ie-logo{font-weight:800;letter-spacing:.05em;font-size:15px}.ie-logo b{color:#ff4b5c}
+.ie-who{font-size:11px;line-height:1.35;opacity:.85}.ie-who b{font-size:13px;opacity:1}
+.ie-mid{flex:1;text-align:center;display:flex;justify-content:center;align-items:center;gap:8px}
+.ie-timer{font-weight:700;font-size:18px;letter-spacing:.02em}.ie-warn .ie-timer{color:#ff6b6b;animation:iep 1s infinite}
+@keyframes iep{50%{opacity:.5}}
+.ie-eye,.ie-tools button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px}
+.ie-tools{display:flex;gap:6px}
+.ie-sub2{background:#fff;border-bottom:2px solid #c9d2de;padding:10px 20px;font-size:15px}.ie-sub2 span{color:#5b6b80;margin-left:10px}
+.ie-main{flex:1;overflow:hidden;display:grid;grid-template-columns:1fr;min-height:0}
+.ie-main.two{grid-template-columns:1fr 1fr}
+.ie-pass,.ie-qs{overflow:auto;padding:18px 24px;background:#fff;margin:10px;border-radius:6px;border:1px solid #c9d2de}
+.ie-main:not(.two) .ie-qs{max-width:900px;margin:10px auto;width:calc(100% - 20px)}
+.ie-pass h3{margin:6px 0 10px}.ie-ptxt{line-height:1.8}.ie-pass mark{background:#ffe66d;color:#000}
+.ie-hlbar{display:flex;gap:8px;margin-bottom:10px;position:sticky;top:-18px;background:#fff;padding:6px 0;z-index:1}
+.ie-ins{font-style:italic;color:#4a5a70;margin-bottom:14px}
+.ie-q{padding:14px 0;border-bottom:1px solid #e3e8ef}.ie-q.pulse{animation:iepl 1.2s}
+@keyframes iepl{0%,60%{background:#fff6c7}100%{background:transparent}}
+.ie-qh{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.ie-qn{background:#1c2b45;color:#fff;border-radius:4px;min-width:30px;height:28px;display:grid;place-items:center;font-weight:700;font-size:.85em}
+.ie-qt{flex:1;font-weight:600;line-height:1.5}
+.ie-flag{background:none;border:1px solid #c9d2de;border-radius:6px;color:#8a97a8;cursor:pointer;font-size:1.1em;padding:2px 8px}.ie-flag.on{background:#fff0b3;border-color:#e0a800;color:#b57c00}
+.ie-o{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;margin:5px 0 5px 40px;border:1px solid #d3dae4;border-radius:6px;cursor:pointer}
+.ie-o:hover{background:#f2f6fb}.ie-o.sel{border-color:#2f6fed;background:#e8f0ff}
+.ie-o input{margin-top:4px}.ie-o b{min-width:18px}
+.ie-in{margin:4px 0 0 40px;width:calc(100% - 40px);max-width:420px;padding:9px 12px;border:2px solid #b8c3d2;border-radius:6px;font-size:1em}.ie-in:focus{outline:none;border-color:#2f6fed}
+.ie-f{background:#fff;border-top:2px solid #c9d2de;padding:8px 14px;display:flex;gap:14px;align-items:center}
+.ie-chips{flex:1;display:flex;gap:14px;overflow-x:auto;padding:2px}
+.ie-pc{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;border:1px solid transparent;flex:none}.ie-pc.on{border-color:#1c2b45;background:#f1f4f9}
+.ie-pn{background:none;border:0;font-weight:700;cursor:pointer;color:#1c2b45;font-size:13px}
+.ie-cs{display:flex;gap:3px;flex-wrap:nowrap}
+.ie-c{min-width:28px;height:28px;border:1px solid #9aa8bb;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;position:relative;color:#1b2430}
+.ie-c.ans{background:#1c2b45;color:#fff;border-color:#1c2b45}.ie-c.fl::after{content:"";position:absolute;right:-1px;top:-1px;border:5px solid transparent;border-top-color:#e0a800;border-right-color:#e0a800}
+.ie-nav{display:flex;align-items:center;gap:8px;flex:none}.ie-cnt{font-size:13px;color:#4a5a70}
+.ie-arr{width:44px;height:40px;border-radius:6px;border:0;background:#1c2b45;color:#fff;font-size:24px;cursor:pointer}.ie-arr:disabled{opacity:.3;cursor:not-allowed}
+.ie-btn{background:#2f6fed;color:#fff;border:0;border-radius:6px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:14px}.ie-btn.sm{padding:6px 12px;font-size:13px}.ie-btn.ghost{background:#fff;color:#1c2b45;border:1px solid #9aa8bb}.ie-btn.ie-go{background:#1b9a59}
+.ie-intro,.ie-res{flex:1;overflow:auto;padding:24px 12px}
+.ie-card{background:#fff;max-width:720px;margin:0 auto 16px;padding:28px;border-radius:10px;border:1px solid #c9d2de}.ie-card h1{margin:0 0 4px;font-size:1.5em}.ie-sub{color:#5b6b80;margin:0 0 14px}
+.ie-card li{margin:8px 0;line-height:1.5}
+.ie-score{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.ie-score div{background:#f1f4f9;border-radius:8px;padding:12px;text-align:center}.ie-score b{display:block;font-size:1.6em}.ie-score small{color:#5b6b80}
+.ie-note{font-size:12px;color:#6b7a8f}.ie-row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.ie-rv{max-width:720px;margin:auto}.ie-r{background:#fff;border-left:5px solid;padding:10px 14px;margin:8px 0;border-radius:6px;line-height:1.5}.ie-r.ok{border-color:#1b9a59}.ie-r.no{border-color:#e5484d}.ie-r small{color:#5b6b80}
+.ie-modal{position:absolute;inset:0;background:rgba(10,20,40,.55);display:grid;place-items:center;z-index:5;padding:12px}
+.ie-mc{background:#fff;border-radius:10px;padding:22px;max-width:560px;width:100%}.ie-mc h2{margin:0 0 6px}
+.ie-grid{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;max-height:40vh;overflow:auto}.ie-grid .ie-c{min-width:34px;height:34px}
+@media(max-width:800px){.ie-main.two{grid-template-columns:1fr;grid-template-rows:42% 58%}.ie-who{display:none}.ie-score{grid-template-columns:1fr 1fr}.ie-o{margin-left:0}.ie-in{margin-left:0;width:100%}.ie-logo{font-size:12px}.ie-f{flex-direction:column;align-items:stretch}}
+.ie-start{background:linear-gradient(135deg,#1c2b45,#2f6fed);color:#fff;border:0;border-radius:12px;padding:14px 18px;width:100%;text-align:left;cursor:pointer;display:flex;gap:12px;align-items:center;margin:14px 0}.ie-start b{display:block;font-size:1.05rem}.ie-start small{opacity:.85}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -8304,8 +8354,9 @@ function drawLessonBody() {
       ${sec('Luyện tập', ['quiz', 'listen', 'fill', 'match', 'scramble', 'type', 'tf', 'hang', 'speak'])}
       ${imgW >= 4 || (l.exs || []).some(x => x.img) ? sec('Luyện tập với hình ảnh', ['picmix'].concat(imgW >= 4 ? ['pic', 'picw', 'picl', 'pict', 'pictf'] : [])) : ''}
       ${nEx ? sec('Bài tập từ sách (Workbook)', l.psg ? ['exvoc', 'exgra', 'exrea', 'exlis'].filter(k => (l.exs || []).some(x => 'ex' + x.k === k)) : [(l.exs || []).some(x => x.img) ? 'bookpic' : null, (l.exs || []).some(x => !x.img) ? 'book' : null].filter(Boolean)) : ''}
+      ${(nEx || S.words.length >= 4) ? `<button class="ie-start" data-ielts="1" type="button"><span style="font-size:1.8rem">📝</span><span><b>Chế độ thi kiểu IELTS</b><small>Giao diện thi trên máy tính: đồng hồ đếm ngược, đánh dấu câu, nộp bài và chấm điểm</small></span></button>` : ''}
       ${sec('Kiểm tra', ['check', 'test'].concat(mist(l.id).length ? ['review'] : []))}<div style="height:50px"></div>`;
-    body.onclick = e => { const c = e.target.closest('.lr'); if (c && !c.disabled) setTab(c.dataset.act); };
+    body.onclick = e => { if (e.target.closest('[data-ielts]')) return openExam(l, S.words); const c = e.target.closest('.lr'); if (c && !c.disabled) setTab(c.dataset.act); };
     return;
   }
   const meta = EXTRA[S.tab] ? EXTRA[S.tab] : S.tab === 'list' ? { ic: '', n: 'Danh sách từ' } : S.tab === 'docs' ? { ic: '', n: 'Tài liệu' } : S.tab === 'review' ? { ic: '', n: 'Ôn từ sai' } : ACTS[S.tab];
@@ -8581,6 +8632,91 @@ function okText(x, v) {
   const sv = _nt(v), st = sv.split(' ').filter(Boolean);
   return [x.a, ...(x.alt || [])].some(a => { const na = _nt(a); if (na === sv) return true; const kw = na.split(' ').filter(w => w && !_stop.has(w)); return kw.length > 0 && kw.every(w => st.includes(w)) && st.length <= na.split(' ').length + 2; });
 }
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+/* ---------- Chế độ thi kiểu IELTS (máy tính) ---------- */
+function ieBuild(l, words) {
+  const P = l.psg || {};
+  let qs = (l.exs || []).filter(x => x.k !== 'lis' && Array.isArray(x.o) && x.o.length || x.ty === 'text').map(x => ({ q: x.q, o: x.o || [], a: x.a, e: x.e || '', ty: x.ty, p: x.p || '', k: x.k || '', src: x }));
+  let parts = [];
+  if (qs.length) {
+    const g = new Map(); qs.forEach(q => { const key = (q.k || '') + '|' + (q.p || ''); if (!g.has(key)) g.set(key, []); g.get(key).push(q); });
+    const KN = { voc: 'Vocabulary', gra: 'Grammar', rea: 'Reading', lis: 'Listening' };
+    [...g.values()].forEach(a => { for (let i = 0; i < a.length; i += 15) parts.push({ qs: a.slice(i, i + 15), psg: a[0].p && P[a[0].p] ? P[a[0].p] : null, name: KN[a[0].k] || 'Questions' }); });
+  } else {
+    const W = (words || []).filter(w => w.vi && w.en), pool = shuffle(W).slice(0, 30);
+    const mk = (w, i) => { const wr = shuffle(W.filter(x => x.vi !== w.vi)).slice(0, 3).map(x => x.vi); return { q: `What is the Vietnamese meaning of “${w.en}”?`, o: shuffle([w.vi, ...wr]), a: w.vi, e: w.ipa || '', ty: '', p: '', k: 'voc' }; };
+    const qq = W.length >= 4 ? pool.map(mk) : []; for (let i = 0; i < qq.length; i += 10) parts.push({ qs: qq.slice(i, i + 10), psg: null, name: 'Vocabulary' });
+  }
+  let n = 0; parts.forEach((p, i) => { p.i = i; p.from = n + 1; p.qs.forEach(q => { q.n = ++n; q.part = i; }); p.to = n; });
+  return { parts, total: n };
+}
+function openExam(l, words) {
+  const ex = ieBuild(l, words); if (!ex.total) return toast('Bài này chưa có đủ câu hỏi để thi.', 'bad');
+  const all = ex.parts.flatMap(p => p.qs), mins = Math.max(10, Math.round(ex.total * 1.2)), name = (S.profile && S.profile.name) || 'Candidate';
+  const st = { ans: {}, flag: {}, part: 0, left: mins * 60, fs: 16, done: false }; let tm = null, hide = false;
+  const ov = document.createElement('div'); ov.className = 'ie'; document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  const close = () => { clearInterval(tm); ov.remove(); document.body.style.overflow = ''; };
+  const fmt = s => { const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0'); };
+  const head = (mid) => `<header class="ie-h"><div class="ie-logo">INSPIRE <b>ENGLISH</b></div><div class="ie-who">Test taker ID<br><b>${esc(name)}</b></div><div class="ie-mid">${mid}</div><div class="ie-tools"><button data-a="fs-" title="Chữ nhỏ">A−</button><button data-a="fs+" title="Chữ lớn">A+</button><button data-a="exit" title="Thoát">✕</button></div></header>`;
+  function intro() {
+    ov.innerHTML = head('') + `<div class="ie-intro"><div class="ie-card"><h1>${esc(l.title)}</h1><p class="ie-sub">Mô phỏng bài thi trên máy tính</p>
+      <ul><li>Thời gian làm bài: <b>${mins} phút</b></li><li>Tổng số câu: <b>${ex.total}</b> · ${ex.parts.length} phần</li><li>Có thể <b>đánh dấu (⚑)</b> câu muốn xem lại và chuyển phần tự do.</li><li>Bôi đen trong đoạn văn rồi bấm <b>Highlight</b> để tô vàng.</li><li>Hết giờ bài sẽ tự nộp. Đáp án chỉ hiện sau khi nộp.</li></ul>
+      <button class="ie-btn ie-go" data-a="start">Bắt đầu thi</button></div></div>`;
+  }
+  function start() { st.t0 = Date.now(); tm = setInterval(() => { st.left--; const t = $('#ie-t', ov); if (t) t.textContent = hide ? '' : fmt(st.left) + ' minutes left'; if (st.left <= 300) ov.classList.add('ie-warn'); if (st.left <= 0) submit(true); }, 1000); draw(); }
+  function chips() {
+    return ex.parts.map(p => `<div class="ie-pc ${p.i === st.part ? 'on' : ''}"><button class="ie-pn" data-part="${p.i}">Part ${p.i + 1}</button><span class="ie-cs">${p.qs.map(q => `<button class="ie-c ${st.ans[q.n] != null && st.ans[q.n] !== '' ? 'ans' : ''} ${st.flag[q.n] ? 'fl' : ''}" data-q="${q.n}">${q.n}</button>`).join('')}</span></div>`).join('');
+  }
+  function draw(scrollTo) {
+    const p = ex.parts[st.part], ansd = all.filter(q => st.ans[q.n] != null && st.ans[q.n] !== '').length;
+    ov.style.setProperty('--fs', st.fs + 'px');
+    ov.innerHTML = head(`<span id="ie-t" class="ie-timer">${hide ? '' : fmt(st.left) + ' minutes left'}</span><button class="ie-eye" data-a="eye" title="Ẩn/hiện đồng hồ">◔</button>`) +
+      `<div class="ie-sub2"><b>Part ${p.i + 1}</b> · ${esc(p.name)} <span>Questions ${p.from}–${p.to}</span></div>
+      <main class="ie-main ${p.psg ? 'two' : ''}">${p.psg ? `<section class="ie-pass" id="ie-pass"><div class="ie-hlbar"><button class="ie-btn sm" data-a="hl">🖍 Highlight</button><button class="ie-btn sm ghost" data-a="clr">Xoá highlight</button></div>${p.psg.title ? `<h3>${esc(p.psg.title)}</h3>` : ''}<div class="ie-ptxt">${esc(p.psg.text).replace(/\n/g, '<br>')}</div></section>` : ''}
+      <section class="ie-qs" id="ie-qs"><div class="ie-ins">Chọn đáp án đúng nhất${p.qs.some(q => q.ty === 'text') ? ' hoặc điền vào chỗ trống' : ''}.</div>${p.qs.map(q => `<div class="ie-q" id="ieq${q.n}"><div class="ie-qh"><span class="ie-qn">${q.n}</span><div class="ie-qt">${esc(q.q)}</div><button class="ie-flag ${st.flag[q.n] ? 'on' : ''}" data-flag="${q.n}" title="Đánh dấu xem lại">⚑</button></div>${q.ty === 'text' ? `<input class="ie-in" data-q="${q.n}" value="${esc(st.ans[q.n] || '')}" autocomplete="off" spellcheck="false" placeholder="Nhập đáp án">` : q.o.map((o, j) => `<label class="ie-o ${st.ans[q.n] === j ? 'sel' : ''}"><input type="radio" name="q${q.n}" value="${j}" ${st.ans[q.n] === j ? 'checked' : ''}><b>${'ABCDEF'[j]}</b><span>${esc(o)}</span></label>`).join('')}</div>`).join('')}</section></main>
+      <footer class="ie-f"><div class="ie-chips">${chips()}</div><div class="ie-nav"><span class="ie-cnt">${ansd}/${ex.total}</span><button class="ie-arr" data-a="prev" ${st.part === 0 ? 'disabled' : ''} aria-label="Phần trước">‹</button><button class="ie-arr" data-a="next" ${st.part === ex.parts.length - 1 ? 'disabled' : ''} aria-label="Phần sau">›</button><button class="ie-btn" data-a="review">Review &amp; Submit</button></div></footer>`;
+    if (scrollTo) { const e = $('#ieq' + scrollTo, ov); if (e) { e.scrollIntoView({ block: 'center' }); e.classList.add('pulse'); } }
+  }
+  function review() {
+    const un = all.filter(q => st.ans[q.n] == null || st.ans[q.n] === ''), fl = all.filter(q => st.flag[q.n]);
+    const m = document.createElement('div'); m.className = 'ie-modal'; m.innerHTML = `<div class="ie-mc"><h2>Xem lại trước khi nộp</h2><p>Chưa trả lời: <b>${un.length}</b> · Đã đánh dấu: <b>${fl.length}</b></p><div class="ie-grid">${all.map(q => `<button class="ie-c ${st.ans[q.n] != null && st.ans[q.n] !== '' ? 'ans' : ''} ${st.flag[q.n] ? 'fl' : ''}" data-q="${q.n}">${q.n}</button>`).join('')}</div><div class="ie-row"><button class="ie-btn ghost" data-a="back">Quay lại làm tiếp</button><button class="ie-btn ie-go" data-a="submit">Nộp bài</button></div></div>`;
+    ov.appendChild(m);
+  }
+  const band = pc => pc >= 97 ? 9 : pc >= 90 ? 8.5 : pc >= 82 ? 8 : pc >= 75 ? 7.5 : pc >= 67 ? 7 : pc >= 58 ? 6.5 : pc >= 50 ? 6 : pc >= 40 ? 5.5 : pc >= 33 ? 5 : pc >= 25 ? 4.5 : pc >= 18 ? 4 : 3.5;
+  function submit(auto) {
+    clearInterval(tm); st.done = true; let s = 0;
+    const rows = all.map(q => { const v = st.ans[q.n], ok = q.ty === 'text' ? (v ? okText(q.src || q, v) : false) : v != null && q.o[v] === q.a; if (ok) s++; return { q, v, ok }; });
+    const pc = Math.round(s / ex.total * 100), used = Math.round(((mins * 60) - st.left) / 60);
+    ov.classList.remove('ie-warn');
+    ov.innerHTML = head('<span class="ie-timer">Kết quả</span>') + `<div class="ie-res"><div class="ie-card"><h1>${auto === true ? 'Hết giờ — bài đã được nộp' : 'Đã nộp bài'}</h1><div class="ie-score"><div><b>${s}/${ex.total}</b><small>câu đúng</small></div><div><b>${pc}%</b><small>chính xác</small></div><div><b>${band(pc)}</b><small>band ước lượng*</small></div><div><b>${used}′</b><small>thời gian</small></div></div><p class="ie-note">*Band chỉ mang tính tham khảo, quy đổi theo tỉ lệ đúng.</p><div class="ie-row"><button class="ie-btn" data-a="redo">Làm lại</button><button class="ie-btn ghost" data-a="exit">Đóng</button></div></div>
+      <div class="ie-rv">${rows.map(({ q, v, ok }) => `<div class="ie-r ${ok ? 'ok' : 'no'}"><b>${q.n}.</b> ${esc(q.q)}<div>Bạn chọn: <b>${v == null || v === '' ? '(bỏ trống)' : esc(q.ty === 'text' ? v : q.o[v])}</b> ${ok ? '✓' : `✗ · Đáp án: <b>${esc(q.a)}</b>`}</div>${q.e ? `<small>${esc(q.e)}</small>` : ''}</div>`).join('')}</div></div>`;
+  }
+  ov.addEventListener('click', e => {
+    const b = e.target.closest('[data-a],[data-part],[data-q],[data-flag]'); if (!b) return;
+    if (b.dataset.flag) { st.flag[b.dataset.flag] = !st.flag[b.dataset.flag]; b.classList.toggle('on'); const c = $$('.ie-c[data-q="' + b.dataset.flag + '"]', ov); c.forEach(x => x.classList.toggle('fl', !!st.flag[b.dataset.flag])); return; }
+    if (b.dataset.part != null && b.dataset.part !== '') { st.part = +b.dataset.part; return draw(); }
+    if (b.dataset.q && !b.dataset.a && b.tagName === 'BUTTON') { const q = all.find(x => x.n === +b.dataset.q); const m = $('.ie-modal', ov); if (m) m.remove(); st.part = q.part; return draw(q.n); }
+    switch (b.dataset.a) {
+      case 'start': return start();
+      case 'exit': if (st.done || !tm || confirm('Thoát khỏi bài thi? Bài làm sẽ không được lưu.')) close(); return;
+      case 'fs+': st.fs = Math.min(24, st.fs + 2); ov.style.setProperty('--fs', st.fs + 'px'); return;
+      case 'fs-': st.fs = Math.max(13, st.fs - 2); ov.style.setProperty('--fs', st.fs + 'px'); return;
+      case 'eye': hide = !hide; { const t = $('#ie-t', ov); if (t) t.textContent = hide ? '' : fmt(st.left) + ' minutes left'; } return;
+      case 'prev': st.part--; return draw();
+      case 'next': st.part++; return draw();
+      case 'review': return review();
+      case 'back': { const m = $('.ie-modal', ov); if (m) m.remove(); return; }
+      case 'submit': return submit(false);
+      case 'redo': close(); return openExam(l, words);
+      case 'hl': { const s = getSelection(); if (!s.rangeCount || s.isCollapsed) return toast('Bôi đen đoạn văn cần tô trước.', 'bad'); const r = s.getRangeAt(0); if (!$('#ie-pass', ov) || !$('#ie-pass', ov).contains(r.commonAncestorContainer)) return; const m = document.createElement('mark'); try { r.surroundContents(m); } catch (x) { toast('Hãy bôi trong một đoạn liền nhau.', 'bad'); } s.removeAllRanges(); return; }
+      case 'clr': $$('#ie-pass mark', ov).forEach(m => m.replaceWith(...m.childNodes)); return;
+    }
+  });
+  ov.addEventListener('change', e => { const t = e.target; if (t.type === 'radio') { const n = +t.name.slice(1); st.ans[n] = +t.value; $$('.ie-q#ieq' + n + ' .ie-o', ov).forEach(x => x.classList.toggle('sel', x.querySelector('input').checked)); const c = $('.ie-c[data-q="' + n + '"]', ov); if (c) c.classList.add('ans'); const cnt = $('.ie-cnt', ov); if (cnt) cnt.textContent = all.filter(q => st.ans[q.n] != null && st.ans[q.n] !== '').length + '/' + ex.total; } });
+  ov.addEventListener('input', e => { const t = e.target; if (t.classList.contains('ie-in')) { const n = +t.dataset.q; st.ans[n] = t.value; const c = $('.ie-c[data-q="' + n + '"]', ov); if (c) c.classList.toggle('ans', !!t.value.trim()); const cnt = $('.ie-cnt', ov); if (cnt) cnt.textContent = all.filter(q => st.ans[q.n] != null && String(st.ans[q.n]).trim() !== '').length + '/' + ex.total; } });
+  intro();
+}
+
 function mountEx(el, c, k) {
   const L = (c.lesson.exs || []).filter(x => x.k === k), P = c.lesson.psg || {}, lid = c.lesson.id, key = 'ex' + k;
   if (!L.length) return void (el.innerHTML = empty('Chưa có bài tập.'));

@@ -7036,7 +7036,9 @@ function viewSrs() {
   render();
 }
 
+const isLocked = () => !!(S.user && S.profile && S.enrolReady && !S.enrol.length);
 function go(v) {
+  if (v !== 'auth' && v !== 'loading' && isLocked() && !['courses', 'profile'].includes(v)) { v = 'courses'; if (!S._lockToast) { S._lockToast = 1; toast('Tài khoản mới: em ghi danh một khoá học để mở khoá các tính năng khác nhé.', 'warn'); } }
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
@@ -7302,6 +7304,7 @@ const brandHTML = (link = true) => `<${link ? 'a href="#" data-go="home"' : 'div
 const _mq = window.matchMedia('(max-width:700px)'), isMob = () => _mq.matches;
 try { _mq.addEventListener('change', () => { if (S.user) renderTop(); }); } catch { }
 function renderTop() {
+  try { document.body.classList.toggle('newbie', isLocked()); } catch {}
   const t = S.site || {}, fb = /^https?:/.test(t.facebook || '') ? `<a href="${esc(t.facebook)}" target="_blank" rel="noopener">Facebook</a>` : '';
   const IC_P = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>', IC_M = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5z"/></svg>';
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
@@ -9539,19 +9542,23 @@ else {
     uP && uP(); uL && uL(); uA && uA(); uS && uS(); uE && uE(); uB && uB(); uC && uC(); uN && uN(); window.__uCD && window.__uCD(); window.__uCD = null; closeThread(); S.posts = []; S.banks = []; S.banksReady = false; S.enrol = []; S.enrolReady = false; stopChat(); stopGroups();
     S.user = u; S.profile = null; S.lessons = []; S.assignments = []; S.announce = null; S.streakChecked = false;
     if (!u) { stopClasses(); go('auth'); return; }
-    startChat(u.uid); startGroups(u.uid); startClasses(u.uid);
-    let contentOn = false;
+    let contentOn = false, fullOn = false;
     // Nội dung học chỉ tải sau khi học sinh có ảnh đại diện (quy tắc Firestore yêu cầu),
     // nên không báo lỗi quyền khi ảnh chưa kịp lưu lúc đăng nhập.
-    const startContent = () => {
-      if (contentOn) return; contentOn = true;
+    const startFull = () => {
+      if (fullOn) return; fullOn = true;
+      startChat(u.uid); startGroups(u.uid); startClasses(u.uid);
       uL = api.watchLessons(list => { S.rawLessons = list; recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }, err => toast('Không tải được bài học: ' + err.message, 'bad'));
-      uE = api.watchEnrol(u.uid, ids => { S.enrol = [...new Set(ids || [])]; S.enrolReady = true; applyLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'classes') viewClasses(); else if (S.view === 'courses') viewCourses(); else if (S.view === 'course' && !isEnrolled(S.course)) go('home'); else if (S.view === 'lesson' && S.lesson && !(courseOf(S.lesson) && isEnrolled(courseOf(S.lesson).id))) go('home'); });
       uB = api.watchBanks(list => { S.banks = list.filter(b => b.published !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); S.banksReady = true; if (S.view === 'course') viewCourse(); setTimeout(tryDeep, 0); });
-      uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
       uN = api.watchPosts(list => { S.posts = list; onPosts(); });
       uA = api.watchAssignments(list => { S.assignments = list; remindOnce(); if (S.view === 'home') drawDash(); });
       let cdFirst = true; window.__uCD = api.watchCD(m => { CDMETA = m; if (CDBASE) mergeCD(); const f = cdFirst; cdFirst = false; if (S.view === 'exam' || (f && S.view === 'cd')) go(S.view); }); uS = api.watchAnnounce(a => { S.announce = a; if (S.view === 'home') drawDash(); });
+    };
+    // Tài khoản mới chỉ tải danh sách khoá và ghi danh; ghi danh xong mới mở và tải phần còn lại.
+    const startContent = () => {
+      if (contentOn) return; contentOn = true;
+      uE = api.watchEnrol(u.uid, ids => { S.enrol = [...new Set(ids || [])]; S.enrolReady = true; if (S.enrol.length) startFull(); applyLessons(); renderTop(); if (isLocked()) { if (!['courses', 'profile'].includes(S.view)) go('courses'); else if (S.view === 'courses') viewCourses(); return; } if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'classes') viewClasses(); else if (S.view === 'courses') viewCourses(); else if (S.view === 'course' && !isEnrolled(S.course)) go('home'); else if (S.view === 'lesson' && S.lesson && !(courseOf(S.lesson) && isEnrolled(courseOf(S.lesson).id))) go('home'); });
+      uC = api.watchCourses(docs => { setCatalog(docs); recalcLessons(); redrawCat(); });
     };
     uP = api.watchProfile(u.uid, async p => {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
@@ -11172,7 +11179,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
-<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.q-emo-s{font-size:1.4em}.exall-modes{display:flex;flex-direction:column;gap:10px;margin:8px 0}.exall-in{width:100%;box-sizing:border-box;margin:2px 0 8px;padding:12px 14px;font-size:1rem;border:2px solid #d6dff0;border-radius:14px;background:#fff}.exall-in:focus{outline:none;border-color:#1D6FB8}.exall-in.ok{border-color:#2BB673;background:#eafaf1}.exall-in.bad{border-color:#E5484D;background:#fdeeee}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
+<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.q-emo-s{font-size:1.4em}.exall-modes{display:flex;flex-direction:column;gap:10px;margin:8px 0}.exall-in{width:100%;box-sizing:border-box;margin:2px 0 8px;padding:12px 14px;font-size:1rem;border:2px solid #d6dff0;border-radius:14px;background:#fff}.exall-in:focus{outline:none;border-color:#1D6FB8}.exall-in.ok{border-color:#2BB673;background:#eafaf1}.exall-in.bad{border-color:#E5484D;background:#fdeeee}.newbie .navb:not([data-go="courses"]):not([data-go="profile"]),.newbie #more{opacity:.38;filter:grayscale(1)}.newbie .fab{display:none!important}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
 <style id="emo-css">
 .q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
 .fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}

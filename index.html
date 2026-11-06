@@ -1262,7 +1262,7 @@ h1{font-size:1.9rem}h2{font-size:1.5rem}h3{font-size:1.15rem}
 .clg-card:hover,.clg-card:focus-visible{outline:0;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .clg-cv{height:112px;background-size:cover;background-position:center;background-color:#0FB98F}
 .clg-b{display:flex;flex-direction:column;gap:4px;padding:12px 12px 6px;flex:1}
-.clg-n{color:var(--due-blue);font-size:1rem;line-height:1.4}
+.clg-n{color:var(--due-blue);font-size:1rem;line-height:1.4;font-weight:800;text-transform:uppercase}
 .clg-card:hover .clg-n{text-decoration:underline}
 .clg-t{color:#3A3F45;font-size:.92rem}
 .clg-m{color:#6C757D;font-size:.82rem}
@@ -5225,7 +5225,7 @@ if (MODE === 'firebase' && FB) {
     _eget: uid => { try { return JSON.parse(store.get('inspire_enrol_' + uid) || '[]'); } catch { return []; } },
     async enrol(course, key) {
       let ks = {}; try { ks = JSON.parse(store.get('inspire_ckeys') || '{}'); } catch {}
-      const def = { gs9: 'gs9', unlock7: 'unlock7', gs6: 'BANGDEPTRAI', gs8: 'gs8' };
+      const def = { gs9: 'gs9', unlock7: 'unlock7', gs6: 'BANGDEPTRAI', gs8: 'BANGDEPTRAI' };
       if (String(key).trim() !== (ks[course] || def[course])) throw Object.assign(new Error('bad-key'), { code: 'bad-key' });
       const uid = S.user.uid, a = api._eget(uid); if (!a.includes(course)) a.push(course);
       store.set('inspire_enrol_' + uid, JSON.stringify(a)); (api._el || []).filter(o => o.uid === uid).forEach(o => o.cb(a.slice()));
@@ -9716,7 +9716,7 @@ else {
 .kc-cv{height:105px}
 .kc.lock .kc-cv::after{display:none}
 .kc-t{padding:14px 14px 2px}
-.kc-t h3{margin:0!important;font-size:.98rem!important;font-weight:500!important;line-height:1.35;color:#1F2A37!important;text-transform:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kc-t h3{margin:0!important;font-size:.98rem!important;font-weight:800!important;line-height:1.35;color:#0B5CA8!important;text-transform:uppercase!important;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:normal}
 .kc:hover .kc-t h3{color:#0B5CA8!important;text-decoration:underline}
 .kc-s{padding:0 14px 14px;font-size:.8rem;color:#64748B}
 .kc-p2{height:5px;background:#E6EDF5;margin:-6px 14px 14px;border-radius:99px;overflow:hidden}

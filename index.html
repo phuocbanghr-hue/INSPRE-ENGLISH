@@ -8525,7 +8525,8 @@ function mountPic(el, c, mode = 'pic') {
   runQuiz(el, { ...c, key: mode, timer: mode === 'pictf' ? 6 : 0, xpEach: mode === 'pictf' ? 8 : 10, noMist: false, build: () => take(L, 10).map(w => picQ(mode, w, L)) });
 }
 const toPic = w => { if (w.img) return w; const e = w.emo || emoOf(w); return e ? { ...w, emo: e, img: emoImg(e), _emoPic: 1 } : w; };
-const picAllWords = () => (S.lessons || []).flatMap(l => (l.words || []).map(toPic).filter(w => w.img).map(w => ({ ...w, _lid: l.id })));
+const picLs = () => (S.lessons || []).filter(l => !S.pxAll || (courseOf(l) || {}).id === S.pxAll);
+const picAllWords = () => picLs().flatMap(l => (l.words || []).map(toPic).filter(w => w.img).map(w => ({ ...w, _lid: l.id })));
 function picMixRun(el, W, X, ctx, back) {
   const ms = Object.keys(PICMODES), total = W.length + X.length;
   if (!total || (W.length < 4 && !X.length)) { el.innerHTML = empty('Chưa đủ hình để tạo bài tổng hợp.'); return; }
@@ -8544,7 +8545,7 @@ function viewPicAll() {
   main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Tổng hợp mọi unit</h3></div>
     <p class="muted">Trộn tất cả dạng bài có hình của mọi unit. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;
   $('#pa-b').onclick = () => go('picex');
-  picMixRun($('#pa'), picAllWords(), (S.lessons || []).flatMap(l => (l.exs || []).filter(x => x.img)), null);
+  picMixRun($('#pa'), picAllWords(), picLs().flatMap(l => (l.exs || []).filter(x => x.img)), null);
 }
 function mountBook(el, c, withImg) {
   const L = (c.lesson.exs || []).filter(x => withImg ? !!x.img : !x.img);
@@ -9391,17 +9392,20 @@ function openShare(c, iid) {
 
 /* ===== Trang riêng: Bài tập hình ảnh (gom từ mọi bài có hình) ===== */
 function viewPicEx() {
-  const L = (S.lessons || []).filter(l => (l.words || []).some(hasPic) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const L0 = (S.lessons || []).filter(l => (l.words || []).some(hasPic) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const cs = COURSES.filter(c => L0.some(l => (courseOf(l) || {}).id === c.id)); if (!cs.some(c => c.id === S.pxc)) S.pxc = cs[0] && cs[0].id;
+  const L = L0.filter(l => (courseOf(l) || {}).id === S.pxc), chips = cs.length > 1 ? `<div class="pxt">${cs.map(c => `<button class="pxt-b ${c.id === S.pxc ? 'on' : ''}" data-pxc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>` : '';
   const nImg = l => (l.words || []).filter(hasPic).length, nQ = l => (l.exs || []).filter(x => x.img).length;
   const total = L.reduce((a, l) => a + nImg(l), 0);
   const card = l => `<article class="card pxc"><div class="pxc-h"><span class="lgt">${esc(l.topic || '')}</span><h3>${esc(l.title)}</h3><p class="muted">${esc(l.description || '')}</p></div>
     <div class="pxc-stat"><span>${nImg(l)} hình từ vựng</span><span>${nQ(l)} câu hỏi có hình</span></div>
     <div class="pxc-b">${nImg(l) >= 4 || nQ(l) ? `<button class="btn" data-o="${esc(l.id)}" data-t="picmix">Tổng hợp hình ảnh</button>` : ''}${nImg(l) >= 2 ? `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="gallery">Xem hình</button>` : ''}${nImg(l) >= 4 ? Object.entries(PICMODES).map(([k, t]) => `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="${k}">${t}</button>`).join('') : ''}${nQ(l) ? `<button class="btn soft sm" data-o="${esc(l.id)}" data-t="bookpic">Bài tập hình trong sách</button>` : ''}<button class="btn soft sm" data-sh="${esc(l.id)}">Chia sẻ HW</button></div></article>`;
-  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Bài tập hình ảnh</h2><p class="muted">Tất cả bài có hình minh họa: xem hình để nhớ từ, nhìn hình chọn từ và làm bài tập có hình trong sách. ${L.length ? `Có ${L.length} bài với ${total} hình.` : ''}</p>
-    ${total >= 4 ? '<div class="pxa"><div><b>Tổng hợp bài tập hình ảnh</b><small>Trộn tất cả dạng bài có hình của mọi unit, chọn 15 đến tất cả câu</small></div><button class="btn" id="px-all">Làm bài tổng hợp</button></div>' : ''}
+  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Bài tập hình ảnh</h2><p class="muted">Tất cả bài có hình minh họa: xem hình để nhớ từ, nhìn hình chọn từ và làm bài tập có hình trong sách. ${L.length ? `Có ${L.length} bài với ${total} hình.` : ''}</p>${chips}
+    ${total >= 4 ? '<div class="pxa"><div><b>Tổng hợp bài tập hình ảnh</b><small>Trộn tất cả dạng bài có hình của mọi unit trong khoá này, chọn 15 đến tất cả câu</small></div><button class="btn" id="px-all">Làm bài tổng hợp</button></div>' : ''}
     ${L.length ? `<div class="pxg">${L.map(card).join('')}</div>` : empty('Chưa có bài nào có hình ảnh.')}<div style="height:50px"></div>`;
   main.onclick = e => {
-    if (e.target.closest('#px-all')) return go('picall');
+    const pc = e.target.closest('[data-pxc]'); if (pc) { S.pxc = pc.dataset.pxc; return viewPicEx(); }
+    if (e.target.closest('#px-all')) { S.pxAll = S.pxc; return go('picall'); }
     const o = e.target.closest('[data-o]'); if (o) return openLesson(o.dataset.o, o.dataset.t);
     const sh = e.target.closest('[data-sh]'); if (sh) { const l = L.find(x => x.id === sh.dataset.sh); if (l) openShareLesson(l); }
   };
@@ -11187,7 +11191,7 @@ document.addEventListener('click', e => {
 }
 @media(max-width:600px){.bar .nav .navb,.bar .nav .navb[data-go]{padding:8px 12px!important;font-size:.72rem;letter-spacing:.03em}}
 </style>
-<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.q-emo-s{font-size:1.4em}.exall-modes{display:flex;flex-direction:column;gap:10px;margin:8px 0}.exall-in{width:100%;box-sizing:border-box;margin:2px 0 8px;padding:12px 14px;font-size:1rem;border:2px solid #d6dff0;border-radius:14px;background:#fff}.exall-in:focus{outline:none;border-color:#1D6FB8}.exall-in.ok{border-color:#2BB673;background:#eafaf1}.exall-in.bad{border-color:#E5484D;background:#fdeeee}.newbie .navb:not([data-go="courses"]):not([data-go="profile"]),.newbie #more{opacity:.38;filter:grayscale(1)}.newbie .fab{display:none!important}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
+<style id="boba-css">.boba{display:inline-block;font-size:1.15em;animation:bobaw 2.2s ease-in-out infinite;transform-origin:50% 80%;filter:drop-shadow(0 2px 3px rgba(150,90,40,.35))}@keyframes bobaw{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) translateY(-2px)}}.bb-r{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed rgba(120,80,40,.2)}.bb-r:last-child{border-bottom:0}.bb-r.me{background:rgba(255,200,120,.25);border-radius:12px}.bb-n{flex:1;min-width:0;display:flex;flex-direction:column}.bb-n b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bb-n small{color:#8a6a50}.bb-r em{font-style:normal;font-weight:800;color:#c2410c}.bb-cd{margin:6px 0 4px;font-size:.85rem;color:#8a5a2a}.bb-h{margin-top:10px}.bb-h summary{cursor:pointer;font-weight:800;color:#7a4a2a;padding:8px 0}.bb-wk{margin:8px 0;padding:8px 10px;border-radius:12px;background:#fff7ec}.bb-wk>b{display:block;margin-bottom:4px;color:#9a3412}.bb-w2{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.93rem}.bb-w2 em{font-style:normal;font-weight:800;color:#c2410c;white-space:nowrap}.q-emo-s{font-size:1.4em}.exall-modes{display:flex;flex-direction:column;gap:10px;margin:8px 0}.exall-in{width:100%;box-sizing:border-box;margin:2px 0 8px;padding:12px 14px;font-size:1rem;border:2px solid #d6dff0;border-radius:14px;background:#fff}.exall-in:focus{outline:none;border-color:#1D6FB8}.exall-in.ok{border-color:#2BB673;background:#eafaf1}.exall-in.bad{border-color:#E5484D;background:#fdeeee}.newbie .navb:not([data-go="courses"]):not([data-go="profile"]),.newbie #more{opacity:.38;filter:grayscale(1)}.newbie .fab{display:none!important}.pxt{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.pxt-b{border:2px solid #cfe0f5;background:#fff;color:#0B5CA8;font-weight:800;border-radius:999px;padding:9px 18px;font:inherit;font-weight:800;cursor:pointer}.pxt-b.on{background:#0B5CA8;border-color:#0B5CA8;color:#fff}.boba-note{margin:0 0 10px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fff4e0,#ffe6ef);color:#7a4a2a;font-weight:700;font-size:.92rem}.rank-row .boba{margin-left:4px}@media(prefers-reduced-motion:reduce){.boba{animation:none}}</style>
 <style id="emo-css">
 .q-emo{font-size:4.4rem;text-align:center;line-height:1.15;margin:4px 0 6px;filter:drop-shadow(0 8px 8px rgba(0,0,0,.12))}
 .fc-emo{font-size:4.6rem;line-height:1.1;margin-bottom:6px}

@@ -8522,7 +8522,8 @@ function mountPic(el, c, mode = 'pic') {
   const L = c.words.filter(w => w.img); if (L.length < 4) return void (el.innerHTML = empty('Cần ít nhất 4 từ có hình để chơi.'));
   runQuiz(el, { ...c, key: mode, timer: mode === 'pictf' ? 6 : 0, xpEach: mode === 'pictf' ? 8 : 10, noMist: false, build: () => take(L, 10).map(w => picQ(mode, w, L)) });
 }
-const picAllWords = () => (S.allLessons || []).flatMap(l => (l.words || []).filter(w => w.img));
+const toPic = w => { if (w.img) return w; const e = w.emo || emoOf(w); return e ? { ...w, emo: e, img: emoImg(e), _emoPic: 1 } : w; };
+const picAllWords = () => (S.lessons || []).flatMap(l => (l.words || []).map(toPic).filter(w => w.img).map(w => ({ ...w, _lid: l.id })));
 function picMixRun(el, W, X, ctx, back) {
   const ms = Object.keys(PICMODES), total = W.length + X.length;
   if (!total || (W.length < 4 && !X.length)) { el.innerHTML = empty('Chưa đủ hình để tạo bài tổng hợp.'); return; }
@@ -8541,7 +8542,7 @@ function viewPicAll() {
   main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Tổng hợp mọi unit</h3></div>
     <p class="muted">Trộn tất cả dạng bài có hình của mọi unit. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;
   $('#pa-b').onclick = () => go('picex');
-  picMixRun($('#pa'), picAllWords(), (S.allLessons || []).flatMap(l => (l.exs || []).filter(x => x.img)), null);
+  picMixRun($('#pa'), picAllWords(), (S.lessons || []).flatMap(l => (l.exs || []).filter(x => x.img)), null);
 }
 function mountBook(el, c, withImg) {
   const L = (c.lesson.exs || []).filter(x => withImg ? !!x.img : !x.img);
@@ -9388,7 +9389,7 @@ function openShare(c, iid) {
 
 /* ===== Trang riêng: Bài tập hình ảnh (gom từ mọi bài có hình) ===== */
 function viewPicEx() {
-  const L = (S.allLessons || []).filter(l => (l.words || []).some(hasPic) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  const L = (S.lessons || []).filter(l => (l.words || []).some(hasPic) || (l.exs || []).some(x => x.img)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   const nImg = l => (l.words || []).filter(hasPic).length, nQ = l => (l.exs || []).filter(x => x.img).length;
   const total = L.reduce((a, l) => a + nImg(l), 0);
   const card = l => `<article class="card pxc"><div class="pxc-h"><span class="lgt">${esc(l.topic || '')}</span><h3>${esc(l.title)}</h3><p class="muted">${esc(l.description || '')}</p></div>

@@ -11476,12 +11476,15 @@ document.addEventListener('click', e => {
   .bar .nav .navb::after,.bar .nav #more::after{display:none!important}
   .bar .nav .navb.on,.bar .nav .navb.on[data-go]{background:#E3EEFA!important;color:#0B5CA8!important;box-shadow:none!important}
   .bar .nav .navb:hover{background:#EEF5FC}
-  .bar .menu{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:380px;min-width:0;padding:14px!important;border-radius:24px!important;top:calc(100% + 10px);right:0;z-index:1001}
-  .bar .menu[hidden]{display:none!important}
-  .bar .menu .mi{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:88px;padding:12px 4px!important;border-radius:20px!important;background:#FFF6F7!important;color:#B10B32!important;text-align:center;text-transform:uppercase;font-size:.7rem!important;font-weight:800;letter-spacing:.02em}
-  .bar .menu .mi::before{content:'';width:28px;height:28px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
-  .bar .menu .mi:hover{background:#FCE4E8!important;color:#B10B32!important}
-  .bar .menu .mi.on{background:linear-gradient(135deg,#F26B1D,#B10B32)!important;color:#fff!important;box-shadow:none!important}
+  /* v21: gộp tất cả tab thành một thanh ngang, không còn nút Khác */
+  .bar .nav{flex-wrap:wrap!important;justify-content:center!important;row-gap:4px;width:100%!important;max-width:100%!important;margin-left:0!important;overflow:visible!important;-webkit-mask-image:none!important;mask-image:none!important;border-radius:22px!important}
+  .bar .nav .more,.bar .nav .menu,.bar .nav .menu[hidden]{display:contents!important;position:static!important}
+  .bar .nav #more{display:none!important}
+  .bar .nav .navb,.bar .nav .navb[data-go],.bar .menu .mi{min-width:0;flex:none!important;padding:7px 9px 6px!important}
+  .bar .menu .mi{display:inline-flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:14px!important;background:transparent!important;color:#3F5F86!important;text-align:center;text-transform:uppercase;font-size:.64rem!important;font-weight:800;letter-spacing:.02em;line-height:1.15;white-space:nowrap;width:auto!important;min-height:0;box-shadow:none!important}
+  .bar .menu .mi::before{content:'';display:block;width:22px;height:22px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  .bar .menu .mi:hover{background:#EEF5FC!important;color:#0B5CA8!important}
+  .bar .menu .mi.on{background:#E3EEFA!important;color:#0B5CA8!important}
 }
 
 </style>

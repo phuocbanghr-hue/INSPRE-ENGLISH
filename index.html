@@ -1410,6 +1410,15 @@ body:has(.rm-paper){background:#E4E7EB}
 .rm-bb{width:22px;height:22px;border-radius:50%;border:1.3px solid #444;background:#fff;font:600 .65rem system-ui;color:#444;cursor:pointer;padding:0}.rm-bb.on{background:#14263F;color:#fff;border-color:#14263F}
 .rm-rev{border-radius:2px}
 .rm-sr{flex-wrap:wrap}.rm-sr .rm-n{flex:none}
+.dl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.dl-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.dl-tools input{flex:1;min-width:200px;padding:10px 14px;border:1.5px solid var(--line,#d9e2ec);border-radius:10px;font:inherit}
+.dl-chips{display:flex;gap:6px;flex-wrap:wrap}.dl-chips .chip{border:1px solid var(--line,#d9e2ec);background:#fff;border-radius:99px;padding:6px 12px;cursor:pointer;font:inherit;font-size:.85rem}.dl-chips .chip.on{background:#2f6fed;color:#fff;border-color:#2f6fed}
+.dl-n{margin:10px 0 4px}.dl-list{display:grid;gap:8px}
+.dl-it{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line,#d9e2ec);border-radius:12px;background:#fff}
+.dl-ic{font-size:1.6rem}.dl-m{flex:1;min-width:0}.dl-m b{display:block;word-break:break-word;line-height:1.35}.dl-m small{color:#6b7a8f}
+.dl-a{display:flex;gap:6px;flex:none}.dl-a a{text-decoration:none}
+@media(max-width:600px){.dl-it{flex-wrap:wrap}.dl-a{width:100%}.dl-a a{flex:1;text-align:center}}
+.bar .nav .navb[data-go=docs]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E")}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -7152,7 +7161,7 @@ function go(v) {
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
-  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, picall: viewPicAll, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
+  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, picall: viewPicAll, docs: viewDocLib, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
   scrollTo(0, 0);
 }
 /* ===== Phòng thi thử: đề trộn từ ngân hàng câu hỏi của lớp, mã đề, bấm giờ, bút highlight ===== */
@@ -7602,7 +7611,7 @@ function renderTop() {
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
   if (!S.user) { topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}</div></div><div class="wrap bar">${brandHTML(false)}</div>`; return; }
   const p = S.profile || {}, v = S.view;
-  const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['room', 'Phòng thi', v === 'room'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
+  const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['docs', 'Kho tài liệu', v === 'docs'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['room', 'Phòng thi', v === 'room'], ['games', 'Trò chơi', v === 'games'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['search', 'Tìm kiếm', v === 'search'], ['review', 'Ôn tập', v === 'review'], ['profile', 'Hồ sơ', v === 'profile']];
   const NM = isMob() ? 4 : 8, MAIN = N.slice(0, NM), MORE = N.slice(NM), mon = MORE.some(x => x[2]);
   const nb = ([g, n, on], c = '') => `<button class="navb ${c} ${on ? 'on' : ''}" data-go="${g}">${n}</button>`;
   topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}
@@ -8829,6 +8838,29 @@ function picMixRun(el, W, X, ctx, back) {
   if (sizes.length === 1) start(sizes[0]); else intro();
 }
 function mountPicMix(el, c) { picMixRun(el, c.words.filter(w => w.img), (c.lesson.exs || []).filter(x => x.img), c); }
+/* ---------- Kho tài liệu (GV in / HS tham khảo) ---------- */
+let _docLib = null;
+const dlSize = n => !n ? '' : n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+const dlKind = it => it.f ? 'dir' : /^(pdf)$/.test(it.x) ? 'pdf' : /^(docx?|rtf|txt)$/.test(it.x) ? 'doc' : /^(pptx?)$/.test(it.x) ? 'ppt' : /^(xlsx?)$/.test(it.x) ? 'xls' : /^(mp3|wav|m4a)$/.test(it.x) ? 'aud' : /^(zip|rar|7z)$/.test(it.x) ? 'zip' : /^(png|jpe?g|gif)$/.test(it.x) ? 'img' : 'file';
+const DL_IC = { dir: '📁', pdf: '📕', doc: '📘', ppt: '📙', xls: '📗', aud: '🎧', zip: '🗜️', img: '🖼️', file: '📄' };
+const DL_LB = { all: 'Tất cả', dir: 'Thư mục', pdf: 'PDF', doc: 'Word', aud: 'Âm thanh', zip: 'File nén' };
+async function viewDocLib() {
+  main.innerHTML = `<section class="card mt dl"><h2>Kho tài liệu</h2><p class="muted">Tài liệu giáo viên dùng để in và học sinh tham khảo, chia theo từng khối lớp. Bấm <b>Mở</b> để xem, muốn in thì mở file rồi nhấn Ctrl+P (hoặc nút In của Google Drive).</p><div id="dl-b"><p class="muted">Đang tải danh sách…</p></div></section><div style="height:50px"></div>`;
+  if (!_docLib) { try { _docLib = await (await fetch('docs/kho-tai-lieu.json', { cache: 'no-cache' })).json(); } catch (e) { $('#dl-b').innerHTML = '<p class="muted">Không tải được danh sách tài liệu. Em thử tải lại trang nhé.</p>'; return; } }
+  let g = (S.dlGrade && _docLib[S.dlGrade]) ? S.dlGrade : ((S.profile && String(S.profile.className || '').match(/[6-9]/) || ['7'])[0]), kind = 'all', q = '';
+  const draw = () => {
+    const D = _docLib[g], L = D.items.filter(it => (kind === 'all' || dlKind(it) === kind) && (!q || norm(it.t).includes(norm(q))));
+    const kinds = ['all', ...['dir', 'pdf', 'doc', 'aud', 'zip'].filter(k => D.items.some(it => dlKind(it) === k))];
+    $('#dl-b').innerHTML = `<div class="dl-tabs">${Object.keys(_docLib).map(k => `<button class="btn ${k === g ? '' : 'soft'}" data-g="${k}">Lớp ${k}</button>`).join('')}<a class="btn soft" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${D.root}">Mở thư mục lớp ${g} trên Drive ↗</a></div>
+      <div class="dl-tools"><input id="dl-q" type="search" placeholder="Tìm tài liệu…" value="${esc(q)}" autocomplete="off"><div class="dl-chips">${kinds.map(k => `<button class="chip ${k === kind ? 'on' : ''}" data-k="${k}">${DL_LB[k]}</button>`).join('')}</div></div>
+      <p class="muted dl-n">${L.length} mục</p><div class="dl-list">${L.map(it => { const k = dlKind(it), u = it.f ? 'https://drive.google.com/drive/folders/' + it.i : 'https://drive.google.com/file/d/' + it.i + '/view'; return `<div class="dl-it"><span class="dl-ic">${DL_IC[k]}</span><div class="dl-m"><b>${esc(it.t)}</b><small>${it.f ? 'Thư mục' : (it.x || 'file').toUpperCase() + (it.s ? ' · ' + dlSize(it.s) : '')}</small></div><div class="dl-a"><a class="btn sm" target="_blank" rel="noopener" href="${u}">Mở</a>${it.f ? '' : `<a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>`}</div></div>`; }).join('') || '<p class="muted">Không tìm thấy tài liệu phù hợp.</p>'}</div>`;
+    $$('[data-g]', $('#dl-b')).forEach(b => b.onclick = () => { g = b.dataset.g; S.dlGrade = g; kind = 'all'; q = ''; draw(); });
+    $$('[data-k]', $('#dl-b')).forEach(b => b.onclick = () => { kind = b.dataset.k; draw(); });
+    const qi = $('#dl-q'); qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; draw(); const n = $('#dl-q'); n.focus(); n.setSelectionRange(pos, pos); };
+  };
+  draw();
+}
+
 function viewPicAll() {
   main.innerHTML = `<div class="crumb2" style="margin-top:22px"><button class="btn soft sm" id="pa-b">← Bài tập hình ảnh</button><h3>Tổng hợp mọi unit</h3></div>
     <p class="muted">Trộn tất cả dạng bài có hình của mọi unit. Mỗi lần chơi một bộ câu mới.</p><section class="panel" id="pa"></section><div style="height:50px"></div>`;

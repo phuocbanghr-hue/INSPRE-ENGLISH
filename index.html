@@ -1426,6 +1426,13 @@ body:has(.rm-paper){background:#E4E7EB}
 .rm-wt{font:.7rem system-ui;color:#777;font-style:normal;padding-left:4px}.rm-ans{margin:2px 0 4px 6px;font-size:.95rem}.rm-ans u{text-decoration:none;border-bottom:1px dotted #333}
 .rm-paper input.rm-in{border:0!important;border-bottom:1.5px dotted #333!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:4px 2px!important;height:auto!important}.rm-paper input.rm-in:focus{border-bottom:1.5px solid #0B5CA8!important;background:#F7FAFF!important}
 .rm-warn{position:fixed;inset:0;z-index:200;background:rgba(150,10,25,.96);color:#fff;display:grid;place-items:center;text-align:center;padding:24px}.rm-warn h2{font-size:2rem;margin:8px 0}.rm-warn p{max-width:520px;margin:8px auto;font-size:1.1rem}.rm-wx,.rm-kx{width:72px;height:72px;border-radius:50%;background:#fff;color:#B3122A;font:800 2.6rem system-ui;display:grid;place-items:center;margin:0 auto 8px}.rm-warn .btn{margin-top:16px;background:#fff;color:#B3122A;font-weight:700}.rm-kill{text-align:center;max-width:560px;margin:30px auto}.rm-kx{background:#B3122A;color:#fff}
+.dl-ov{position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:9000;display:grid;place-items:center;padding:12px}
+.dl-md{background:#fff;border-radius:14px;padding:22px;max-width:560px;width:100%;position:relative;max-height:90vh;overflow:auto}.dl-md h3{margin:0 0 6px}
+.dl-x{position:absolute;right:12px;top:10px;border:0;background:none;font-size:1.2rem;cursor:pointer}
+.dl-st{padding-left:20px;line-height:2}.dl-st li{margin:6px 0}
+.dl-vw{padding:0;display:flex;flex-direction:column;place-items:stretch;background:#fff;z-index:9100}
+.dl-vb{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 14px;background:#1c2b45;color:#fff}.dl-vb b{flex:1;min-width:160px;word-break:break-word}.dl-vb span{display:flex;gap:6px;flex-wrap:wrap}.dl-vb a{text-decoration:none}
+.dl-vw iframe{flex:1;border:0;width:100%;background:#eee}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -8883,6 +8890,66 @@ function picMixRun(el, W, X, ctx, back) {
   if (sizes.length === 1) start(sizes[0]); else intro();
 }
 function mountPicMix(el, c) { picMixRun(el, c.words.filter(w => w.img), (c.lesson.exs || []).filter(x => x.img), c); }
+/* ---------- Xem tài liệu + chèn header/footer Inspire ---------- */
+const _loadJs = src => new Promise((ok, no) => { if (document.querySelector('script[data-lib="' + src + '"]')) return ok(); const s = document.createElement('script'); s.src = src; s.dataset.lib = src; s.onload = ok; s.onerror = () => no(new Error('Không tải được thư viện')); document.head.appendChild(s); });
+const _dlBlob = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); };
+const _tpl = async f => { const r = await fetch('docs/template/' + f, { cache: 'no-cache' }); if (!r.ok) throw new Error('Thiếu file mẫu header'); return r; };
+async function hfDocx(buf) {
+  await _loadJs('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  const zip = await JSZip.loadAsync(buf);
+  if (!zip.file('word/document.xml')) throw new Error('File không phải Word .docx hợp lệ');
+  const hdr = await (await _tpl('header1.xml')).text(), img = await (await _tpl('letterhead.png')).arrayBuffer();
+  let d = await zip.file('word/document.xml').async('string');
+  const pg = d.match(/<w:pgSz\b[^>]*\bw:w="(\d+)"[^>]*\bw:h="(\d+)"/) || d.match(/<w:pgSz\b[^>]*\bw:h="(\d+)"[^>]*\bw:w="(\d+)"/) && null;
+  const pw = pg ? +pg[1] * 635 : 7560310, ph = pg ? +pg[2] * 635 : 10692130;
+  zip.file('word/headerInspire.xml', hdr.replace(/cx="7560310" cy="10692130"/g, `cx="${pw}" cy="${ph}"`));
+  zip.file('word/_rels/headerInspire.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/inspire_letterhead.png"/></Relationships>');
+  zip.file('word/media/inspire_letterhead.png', img);
+  let ct = await zip.file('[Content_Types].xml').async('string');
+  if (!/Extension="png"/i.test(ct)) ct = ct.replace('<Override', '<Default Extension="png" ContentType="image/png"/><Override');
+  ct = ct.replace('</Types>', '<Override PartName="/word/headerInspire.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>');
+  zip.file('[Content_Types].xml', ct);
+  let rl = await zip.file('word/_rels/document.xml.rels').async('string');
+  rl = rl.replace('</Relationships>', '<Relationship Id="rIdInspHdr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="headerInspire.xml"/></Relationships>');
+  zip.file('word/_rels/document.xml.rels', rl);
+  if (!/xmlns:r=/.test(d.slice(0, 4000))) d = d.replace(/<w:document\b/, '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
+  const ref = '<w:headerReference w:type="default" r:id="rIdInspHdr"/>'; let n = 0;
+  d = d.replace(/<w:sectPr\b([^>]*?)(\/>|>([\s\S]*?)<\/w:sectPr>)/g, (m, at, tail, inner) => { n++; inner = (inner || '').replace(/<w:(header|footer)Reference\b[^>]*\/>/g, '').replace(/<w:titlePg\b[^>]*\/>/g, ''); return `<w:sectPr${at}>${ref}${inner}</w:sectPr>`; });
+  if (!n) d = d.replace('</w:body>', `<w:sectPr>${ref}<w:pgSz w:w="11907" w:h="16840"/><w:pgMar w:top="1203" w:right="746" w:bottom="861" w:left="1261" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body>`);
+  zip.file('word/document.xml', d);
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
+}
+async function hfPdf(buf) {
+  await _loadJs('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+  const pdf = await PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }), img = await pdf.embedPng(await (await _tpl('letterhead.png')).arrayBuffer());
+  pdf.getPages().forEach(p => { const { width, height } = p.getSize(); p.drawImage(img, { x: 0, y: 0, width, height }); });
+  return new Blob([await pdf.save()], { type: 'application/pdf' });
+}
+function openHF(pre) {
+  const ov = document.createElement('div'); ov.className = 'dl-ov';
+  ov.innerHTML = `<div class="dl-md"><button class="dl-x" aria-label="Đóng">✕</button><h3>Chèn header &amp; footer Inspire</h3>
+    <p class="muted">Tự thêm khung đầu trang (Cambridge Assessment English) và chân trang (logo Inspire) vào đề/tài liệu để in. File gốc không bị thay đổi.</p>
+    <ol class="dl-st">${pre ? `<li>Tải file gốc về máy: <a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${pre.i}">Tải “${esc(pre.t)}”</a></li>` : '<li>Tải file Word (.docx) hoặc PDF từ kho tài liệu về máy.</li>'}<li>Chọn file vừa tải: <input type="file" id="hf-f" accept=".docx,.pdf"></li><li>Bấm nút bên dưới, file mới sẽ tự tải xuống.</li></ol>
+    <button class="btn" id="hf-go" disabled>Chèn header/footer &amp; tải về</button><p class="muted" id="hf-s" style="margin-top:10px"></p><p class="muted" style="font-size:.82rem">File Word đời cũ (.doc) cần mở bằng Word rồi “Lưu thành .docx” trước.</p></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov || e.target.closest('.dl-x')) close(); };
+  const f = $('#hf-f', ov), go = $('#hf-go', ov), st = $('#hf-s', ov);
+  f.onchange = () => { const x = f.files[0]; go.disabled = !x; st.textContent = x && !/\.(docx|pdf)$/i.test(x.name) ? 'Chỉ hỗ trợ .docx và .pdf.' : ''; if (x && !/\.(docx|pdf)$/i.test(x.name)) go.disabled = true; };
+  go.onclick = async () => {
+    const x = f.files[0]; if (!x) return; go.disabled = true; st.textContent = 'Đang xử lý…';
+    try { const buf = await x.arrayBuffer(), pdf = /\.pdf$/i.test(x.name), out = pdf ? await hfPdf(buf) : await hfDocx(buf); _dlBlob(out, x.name.replace(/\.(docx|pdf)$/i, '') + ' - Inspire.' + (pdf ? 'pdf' : 'docx')); st.textContent = 'Xong. File đã được tải xuống.'; }
+    catch (e) { st.textContent = 'Không xử lý được: ' + e.message; }
+    go.disabled = false;
+  };
+}
+function openDocView(it) {
+  const ov = document.createElement('div'); ov.className = 'dl-ov dl-vw';
+  ov.innerHTML = `<div class="dl-vb"><b>${esc(it.t)}</b><span><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${it.i}/view">Mở tab mới</a><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? '<button class="btn sm" data-hf>Chèn header/footer</button>' : ''}<button class="btn sm" data-x>Đóng</button></span></div><iframe src="https://drive.google.com/file/d/${it.i}/preview" allow="autoplay" title="${esc(it.t)}"></iframe>`;
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.onclick = e => { if (e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-hf]')) openHF(it); };
+}
+
 /* ---------- Kho tài liệu (GV in / HS tham khảo) ---------- */
 let _docLib = null; const dlIsExam = t => /(^|[^a-z])(de|test|kiem tra|ktra|thi|exam|hsg|key|dap an|ôn thi|on thi|cuong|midterm|mid|final|revision)([^a-z]|$)|giua (ki|ky|hk)|cuoi (ki|ky|hk)|bo de|hk ?(i|1|2|ii)\b/.test(String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'));
 const dlSize = n => !n ? '' : n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
@@ -8890,15 +8957,19 @@ const dlKind = it => it.f ? 'dir' : /^(pdf)$/.test(it.x) ? 'pdf' : /^(docx?|rtf|
 const DL_IC = { dir: '📁', pdf: '📕', doc: '📘', ppt: '📙', xls: '📗', aud: '🎧', zip: '🗜️', img: '🖼️', file: '📄' };
 const DL_LB = { all: 'Tất cả', dir: 'Thư mục', pdf: 'PDF', doc: 'Word', aud: 'Âm thanh', zip: 'File nén' };
 async function viewDocLib() {
-  main.innerHTML = `<section class="card mt dl"><h2>Tài liệu &amp; đề thi</h2><p class="muted"><b>Kho tài liệu</b>: sách, bài tập, giáo án. <b>Ngân hàng đề thi</b>: đề kiểm tra, đề cương, đề HSG và đáp án. Tài liệu giáo viên dùng để in và học sinh tham khảo, chia theo từng khối lớp. Bấm <b>Mở</b> để xem, muốn in thì mở file rồi nhấn Ctrl+P (hoặc nút In của Google Drive).</p><div id="dl-b"><p class="muted">Đang tải danh sách…</p></div></section><div style="height:50px"></div>`;
+  main.innerHTML = `<section class="card mt dl"><h2>Tài liệu &amp; đề thi</h2><p class="muted"><b>Kho tài liệu</b>: sách, bài tập, giáo án. <b>Ngân hàng đề thi</b>: đề kiểm tra, đề cương, đề HSG và đáp án. Tài liệu giáo viên dùng để in và học sinh tham khảo, chia theo từng khối lớp. Bấm <b>Xem</b> để đọc ngay trên màn hình. Muốn dùng để in, bấm <b>Header</b> để chèn khung đầu trang/chân trang của trung tâm rồi tải về.</p><div id="dl-b"><p class="muted">Đang tải danh sách…</p></div></section><div style="height:50px"></div>`;
   if (!_docLib) { try { _docLib = await (await fetch('docs/kho-tai-lieu.json', { cache: 'no-cache' })).json(); } catch (e) { $('#dl-b').innerHTML = '<p class="muted">Không tải được danh sách tài liệu. Em thử tải lại trang nhé.</p>'; return; } }
   let mode = S.dlMode || 'doc'; let g = (S.dlGrade && _docLib[S.dlGrade]) ? S.dlGrade : ((S.profile && String(S.profile.className || '').match(/[6-9]/) || ['7'])[0]), kind = 'all', q = '';
   const draw = () => {
     const D0 = _docLib[g], D = { ...D0, items: D0.items.filter(it => (mode === 'exam') === dlIsExam(it.t)) }, L = D.items.filter(it => (kind === 'all' || dlKind(it) === kind) && (!q || norm(it.t).includes(norm(q))));
     const kinds = ['all', ...['dir', 'pdf', 'doc', 'aud', 'zip'].filter(k => D.items.some(it => dlKind(it) === k))];
-    $('#dl-b').innerHTML = `<div class="dl-tabs dl-mode"><button class="btn ${mode === 'doc' ? '' : 'soft'}" data-m="doc">Kho tài liệu</button><button class="btn ${mode === 'exam' ? '' : 'soft'}" data-m="exam">Ngân hàng đề thi</button></div><div class="dl-tabs">${Object.keys(_docLib).map(k => `<button class="btn ${k === g ? '' : 'soft'}" data-g="${k}">Lớp ${k}</button>`).join('')}<a class="btn soft" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${D.root}">Mở thư mục lớp ${g} trên Drive ↗</a></div>
+    $('#dl-b').innerHTML = `<div class="dl-tabs dl-mode"><button class="btn ${mode === 'doc' ? '' : 'soft'}" data-m="doc">Kho tài liệu</button><button class="btn ${mode === 'exam' ? '' : 'soft'}" data-m="exam">Ngân hàng đề thi</button></div><div class="dl-tabs">${Object.keys(_docLib).map(k => `<button class="btn ${k === g ? '' : 'soft'}" data-g="${k}">Lớp ${k}</button>`).join('')}<a class="btn soft" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${D.root}">Mở thư mục lớp ${g} trên Drive ↗</a><button class="btn" id="dl-hfb" type="button">Chèn header/footer cho file</button></div>
       <div class="dl-tools"><input id="dl-q" type="search" placeholder="Tìm tài liệu…" value="${esc(q)}" autocomplete="off"><div class="dl-chips">${kinds.map(k => `<button class="chip ${k === kind ? 'on' : ''}" data-k="${k}">${DL_LB[k]}</button>`).join('')}</div></div>
-      <p class="muted dl-n">${L.length} mục</p><div class="dl-list">${L.map(it => { const k = dlKind(it), u = it.f ? 'https://drive.google.com/drive/folders/' + it.i : 'https://drive.google.com/file/d/' + it.i + '/view'; return `<div class="dl-it"><span class="dl-ic">${DL_IC[k]}</span><div class="dl-m"><b>${esc(it.t)}</b><small>${it.f ? 'Thư mục' : (it.x || 'file').toUpperCase() + (it.s ? ' · ' + dlSize(it.s) : '')}</small></div><div class="dl-a"><a class="btn sm" target="_blank" rel="noopener" href="${u}">Mở</a>${it.f ? '' : `<a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>`}</div></div>`; }).join('') || '<p class="muted">Không tìm thấy tài liệu phù hợp.</p>'}</div>`;
+      <p class="muted dl-n">${L.length} mục</p><div class="dl-list">${L.map(it => { const k = dlKind(it), u = it.f ? 'https://drive.google.com/drive/folders/' + it.i : 'https://drive.google.com/file/d/' + it.i + '/view'; return `<div class="dl-it"><span class="dl-ic">${DL_IC[k]}</span><div class="dl-m"><b>${esc(it.t)}</b><small>${it.f ? 'Thư mục' : (it.x || 'file').toUpperCase() + (it.s ? ' · ' + dlSize(it.s) : '')}</small></div><div class="dl-a">${it.f ? `<a class="btn sm" target="_blank" rel="noopener" href="${u}">Mở thư mục</a>` : `<button class="btn sm" data-view="${it.i}">Xem</button><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? `<button class="btn soft sm" data-hf="${it.i}" title="Chèn header/footer Inspire">Header</button>` : ''}`}</div></div>`; }).join('') || '<p class="muted">Không tìm thấy tài liệu phù hợp.</p>'}</div>`;
+    const byId = id => D0.items.find(x => x.i === id);
+    $$('[data-view]', $('#dl-b')).forEach(b => b.onclick = () => openDocView(byId(b.dataset.view)));
+    $$('[data-hf]', $('#dl-b')).forEach(b => b.onclick = () => openHF(byId(b.dataset.hf)));
+    const hb = $('#dl-hfb'); if (hb) hb.onclick = () => openHF();
     $$('[data-m]', $('#dl-b')).forEach(b => b.onclick = () => { mode = b.dataset.m; S.dlMode = mode; kind = 'all'; q = ''; draw(); });
     $$('[data-g]', $('#dl-b')).forEach(b => b.onclick = () => { g = b.dataset.g; S.dlGrade = g; kind = 'all'; q = ''; draw(); });
     $$('[data-k]', $('#dl-b')).forEach(b => b.onclick = () => { kind = b.dataset.k; draw(); });

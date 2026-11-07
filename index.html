@@ -1433,6 +1433,7 @@ body:has(.rm-paper){background:#E4E7EB}
 .dl-vw{padding:0;display:flex;flex-direction:column;place-items:stretch;background:#fff;z-index:9100}
 .dl-vb{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 14px;background:#1c2b45;color:#fff}.dl-vb b{flex:1;min-width:160px;word-break:break-word}.dl-vb span{display:flex;gap:6px;flex-wrap:wrap}.dl-vb a{text-decoration:none}
 .dl-vw iframe{flex:1;border:0;width:100%;background:#eee}
+.dl-cc{background:#fff;border:1px solid var(--line,#d9e2ec);border-radius:14px;padding:16px 18px;display:grid;gap:12px}.dl-cc .row{display:flex;gap:10px;flex-wrap:wrap}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -8488,6 +8489,8 @@ function viewCourse() {
   const list = all.filter(l => (flt === 'all' || st(l) === flt) && (!q || (l.title + ' ' + (l.description || '')).toLowerCase().includes(q)));
   const TAG = { new: ['MỚI', 'tn'], doing: ['ĐANG HỌC', 'td'], done: ['HOÀN THÀNH', 'tk'] };
   const bks = (S.banks || []).filter(b => b.course === c.id && forMyClass(b)), best = S.profile?.bankbest || {};
+  const gMap = { gs6: '6', unlock7: '7', gs8: '8', gs9: '9' }, dg = gMap[c.id];
+  const docsCard = dg ? `<h2 class="sec" style="margin-top:22px">Tài liệu &amp; đề thi lớp ${dg}</h2><div class="dl-cc"><p class="muted" style="margin:0">Sách, bài tập, giáo án và toàn bộ đề kiểm tra, đề cương, đề HSG của lớp ${dg}. GV in được, HS tham khảo.</p><div class="row"><button class="btn" data-dlg="${dg}" data-dlm="doc">Kho tài liệu lớp ${dg}</button><button class="btn soft" data-dlg="${dg}" data-dlm="exam">Ngân hàng đề thi lớp ${dg}</button></div></div>` : '';
   const bank = bks.length ? `<h2 class="sec" style="margin-top:22px">Ngân hàng đề luyện tập</h2><div class="bgrid">${bks.map(b => `<button class="bcard" data-b="${esc(b.id)}"><span class="bc-k">${b.count || (b.qs || []).length} câu</span><b>${esc(b.title)}</b><small>${esc(b.desc || 'Trắc nghiệm có giải thích đáp án')}</small><span class="bc-f"><em>${best[b.id] != null ? 'Điểm cao nhất ' + best[b.id] + '%' : 'Chưa làm'}</em><span class="btn sm">Làm đề</span></span></button>`).join('')}</div>` : '';
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="home">Khoá học</a><span>›</span><b>${esc(c.name)}</b></nav>
     <section class="chero"><img class="w-bg" src="${c.img}" alt="" onerror="this.remove()"><div class="chero-sun"></div>
@@ -8495,7 +8498,7 @@ function viewCourse() {
         <div class="w-cta">${cont ? `<button class="btn w-main" id="cont">${st(cont) === 'new' ? 'Bắt đầu' : 'Tiếp tục'}: ${esc(cont.title)}</button>` : ''}<button class="btn w-sub" data-go="home">Về trang khoá học</button></div>
         <div class="chero-st"><div><b>${all.length}</b><span>Bài học</span></div><div><b>${done}</b><span>Hoàn thành</span></div><div><b>${doing}</b><span>Đang học</span></div><div><b>${words}</b><span>Từ vựng</span></div></div></div>
       <div class="chero-r"><div class="ring big"><svg viewBox="0 0 100 100" role="img" aria-label="Tiến độ ${pc}%"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="9"/><circle cx="50" cy="50" r="44" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * pc / 100} ${C}" transform="rotate(-90 50 50)"/></svg><b>${pc}%</b></div><small>Tiến độ khoá học</small></div></section>
-    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${bank}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
+    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${bank}${docsCard}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
     <div class="flt" style="margin:0 0 18px"><input id="cq" type="search" placeholder="Tìm bài trong khoá ${esc(c.name)}…" value="${esc(S.cq || '')}" aria-label="Tìm bài"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${flt === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
     <div class="ugrid">${list.length ? list.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), p = Math.round(d / NA * 100), k = st(l);
       return `<button class="ucard ${k}" data-id="${l.id}"><span class="u-n">${pad(lessonNum(l) % 100)}</span><span class="u-b"><span class="tg ${TAG[k][1]}" style="display:inline-block">${TAG[k][0]}</span><b>${esc(l.title)}</b><small>${l.description ? esc(l.description) : n + ' từ vựng'}</small></span>
@@ -8950,6 +8953,7 @@ function openDocView(it) {
   ov.onclick = e => { if (e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-hf]')) openHF(it); };
 }
 
+document.addEventListener('click', e => { const b = e.target.closest('[data-dlg]'); if (b) { S.dlGrade = b.dataset.dlg; S.dlMode = b.dataset.dlm; go('docs'); } });
 /* ---------- Kho tài liệu (GV in / HS tham khảo) ---------- */
 let _docLib = null; const dlIsExam = t => /(^|[^a-z])(de|test|kiem tra|ktra|thi|exam|hsg|key|dap an|ôn thi|on thi|cuong|midterm|mid|final|revision)([^a-z]|$)|giua (ki|ky|hk)|cuoi (ki|ky|hk)|bo de|hk ?(i|1|2|ii)\b/.test(String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'));
 const dlSize = n => !n ? '' : n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';

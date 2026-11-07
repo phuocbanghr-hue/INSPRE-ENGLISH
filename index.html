@@ -1429,7 +1429,7 @@ body:has(.rm-paper){background:#E4E7EB}
 .dl-ov{position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:9300;display:grid;place-items:center;padding:12px}
 .dl-md{background:#fff;border-radius:14px;padding:22px;max-width:560px;width:100%;position:relative;max-height:90vh;overflow:auto}.dl-md h3{margin:0 0 6px}
 .dl-x{position:absolute;right:12px;top:10px;border:0;background:none;font-size:1.2rem;cursor:pointer}
-.dl-st{padding-left:20px;line-height:2}.dl-st li{margin:6px 0}
+.dl-sm{max-width:440px}.hf-drop{display:block;border:2px dashed #9aa8bb;border-radius:12px;padding:22px 12px;text-align:center;cursor:pointer;margin:10px 0}.hf-drop.on{background:#e8f0ff;border-color:#2f6fed}
 .dl-vw{padding:0;display:flex;flex-direction:column;place-items:stretch;background:#fff;z-index:9200}
 .dl-vb{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 14px;background:#1c2b45;color:#fff}.dl-vb b{flex:1;min-width:160px;word-break:break-word}.dl-vb span{display:flex;gap:6px;flex-wrap:wrap}.dl-vb a{text-decoration:none}
 .dl-vw iframe{flex:1;border:0;width:100%;background:#eee}
@@ -8930,26 +8930,32 @@ async function hfPdf(buf) {
   pdf.getPages().forEach(p => { const { width, height } = p.getSize(); p.drawImage(img, { x: 0, y: 0, width, height }); });
   return new Blob([await pdf.save()], { type: 'application/pdf' });
 }
+async function hfProcess(buf, name) {
+  const pdf = /\.pdf$/i.test(name), out = pdf ? await hfPdf(buf) : await hfDocx(buf);
+  _dlBlob(out, name.replace(/\.(docx|pdf)$/i, '') + ' - Inspire.' + (pdf ? 'pdf' : 'docx'));
+}
 function openHF(pre) {
   const ov = document.createElement('div'); ov.className = 'dl-ov';
-  ov.innerHTML = `<div class="dl-md"><button class="dl-x" aria-label="Đóng">✕</button><h3>Chèn header &amp; footer Inspire</h3>
-    <p class="muted">Tự thêm khung đầu trang (Cambridge Assessment English) và chân trang (logo Inspire) vào đề/tài liệu để in. File gốc không bị thay đổi.</p>
-    <ol class="dl-st">${pre ? `<li>Tải file gốc về máy: <a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${pre.i}">Tải “${esc(pre.t)}”</a></li>` : '<li>Tải file Word (.docx) hoặc PDF từ kho tài liệu về máy.</li>'}<li>Chọn file vừa tải: <input type="file" id="hf-f" accept=".docx,.pdf"></li><li>Bấm nút bên dưới, file mới sẽ tự tải xuống.</li></ol>
-    <button class="btn" id="hf-go" disabled>Chèn header/footer &amp; tải về</button><p class="muted" id="hf-s" style="margin-top:10px"></p><p class="muted" style="font-size:.82rem">File Word đời cũ (.doc) cần mở bằng Word rồi “Lưu thành .docx” trước.</p></div>`;
+  ov.innerHTML = `<div class="dl-md dl-sm"><button class="dl-x" aria-label="Đóng">✕</button><h3>Chèn header &amp; footer</h3><p id="hf-s" class="muted"></p><div id="hf-fb" hidden><label class="hf-drop" id="hf-drop">Kéo file đã tải vào đây hoặc <b>bấm để chọn</b><input type="file" id="hf-f" accept=".docx,.pdf" hidden></label>${pre ? `<a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${pre.i}">1. Tải file gốc</a>` : ''}</div></div>`;
   document.body.appendChild(ov);
-  const close = () => ov.remove(); ov.onclick = e => { if (e.target === ov || e.target.closest('.dl-x')) close(); };
-  const f = $('#hf-f', ov), go = $('#hf-go', ov), st = $('#hf-s', ov);
-  f.onchange = () => { const x = f.files[0]; go.disabled = !x; st.textContent = x && !/\.(docx|pdf)$/i.test(x.name) ? 'Chỉ hỗ trợ .docx và .pdf.' : ''; if (x && !/\.(docx|pdf)$/i.test(x.name)) go.disabled = true; };
-  go.onclick = async () => {
-    const x = f.files[0]; if (!x) return; go.disabled = true; st.textContent = 'Đang xử lý…';
-    try { const buf = await x.arrayBuffer(), pdf = /\.pdf$/i.test(x.name), out = pdf ? await hfPdf(buf) : await hfDocx(buf); _dlBlob(out, x.name.replace(/\.(docx|pdf)$/i, '') + ' - Inspire.' + (pdf ? 'pdf' : 'docx')); st.textContent = 'Xong. File đã được tải xuống.'; }
-    catch (e) { st.textContent = 'Không xử lý được: ' + e.message; }
-    go.disabled = false;
-  };
+  const st = $('#hf-s', ov), fb = $('#hf-fb', ov); ov.onclick = e => { if (e.target === ov || e.target.closest('.dl-x')) ov.remove(); };
+  const fromFile = async x => { if (!/\.(docx|pdf)$/i.test(x.name)) { st.textContent = 'Chỉ hỗ trợ .docx và .pdf (file .doc cần lưu lại thành .docx).'; return; } st.textContent = 'Đang chèn header/footer…'; try { await hfProcess(await x.arrayBuffer(), x.name); st.textContent = 'Xong, file đã được tải xuống.'; setTimeout(() => ov.remove(), 1200); } catch (e) { st.textContent = 'Không xử lý được: ' + e.message; } };
+  const showFb = msg => { st.textContent = msg; fb.hidden = false; const f = $('#hf-f', ov), d = $('#hf-drop', ov); f.onchange = () => f.files[0] && fromFile(f.files[0]); d.ondragover = e => { e.preventDefault(); d.classList.add('on'); }; d.ondragleave = () => d.classList.remove('on'); d.ondrop = e => { e.preventDefault(); d.classList.remove('on'); if (e.dataTransfer.files[0]) fromFile(e.dataTransfer.files[0]); }; };
+  if (!pre) return showFb('Chọn file Word (.docx) hoặc PDF trên máy để thêm khung đầu/chân trang.');
+  if (!/^(docx|pdf)$/.test(pre.x)) return showFb('Chỉ chèn được cho file .docx và .pdf. File .doc cần mở bằng Word và lưu lại thành .docx.');
+  st.textContent = 'Đang lấy file và chèn header/footer…';
+  (async () => {
+    try {
+      if (pre.s > 60 * 1048576) throw new Error('big');
+      const r = await fetch('https://www.googleapis.com/drive/v3/files/' + pre.i + '?alt=media&key=' + encodeURIComponent(firebaseConfig.apiKey));
+      if (!r.ok) throw new Error('http ' + r.status);
+      await hfProcess(await r.arrayBuffer(), pre.t); st.textContent = 'Xong, file đã được tải xuống.'; setTimeout(() => ov.remove(), 1200);
+    } catch (e) { showFb(e.message === 'big' ? 'File lớn, em tải về rồi kéo vào đây để chèn nhé.' : 'Trình duyệt chưa lấy trực tiếp được file này từ Drive. Tải file gốc về rồi kéo vào đây, hệ thống sẽ chèn header ngay.'); }
+  })();
 }
 function openDocView(it) {
   const ov = document.createElement('div'); ov.className = 'dl-ov dl-vw';
-  ov.innerHTML = `<div class="dl-vb"><b>${esc(it.t)}</b><span><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${it.i}/view">Mở tab mới</a><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? '<button class="btn sm" data-hf>Chèn header/footer</button>' : ''}<button class="btn sm" data-x>Đóng</button></span></div><iframe src="https://drive.google.com/file/d/${it.i}/preview" allow="autoplay" title="${esc(it.t)}"></iframe>`;
+  ov.innerHTML = `<div class="dl-vb"><b>${esc(it.t)}</b><span><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${it.i}/view">Mở tab mới</a><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? '<button class="btn sm" data-hf>Chèn header &amp; tải về</button>' : ''}<button class="btn sm" data-x>Đóng</button></span></div><iframe src="https://drive.google.com/file/d/${it.i}/preview" allow="autoplay" title="${esc(it.t)}"></iframe>`;
   document.body.appendChild(ov); document.body.style.overflow = 'hidden';
   const close = () => { ov.remove(); document.body.style.overflow = ''; };
   ov.onclick = e => { if (e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-hf]')) openHF(it); };

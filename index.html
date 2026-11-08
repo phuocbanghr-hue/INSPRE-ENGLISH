@@ -1492,6 +1492,10 @@ body:has(.ovl:not([hidden])) .bar .nav,body:has(.ovl:not([hidden])) .bar .menu,b
 .ovl>.mdl,.ovl>.modal{width:100%!important;max-width:none!important;max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
 .ovl input,.ovl select,.ovl textarea{font-size:16px!important}
 }
+.bn{margin:0 0 18px}.bn-v{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-radius:16px}.bn-v::-webkit-scrollbar{display:none}
+.bn-t{display:flex;gap:12px;width:max-content}.bn-t img{height:200px;width:auto;border-radius:14px;display:block;cursor:zoom-in;user-select:none;-webkit-user-drag:none;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+@media(max-width:700px){.bn-t img{height:150px}.bn{margin-bottom:14px}}
+.bn-lb{position:fixed;inset:0;z-index:99000;background:rgba(0,0,0,.82);display:grid;place-items:center;padding:14px;cursor:zoom-out}.bn-lb img{max-width:100%;max-height:100%;border-radius:12px}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -8437,6 +8441,23 @@ function asgStatus(a) {
   const end = a.due ? new Date(a.due + 'T23:59:59') : null;
   return { done, overdue: !done && !!end && end < new Date(), days: end ? Math.ceil((end - new Date()) / 864e5) : null };
 }
+/* ---------- Banner chạy ngang ---------- */
+const BANNERS = [['img/banners/8nam.jpg', '8 năm Inspire'], ['img/banners/cung-inspire.jpg', 'Cùng Inspire đi muôn nơi'], ['img/banners/khoi-dau.jpg', 'Khởi đầu cùng tiếng Anh'], ['img/banners/hoi-chieu.jpg', 'Quà tặng chào bạn mới'], ['img/banners/tuyen-sinh-10.jpg', 'Tuyển sinh ôn luyện thi lớp 10'], ['img/banners/on-thi-10.jpg', 'Ôn luyện thi tuyển sinh lớp 10']];
+function mountBanners() {
+  const hm = document.getElementById('hm'); if (!hm || document.getElementById('bn')) return;
+  const one = BANNERS.map(([u, t]) => `<img src="${u}" alt="${esc(t)}" loading="lazy" draggable="false">`).join('');
+  hm.insertAdjacentHTML('beforebegin', `<section class="bn" id="bn" aria-label="Thông báo từ Inspire"><div class="bn-v" id="bn-v"><div class="bn-t" id="bn-t">${one}${one}</div></div></section>`);
+  const v = document.getElementById('bn-v'), t = document.getElementById('bn-t'); let hold = false, rel = 0;
+  const half = () => t.scrollWidth / 2;
+  const pause = () => { hold = true; clearTimeout(rel); }, resume = ms => { clearTimeout(rel); rel = setTimeout(() => { hold = false; }, ms); };
+  v.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') pause(); }); v.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') resume(300); });
+  v.addEventListener('touchstart', pause, { passive: true }); v.addEventListener('touchend', () => resume(2500), { passive: true });
+  v.addEventListener('wheel', () => { pause(); resume(2500); }, { passive: true });
+  v.addEventListener('scroll', () => { const h = half(); if (!h) return; if (v.scrollLeft >= h) v.scrollLeft -= h; else if (v.scrollLeft <= 0) v.scrollLeft += h; }, { passive: true });
+  v.addEventListener('click', e => { const im = e.target.closest('img'); if (!im) return; const o = document.createElement('div'); o.className = 'bn-lb'; o.innerHTML = `<img src="${im.src}" alt="${esc(im.alt)}">`; o.onclick = () => o.remove(); document.body.appendChild(o); });
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let acc = 0; const step = () => { if (!v.isConnected) return; if (!hold && document.visibilityState === 'visible') { acc += 0.7; if (acc >= 1) { const d = Math.floor(acc); acc -= d; v.scrollLeft += d; } } requestAnimationFrame(step); }; requestAnimationFrame(step);
+}
 function viewHome() {
   S._dseen = false; resetCount();
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Danh mục khoá học</b></nav>
@@ -8444,6 +8465,7 @@ function viewHome() {
       <h2 class="sec" id="lsec">Bài học của em</h2>
       <div class="flt"><input id="q" type="search" placeholder="Tìm bài học tại đây…" value="${esc(S.q)}" aria-label="Tìm bài học"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${(S.flt || 'all') === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
       <div id="courses"></div></div><aside class="hm-r" id="dash" hidden></aside></div>`;
+  mountBanners();
   if (isMob() && S.profile) {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}

@@ -1469,6 +1469,23 @@ body:has(.rm-paper){background:#E4E7EB}
 .rm-lb{margin-top:14px}.rm-lb h4{margin:0 0 6px;font-size:.92rem;color:#0B5CA8}.rm-lb ol{list-style:none;margin:0;padding:0}.rm-lb li{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}.rm-lb li:nth-child(odd){background:#F4F9FF}.rm-lb li.me{outline:2px solid #F26522}.rm-lb .rk{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0B5CA8;color:#fff;font-size:.8rem;font-weight:700}.rm-lb li:nth-child(1) .rk{background:#E0A800}.rm-lb li:nth-child(2) .rk{background:#8E99A8}.rm-lb li:nth-child(3) .rk{background:#B5733A}.rm-lb small{color:#778}
 #upd-bn{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:300;display:flex;gap:12px;align-items:center;background:#14263F;color:#fff;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px -8px rgba(0,0,0,.5);font-size:.92rem;max-width:calc(100vw - 24px)}#upd-bn button{background:#F26522;color:#fff;border:0;border-radius:999px;padding:6px 14px;font:inherit;font-weight:600;cursor:pointer}#upd-bn i{cursor:pointer;opacity:.7;font-style:normal;font-size:1.2rem}
 main select,main input[type=text],main input[type=search]{max-width:100%}
+
+.toasts{width:min(94vw,380px);gap:10px;z-index:400}
+.toast{position:relative;display:grid;grid-template-columns:28px 1fr 22px;gap:10px;align-items:start;overflow:hidden;background:#fff;color:#1d2433;border:1px solid #E6E9F0;border-left:0;border-radius:14px;padding:12px 12px 14px 14px;font-weight:600;font-size:.92rem;line-height:1.4;box-shadow:0 18px 40px -16px rgba(20,38,63,.45);animation:tin .32s cubic-bezier(.2,.9,.3,1.2)}
+.toast::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--tc,#0B5CA8)}
+.toast .t-ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--tc,#0B5CA8) 14%,#fff);color:var(--tc,#0B5CA8)}.toast .t-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast .t-tx{padding-top:4px;word-break:break-word}.toast .t-x{border:0;background:none;color:#8a93a5;font-size:1.25rem;line-height:1;cursor:pointer;padding:0;margin-top:3px;border-radius:6px}.toast .t-x:hover{background:#EEF1F6;color:#333}
+.toast .t-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--tc,#0B5CA8);opacity:.55;transform-origin:left}
+.toast.ok{--tc:#1E9E57;background:#fff;border-left:0}.toast.bad{--tc:#D6304A;background:#fff;color:#7d1424}.toast.warn{--tc:#E58A00;background:#fff}.toast.info{--tc:#0B5CA8}
+.toast.pop{animation:tpop .3s}.toast.out{animation:tout .22s forwards}
+@keyframes tin{from{transform:translateX(28px) scale(.96);opacity:0}to{transform:none;opacity:1}}@keyframes tout{to{transform:translateX(24px);opacity:0}}@keyframes tpop{50%{transform:scale(1.03)}}@keyframes tbar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media(max-width:640px){.toast{animation-name:tin2}@keyframes tin2{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}}
+.ask-ov{position:fixed;inset:0;z-index:500;background:rgba(15,25,45,.55);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;animation:fadein .15s}
+.ask{width:min(100%,400px);background:#fff;border-radius:18px;padding:26px 24px 20px;text-align:center;box-shadow:0 30px 70px -20px rgba(0,0,0,.5);animation:askin .25s cubic-bezier(.2,.9,.3,1.2)}
+.ask-i{width:52px;height:52px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;background:#FFF1E0;color:#E58A00;font:800 1.6rem system-ui}.ask-i.d{background:#FDE3E6;color:#D6304A}.ask h3{margin:0 0 6px;font-size:1.15rem}.ask p{margin:0 0 18px;color:#4a5468;line-height:1.5}
+.ask-b{display:flex;gap:10px;justify-content:center}.ask-b .btn{min-width:120px}.ask-d{background:#D6304A!important}
+@keyframes askin{from{transform:translateY(14px) scale(.95);opacity:0}to{transform:none;opacity:1}}@keyframes fadein{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.toast,.ask,.ask-ov{animation:none!important}}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -1552,7 +1569,32 @@ const norm = s => String(s || '').toLowerCase().replace(/[’]/g, "'").replace(/
 const clean = s => norm(s).replace(/[^a-z0-9' ]/g, '').trim();
 const empty = m => `<div class="empty">${m}</div>`;
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-function toast(msg, kind = '') { const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg; $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3800); }
+const TOAST_IC = { ok: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>', bad: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 16.5v.5"/></svg>', warn: '<svg viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 17.5v.5"/></svg>', info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.5"/></svg>' };
+function toast(msg, kind = '', o = {}) {
+  const box = $('#toasts'); if (!box || !msg) return; const k = TOAST_IC[kind] ? kind : 'info', text = String(msg);
+  for (const e of box.children) if (e.dataset.m === text) { e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); e._restart && e._restart(); return; }
+  while (box.children.length >= 4) box.firstElementChild.remove();
+  const dur = o.ms || (k === 'bad' ? 6500 : k === 'warn' ? 5500 : 3800), t = document.createElement('div');
+  t.className = 'toast ' + k; t.dataset.m = text; t.setAttribute('role', k === 'bad' || k === 'warn' ? 'alert' : 'status');
+  t.innerHTML = `<span class="t-ic">${TOAST_IC[k]}</span><span class="t-tx"></span><button type="button" class="t-x" aria-label="Đóng">×</button><i class="t-bar"></i>`;
+  t.querySelector('.t-tx').textContent = text; const bar = t.querySelector('.t-bar'); let to = null;
+  const rm = () => { clearTimeout(to); if (!t.isConnected) return; t.classList.add('out'); setTimeout(() => t.remove(), 220); };
+  const run = () => { clearTimeout(to); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = `tbar ${dur}ms linear forwards`; to = setTimeout(rm, dur); };
+  t._restart = run; t.querySelector('.t-x').onclick = rm; t.onmouseenter = () => { clearTimeout(to); bar.style.animationPlayState = 'paused'; }; t.onmouseleave = run;
+  box.appendChild(t); run();
+}
+function askBox(msg, o = {}) {
+  return new Promise(res => {
+    const ov = document.createElement('div'); ov.className = 'ask-ov';
+    ov.innerHTML = `<div class="ask" role="alertdialog" aria-modal="true" aria-label="${esc(o.title || 'Xác nhận')}"><div class="ask-i ${o.danger ? 'd' : ''}">!</div><h3>${esc(o.title || 'Xác nhận')}</h3><p>${esc(msg)}</p><div class="ask-b"><button type="button" class="btn soft" data-v="0">${esc(o.no || 'Huỷ')}</button><button type="button" class="btn ${o.danger ? 'ask-d' : ''}" data-v="1">${esc(o.yes || 'Đồng ý')}</button></div></div>`;
+    document.body.appendChild(ov);
+    const done = v => { ov.remove(); document.removeEventListener('keydown', kd, true); res(v); };
+    const kd = e => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(false); } else if (e.key !== 'Tab' && e.key !== 'Enter' && e.key !== ' ') e.stopPropagation(); };
+    document.addEventListener('keydown', kd, true);
+    ov.onclick = e => { const b = e.target.closest('[data-v]'); if (b) done(b.dataset.v === '1'); else if (e.target === ov) done(false); };
+    ov.querySelector('[data-v="1"]').focus();
+  });
+}
 
 /* ---------- âm thanh / giọng đọc / pháo giấy ---------- */
 let soundOn = store.get('sound') !== 'off', actx;
@@ -5710,7 +5752,7 @@ function viewGroup() {
       else if (t.closest('#g-join')) { const c = $('#g-code').value.trim().toUpperCase(); if (!c) return toast('Em nhập mã nhóm nhé.', 'bad'); GR.sel = await api.joinGroup(c); toast('Đã vào nhóm.', 'ok'); drawGroups(); }
       else if (!g) return;
       else if (t.closest('#g-copy')) { try { await navigator.clipboard.writeText(g.id); toast('Đã sao chép mã ' + g.id, 'ok'); } catch { toast('Mã nhóm: ' + g.id); } }
-      else if (t.closest('#g-leave')) { if (confirm('Em muốn rời nhóm này?')) { await api.leaveGroup(g.id); GR.sel = null; } }
+      else if (t.closest('#g-leave')) { if (await askBox('Em muốn rời nhóm này?', { title: 'Rời nhóm', yes: 'Rời nhóm', danger: true })) { await api.leaveGroup(g.id); GR.sel = null; } }
       else if (t.closest('#t-add')) { const v = $('#t-t').value.trim(); if (!v) return toast('Em nhập nhiệm vụ nhé.', 'bad'); const who = $('#t-w').value; const nt = { id: 't' + Date.now() + Math.random().toString(36).slice(2, 5), t: v, who, whoName: who ? (g.names || {})[who] || '' : '', done: false, by: uid }; await api.mutGroup(g.id, d => { if ((d.tasks || []).length >= 100) throw new Error('Nhóm đã đủ 100 nhiệm vụ, em xoá bớt nhé.'); return { tasks: [...(d.tasks || []), nt] }; }); $('#t-t').value = ''; }
       else if (t.closest('[data-tx]')) { const id = t.closest('[data-tx]').dataset.tx; await api.mutGroup(g.id, d => ({ tasks: (d.tasks || []).filter(x => x.id !== id) })); }
       else if (t.closest('#l-add')) { const n = $('#l-t').value.trim(), u = $('#l-u').value.trim(); if (!n || !/^https?:\/\//i.test(u)) return toast('Em nhập tên tài liệu và link bắt đầu bằng http hoặc https.', 'bad'); const nl = { id: 'l' + Date.now() + Math.random().toString(36).slice(2, 5), t: n, u, by: myName() }; await api.mutGroup(g.id, d => { if ((d.links || []).length >= 100) throw new Error('Nhóm đã đủ 100 tài liệu, em xoá bớt nhé.'); return { links: [...(d.links || []), nl] }; }); $('#l-t').value = ''; $('#l-u').value = ''; }
@@ -6944,12 +6986,12 @@ function cxlChat(c, el) {
   const ta = $('#cxc-t'); ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendCxMsg(); } };
   ta.oninput = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 110) + 'px'; };
   $('#cxc-s').onclick = sendCxMsg;
-  $('#cxc-m').onclick = e => {
+  $('#cxc-m').onclick = async e => {
     const vt = e.target.closest('[data-vote]'); if (vt) { const m = msgById(vt.dataset.mid); if (m) api.votePoll(msgSegs(m), +vt.dataset.vote).catch(er => toast('Không bình chọn được: ' + er.message, 'bad')); return; }
     const rx = e.target.closest('[data-rx]'), rp = e.target.closest('[data-reply]'), un = e.target.closest('[data-unsend]'), bb = e.target.closest('.ms-b');
     if (rx) { const m = msgById(rx.dataset.mid); if (!m) return; const on = !((m.rx || {})[rx.dataset.rx] || []).includes(S.user.uid); CX.openMsg = null; api.reactMsg(msgSegs(m), rx.dataset.rx, on).catch(er => toast('Không thả cảm xúc được: ' + er.message, 'bad')); return; }
     if (rp) { const m = msgById(rp.dataset.reply); if (!m) return; CX.replyTo = { id: m.id, name: msgName(m), text: String(m.text || '').slice(0, 80) }; CX.openMsg = null; drawReplyBar(); drawCxMsgs(); const t = $('#cxc-t'); if (t) t.focus(); return; }
-    if (un) { const m = msgById(un.dataset.unsend); if (!m || !confirm('Thu hồi tin nhắn này?')) return; CX.openMsg = null; api.unsendMsg(msgSegs(m)).catch(er => toast('Không thu hồi được: ' + er.message, 'bad')); return; }
+    if (un) { const m = msgById(un.dataset.unsend); if (!m || !(await askBox('Thu hồi tin nhắn này?', { title: 'Thu hồi tin nhắn', yes: 'Thu hồi', danger: true }))) return; CX.openMsg = null; api.unsendMsg(msgSegs(m)).catch(er => toast('Không thu hồi được: ' + er.message, 'bad')); return; }
     if (bb) { const id = bb.dataset.mid; CX.openMsg = CX.openMsg === id ? null : id; drawCxMsgs(); }
   };
   $('#ms-rb').onclick = e => { if (e.target.closest('#ms-rx-x')) { CX.replyTo = null; drawReplyBar(); } };
@@ -7136,7 +7178,7 @@ function viewClassTest() {
     const showQ = n => { if (n > maxOk()) { toast('Em chọn đáp án câu ' + (maxOk() + 1) + ' trước đã nhé.', 'warn'); n = maxOk(); } cur = Math.max(0, Math.min(Q.length - 1, n)); main.querySelectorAll('.cxl-q[data-q]').forEach((el, i) => { el.hidden = i !== cur; }); $('#qpos').textContent = 'Câu ' + (cur + 1) + '/' + Q.length; $('#qprev').disabled = cur === 0; $('#qnext').hidden = cur === Q.length - 1; $('#sub2').hidden = cur !== Q.length - 1; main.querySelectorAll('.qd').forEach((b, i) => { b.classList.toggle('cur', i === cur); b.classList.toggle('done', Q[i].pick >= 0); b.disabled = i > maxOk(); }); };
     let done = false; const answered = () => Q.filter(q => q.pick >= 0).length;
     const tick = () => { if (done || S.view !== 'ctest' || CX.run !== run) { clearInterval(CX.timer); return; } const left = Math.max(0, end - Date.now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000); const tl = $('#tl'); if (tl) { tl.textContent = pad(m) + ':' + pad(s); tl.style.color = left < 60000 ? '#c0233a' : ''; } if (left <= 0) { toast('Hết giờ, bài đã được nộp.', 'warn'); finish(true); } };
-    const finish = auto => { if (done) return; if (!auto && answered() < Q.length && !confirm('Em còn ' + (Q.length - answered()) + ' câu chưa trả lời. Vẫn nộp bài?')) return; done = true; clearInterval(CX.timer); result(Q); };
+    const finish = async auto => { if (done) return; if (!auto && answered() < Q.length && !(await askBox('Em còn ' + (Q.length - answered()) + ' câu chưa trả lời. Vẫn nộp bài?', { title: 'Nộp bài', yes: 'Nộp bài', no: 'Làm tiếp' }))) return; if (done) return; done = true; clearInterval(CX.timer); result(Q); };
     main.onchange = e => { const s = e.target.closest('.mselect'); if (!s) return; const q = Q[+s.dataset.mi]; q.sel[+s.dataset.m] = +s.value; q.pick = q.sel.every(v => v >= 0) ? 1 : -1; $('#tp').textContent = answered() + '/' + Q.length + ' câu'; };
     main.oninput = e => { const f = e.target.closest('[data-fill]'); if (!f) return; const q = Q[+f.dataset.fill]; q.txt = f.value; q.pick = q.txt.trim() ? 0 : -1; $('#tp').textContent = answered() + '/' + Q.length + ' câu'; };
     main.onclick = e => { if (handleOrder(e, Q)) { $('#tp').textContent = answered() + '/' + Q.length + ' câu'; return; } const o = e.target.closest('.opt'); if (o) { const qd = o.closest('[data-q]'), q = Q[+qd.dataset.q]; q.pick = +o.dataset.k; qd.querySelectorAll('.opt').forEach((x, k) => x.classList.toggle('on', k === q.pick)); $('#tp').textContent = answered() + '/' + Q.length + ' câu'; showQ(cur); return; } if (e.target.closest('#qprev')) return showQ(cur - 1); if (e.target.closest('#qnext')) return showQ(cur + 1); const dq = e.target.closest('[data-qd]'); if (dq) return showQ(+dq.dataset.qd); if (e.target.closest('#sub') || e.target.closest('#sub2')) finish(false); };
@@ -7405,7 +7447,7 @@ function startRoom(cfg, resume, preQ) {
     if (leaves === 1 && !ov) { ov = document.createElement('div'); ov.className = 'rm-warn'; ov.innerHTML = '<div><div class="rm-wx">!</div><h2>CẢNH BÁO LẦN 1/2</h2><p>Em vừa rời khỏi màn hình thi.</p><p><b>Nếu rời màn hình thêm 1 lần nữa, bài thi sẽ bị huỷ ngay và báo cáo được gửi cho giáo viên.</b></p><button class="btn" id="rm-wok">Tôi đã hiểu, quay lại làm bài</button></div>'; document.body.appendChild(ov); $('#rm-wok', ov).onclick = rmOv; } };
   const onSel = () => { if (done || !penOn || tool !== 'pen') return; clearTimeout(hlT); hlT = setTimeout(() => { if (S.view === 'room') hlApply(paperEl, color); }, 350); };
   const cleanup = () => { try { document.querySelectorAll('.rm-warn').forEach(z => z.remove()); } catch (e) {} _longTok++; try { speechSynthesis.cancel(); if (_ttsAudio) _ttsAudio.pause(); } catch (e) {} clearInterval(ROOM.timer); document.removeEventListener('selectionchange', onSel); document.removeEventListener('visibilitychange', onVis); window.onbeforeunload = null; document.onkeydown = null; try { document.fullscreenElement && document.exitFullscreen(); } catch (e) {} };
-  const finish = auto => { if (done) return; if (!auto && ans() < Q.length && !confirm('Em còn ' + (Q.length - ans()) + ' câu chưa trả lời. Vẫn nộp bài?')) return; done = true; cleanup(); rmLS(key, null); roomResult(c, cfg, Q, Math.round((Date.now() - t0) / 1000), leaves, !!preQ); };
+  const finish = async auto => { if (done) return; if (!auto && ans() < Q.length && !(await askBox('Em còn ' + (Q.length - ans()) + ' câu chưa trả lời. Vẫn nộp bài?', { title: 'Nộp bài', yes: 'Nộp bài', no: 'Làm tiếp' }))) return; if (done) return; done = true; cleanup(); rmLS(key, null); roomResult(c, cfg, Q, Math.round((Date.now() - t0) / 1000), leaves, !!preQ); };
   document.addEventListener('selectionchange', onSel); document.addEventListener('visibilitychange', onVis);
   main.oninput = e => { const inp = e.target.closest('.rm-in'); if (inp) { Q[+inp.dataset.in].txt = inp.value; upd(); } };
   main.onclick = e => {
@@ -8123,7 +8165,7 @@ function openArenaReview() {
     $('#rv-q').textContent = cur.q; $('#rv-f').textContent = '';
     $('#rv-o').innerHTML = cur.o.map((o, k) => `<button class="ar-rv-b" type="button" data-k="${k}">${String.fromCharCode(65 + k)}. ${esc(optText(o))}</button>`).join('');
   };
-  ov.addEventListener('click', e => {
+  ov.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.id === 'rv-x') return ov.remove();
     if (!b.classList.contains('ar-rv-b') || busy || !cur) return;
@@ -9163,7 +9205,7 @@ function openExam(l, words) {
   ov.addEventListener('pointerdown', e => { const d = e.target.closest('.ie-div'); if (!d) return; drag = $('.ie-main', ov); d.setPointerCapture(e.pointerId); e.preventDefault(); });
   ov.addEventListener('pointermove', e => { if (!drag) return; const r = drag.getBoundingClientRect(); drag.style.setProperty('--lw', Math.max(220, Math.min(r.width - 280, e.clientX - r.left - 10)) + 'px'); });
   ov.addEventListener('pointerup', () => { drag = null; });
-  ov.addEventListener('click', e => {
+  ov.addEventListener('click', async e => {
     const b = e.target.closest('[data-a],[data-part],[data-q],[data-flag]'); if (!b) return;
     if (b.dataset.flag) { st.flag[b.dataset.flag] = !st.flag[b.dataset.flag]; b.classList.toggle('on'); const c = $$('.ie-c[data-q="' + b.dataset.flag + '"]', ov); c.forEach(x => x.classList.toggle('fl', !!st.flag[b.dataset.flag])); return; }
     if (b.dataset.part != null && b.dataset.part !== '') { st.part = +b.dataset.part; return draw(); }
@@ -9174,7 +9216,7 @@ function openExam(l, words) {
       case 'start': return start();
       case 'hlsel': { selbar(false); hlApply($('.ie-main', ov), 'y'); keepHl(); return; }
       case 'hlclr': { selbar(false); if (selMark && selMark.isConnected) { hlErase(selMark); selMark = null; keepHl(); } return; }
-      case 'exit': if (st.done || !tm || confirm('Thoát khỏi bài thi? Bài làm sẽ không được lưu.')) close(); return;
+      case 'exit': if (st.done || !tm || await askBox('Thoát khỏi bài thi? Bài làm sẽ không được lưu.', { title: 'Thoát bài thi', yes: 'Thoát', no: 'Ở lại', danger: true })) close(); return;
       case 'fs+': st.fs = Math.min(24, st.fs + 2); ov.style.setProperty('--fs', st.fs + 'px'); return;
       case 'fs-': st.fs = Math.max(13, st.fs - 2); ov.style.setProperty('--fs', st.fs + 'px'); return;
       case 'eye': hide = !hide; { const t = $('#ie-t', ov); if (t) t.textContent = hide ? '' : fmt(st.left) + ' minutes left'; } return;
@@ -9436,7 +9478,7 @@ function mountLis(el, { lesson }) {
     <div id="lq-gate" hidden class="lq-gate"><input id="lq-pw" type="password" placeholder="Mật khẩu giáo viên" autocomplete="off"><button class="btn" id="lq-go">Chấm bài</button><small id="lq-err" style="color:#B10B32"></small></div><div id="lq-res"></div>`;
   const read = () => { const a = {}; el.querySelectorAll('[data-q]').forEach(x => { const n = x.dataset.q; if (x.type === 'radio') { if (x.checked) a[n] = x.value; } else a[n] = x.value.trim(); }); return a; };
   const nQ = Q.secs.reduce((t, s) => t + (s.items ? s.items.length : s.left ? s.left.length : s.lines.join(' ').split(/\{\d+\}/).length - 1), 0);
-  $('#lq-sub', el).onclick = async () => { const a = read(), got = Object.values(a).filter(Boolean).length; if (got < nQ && !confirm('Em mới làm ' + got + '/' + nQ + ' câu. Vẫn nộp bài?')) return;
+  $('#lq-sub', el).onclick = async () => { const a = read(), got = Object.values(a).filter(Boolean).length; if (got < nQ && !(await askBox('Em mới làm ' + got + '/' + nQ + ' câu. Vẫn nộp bài?', { title: 'Nộp bài', yes: 'Nộp bài', no: 'Làm tiếp' }))) return;
     store.set(sk, JSON.stringify({ a, sub: Date.now() })); try { await award(lesson.id, 0, { lisAns: JSON.stringify(a), lisSub: Date.now() }); } catch {} toast('Đã nộp bài. Giáo viên sẽ chấm bài của em.', 'ok'); mountLis(el, { lesson }); };
   const redo = $('#lq-redo', el); if (redo) redo.onclick = () => { store.set(sk, '{}'); mountLis(el, { lesson }); };
   $('#lq-tc', el).onclick = () => { $('#lq-gate', el).hidden = false; $('#lq-pw', el).focus(); };
@@ -9614,7 +9656,7 @@ async function postClick(e) {
   const o = e.target.closest('[data-open]'); if (o) { togglePost(o.dataset.open); return true; }
   const s = e.target.closest('[data-send]');
   if (s) { const t = $('#thx'), v = t.value.trim(); if (!v) return true; s.disabled = true; try { await api.addComment(s.dataset.send, v); t.value = ''; } catch (er) { toast('Không gửi được: ' + er.message, 'bad'); } s.disabled = false; return true; }
-  const d = e.target.closest('[data-delc]'); if (d) { if (confirm('Xoá bình luận này?')) api.delComment(PF.open, d.dataset.delc).catch(er => toast(er.message, 'bad')); return true; }
+  const d = e.target.closest('[data-delc]'); if (d) { if (await askBox('Xoá bình luận này?', { title: 'Xoá bình luận', yes: 'Xoá', danger: true })) api.delComment(PF.open, d.dataset.delc).catch(er => toast(er.message, 'bad')); return true; }
   return false;
 }
 function drawNewsStrip() {
@@ -10211,7 +10253,7 @@ else {
     };
     uP = api.watchProfile(u.uid, async p => {
       if (!p) { if (!S.registering) await api.createProfile(u.uid, newProfile({ name: u.displayName || (u.email || 'Học sinh').split('@')[0], email: u.email || '', avatar: S.authAv || '' })); return; }
-      if (p.disabled) { S.profile = null; api.signOut(); alert('Tài khoản đang bị tạm khoá. Em liên hệ trung tâm nhé.'); return; }
+      if (p.disabled) { S.profile = null; api.signOut(); toast('Tài khoản đang bị tạm khoá. Em liên hệ trung tâm nhé.', 'bad', { ms: 9000 }); return; }
       S.profile = normXp(p); rollXp();
       startContent();
       if (!S.streakChecked) {

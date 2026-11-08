@@ -1466,6 +1466,8 @@ body:has(.rm-paper){background:#E4E7EB}
 .ie-main mark.hl{background:#FFE66D;color:#000}
 @media(max-width:800px){.ie-main.two{grid-template-columns:1fr;grid-template-rows:42% 58%}.ie-div{display:none}.ie-pass,.ie-qs{margin:8px}.ie-sub2{flex-direction:column;gap:2px;padding:8px 14px}.ie-bt{display:none}.ie-h{gap:10px;padding:6px 10px}.ie-ielts{height:24px}}
 .ie-c1 h1{color:#111;font-size:1.5rem}.ie-eye{font-size:0}.ie-eye::before{content:'';display:inline-block;width:18px;height:18px;background:#333;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat}
+.rm-lb{margin-top:14px}.rm-lb h4{margin:0 0 6px;font-size:.92rem;color:#0B5CA8}.rm-lb ol{list-style:none;margin:0;padding:0}.rm-lb li{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}.rm-lb li:nth-child(odd){background:#F4F9FF}.rm-lb li.me{outline:2px solid #F26522}.rm-lb .rk{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0B5CA8;color:#fff;font-size:.8rem;font-weight:700}.rm-lb li:nth-child(1) .rk{background:#E0A800}.rm-lb li:nth-child(2) .rk{background:#8E99A8}.rm-lb li:nth-child(3) .rk{background:#B5733A}.rm-lb small{color:#778}
+#upd-bn{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:300;display:flex;gap:12px;align-items:center;background:#14263F;color:#fff;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px -8px rgba(0,0,0,.5);font-size:.92rem;max-width:calc(100vw - 24px)}#upd-bn button{background:#F26522;color:#fff;border:0;border-radius:999px;padding:6px 14px;font:inherit;font-weight:600;cursor:pointer}#upd-bn i{cursor:pointer;opacity:.7;font-style:normal;font-size:1.2rem}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -7224,7 +7226,7 @@ function go(v) {
   scrollTo(0, 0);
 }
 /* ===== Phòng thi thử: đề trộn từ ngân hàng câu hỏi của lớp, mã đề, bấm giờ, bút highlight ===== */
-const ROOM = { run: 0, timer: null };
+const ROOM = { run: 0, timer: null, un: null };
 const ROOM_SEC = ['Nghe hiểu', 'Từ vựng', 'Ngữ pháp', 'Đọc hiểu'], ROOM_VM = 'Từ vựng (nghĩa của từ)';
 const rmRng = str => { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; } let a = h >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 const rmShuf = (a, r) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -7301,14 +7303,17 @@ function roomBuild(cfg) {
 const ROOM_PRESETS = [{ id: 'q15', name: 'Kiểm tra 15 phút', n: 20, m: 15, d: 'Nhanh gọn, ôn từng phần' }, { id: 'q45', name: 'Đề 45 phút', n: 40, m: 45, d: 'Bài kiểm tra định kì' }, { id: 'q60', name: 'Thi học kì', n: 50, m: 60, d: 'Đề đầy đủ như thi thật' }, { id: 'cu', name: 'Tự chọn', n: 30, m: 30, d: 'Em tự chỉnh số câu và thời gian' }];
 const ROOM_PARTS = [['all', 'Tổng hợp'], ['voc', 'Từ vựng'], ['gra', 'Ngữ pháp'], ['rea', 'Đọc hiểu'], ['lis', 'Nghe hiểu'], ['wri', 'Viết câu'], ['oth', 'Bài tập khác']];
 function viewRoom() {
-  clearInterval(ROOM.timer); ROOM.run++; main.onclick = null; main.onchange = null; main.oninput = null; main.onkeydown = null; window.onbeforeunload = null; document.onkeydown = null;
+  clearInterval(ROOM.timer); ROOM.run++; try { ROOM.un && ROOM.un(); } catch (e) {} ROOM.un = null; main.onclick = null; main.onchange = null; main.oninput = null; main.onkeydown = null; window.onbeforeunload = null; document.onkeydown = null;
   const cs = COURSES.filter(c => isEnrolled(c.id)), P = S.profile.room || {};
   main.innerHTML = `<section class="card rm-head"><span class="cc-k">Phòng thi thử</span><h2>Làm đề như thi thật</h2><p class="muted">Đề trộn từ toàn bộ câu hỏi của lớp em ghi danh, có mã đề, đồng hồ đếm ngược, bảng câu hỏi và bút highlight. Đáp án chỉ hiện sau khi nộp bài. Cùng một mã đề thì ra cùng một đề, em có thể cùng bạn thi chung mã.</p></section>
   ${cs.length ? cs.map(c => { const tot = roomCount(c.id, 'all'), b = P[c.id], h = (b && b.hist) || [];
     return `<section class="card rm-course"><div class="rm-ch"><div><h3>${esc(c.name)} · ${esc(c.sub)}</h3><small class="muted">Ngân hàng đề: ${tot} câu${b ? ' · Điểm cao nhất <b>' + b.score + '/10</b> · ' + (b.n || 1) + ' lần thi' : ' · Em chưa thi lần nào'}</small>${rmLS('rm_save_' + c.id) ? '<div class="rm-resume">Em có một bài đang làm dở</div>' : ''}</div>
     ${h.length ? `<div class="rm-hist" title="Điểm các lần thi gần đây">${h.slice(-8).map(x => `<i style="height:${Math.max(8, x[0] * 4)}px" title="${x[0]}/10"></i>`).join('')}</div>` : ''}</div>
-    ${tot < 10 ? '<p class="muted">Lớp này chưa đủ câu hỏi để ra đề. Thầy cô sẽ bổ sung thêm.</p>' : `<button class="btn" data-lobby="${c.id}">Vào phòng thi</button>`}</section>`; }).join('') : empty('Em chưa ghi danh khoá học nào. Vào mục Khoá học để ghi danh trước nhé.')}`;
+    ${tot < 10 ? '<p class="muted">Lớp này chưa đủ câu hỏi để ra đề. Thầy cô sẽ bổ sung thêm.</p>' : `<button class="btn" data-lobby="${c.id}">Vào phòng thi</button>`}<div class="rm-lb" data-lb="${c.id}"></div></section>`; }).join('') : empty('Em chưa ghi danh khoá học nào. Vào mục Khoá học để ghi danh trước nhé.')}`;
   main.onclick = e => { const b = e.target.closest('[data-lobby]'); if (b) roomLobby(b.dataset.lobby); };
+  try { ROOM.un = api.watchTop(150, list => { if (S.view !== 'room' || !main.querySelector('[data-lb]')) return;
+    main.querySelectorAll('[data-lb]').forEach(el => { const cid = el.dataset.lb, top = list.filter(u => u.room && u.room[cid] && u.room[cid].score != null).sort((a, b) => b.room[cid].score - a.room[cid].score || (a.room[cid].n || 0) - (b.room[cid].n || 0)).slice(0, 5);
+      el.innerHTML = top.length ? `<h4>Bảng vàng phòng thi</h4><ol>${top.map((u, i) => `<li class="${u.id === (S.user || {}).uid ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="nm">${esc(u.name || 'Học sinh')}${u.className ? ' <small>' + esc(u.className) + '</small>' : ''}</span><b>${u.room[cid].score}/10</b><small>${u.room[cid].n || 1} lần thi</small></li>`).join('')}</ol>` : ''; }); }, () => {}); } catch (e) {}
 }
 function roomLobby(cid) {
   const c = COURSES.find(x => x.id === cid), p = S.profile || {}; let preset = 'q45', part = 'all', code = rmCode(), focus = false;
@@ -7389,6 +7394,7 @@ function startRoom(cfg, resume, preQ) {
   const kill = () => { if (done) return; done = true; cleanup(); rmOv(); rmLS(key, null); const n = ans(), when = new Date().toLocaleString('vi-VN');
     const msg = '[CẢNH BÁO PHÒNG THI] ' + ((S.profile || {}).name || 'Học sinh') + ' (' + c.name + ', mã đề ' + cfg.code + ') đã rời khỏi màn hình thi 2 lần, bài thi bị huỷ tự động. Đã làm ' + n + '/' + Q.length + ' câu. Lúc ' + when + '.';
     main.onclick = null; main.oninput = null;
+    (async () => { try { await api.updateMe({ ['room.' + cfg.cid + '.viol']: INC(1), ['room.' + cfg.cid + '.violAt']: Date.now(), ['room.' + cfg.cid + '.violCode']: cfg.code }); } catch (e) {} })();
     main.innerHTML = `<section class="card rm-kill"><div class="rm-kx">!</div><h2>Bài thi đã bị huỷ</h2><p>Em đã rời khỏi màn hình thi 2 lần nên hệ thống dừng bài thi này. Bài làm không được chấm và báo cáo đã gửi cho giáo viên.</p><p class="muted">Em liên hệ giáo viên nếu cần thi lại.</p><button class="btn" id="rm-kb">Về phòng thi</button></section>`;
     $('#rm-kb').onclick = () => viewRoom(); scrollTo(0, 0);
     (async () => { try { await api.sendChat(msg); } catch (e) { toast('Chưa gửi được báo cáo cho giáo viên, em hãy báo trực tiếp nhé.', 'bad'); } })(); };
@@ -7443,6 +7449,16 @@ async function roomResult(c, cfg, Q, secs, leaves, retry) {
   if (retry) return;
   try { const upd = { ['room.' + c.id + '.n']: INC(1), ['room.' + c.id + '.at']: Date.now(), ['room.' + c.id + '.hist']: hist }; if (P.score == null || score > P.score) upd['room.' + c.id + '.score'] = score; await api.updateMe(upd); S.profile.room = { ...(S.profile.room || {}), [c.id]: { n: (P.n || 0) + 1, score: P.score > score ? P.score : score, at: Date.now(), hist } }; if (gain) await award(null, gain, {}, 'room'); } catch (e) { toast(e.message, 'bad'); }
 }
+/* ===== Thông báo có bản cập nhật ===== */
+(() => {
+  const hash = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return h; };
+  let base = null; const get = async () => { try { const r = await fetch(location.pathname + '?_=' + Date.now(), { cache: 'no-store' }); return r.ok ? hash(await r.text()) : null; } catch (e) { return null; } };
+  const chk = async () => { const h = await get(); if (h == null) return; if (base == null) { base = h; return; } if (h === base || document.getElementById('upd-bn')) return;
+    if (document.querySelector('.rm-paper, .ie')) return;
+    const b = document.createElement('div'); b.id = 'upd-bn'; b.innerHTML = '<span>Có bản cập nhật mới của Inspire E-study.</span><button type="button">Tải lại ngay</button><i role="button" aria-label="Đóng">×</i>'; document.body.appendChild(b);
+    b.querySelector('button').onclick = () => location.reload(); b.querySelector('i').onclick = () => b.remove(); };
+  setTimeout(chk, 4000); setInterval(chk, 5 * 60 * 1000);
+})();
 /* ===== Trò chơi luyện từ: link Blooket, Kahoot, Quizlet, Gimkit, Wordwall... do thầy cô gắn ===== */
 const GAME_PLAT = [[/blooket\./i, 'Blooket'], [/kahoot\./i, 'Kahoot'], [/quizlet\./i, 'Quizlet'], [/gimkit\./i, 'Gimkit'], [/wordwall\./i, 'Wordwall'], [/quizizz\./i, 'Quizizz'], [/baamboozle\./i, 'Baamboozle'], [/youtube\.|youtu\.be/i, 'YouTube']];
 const gamePlat = u => (GAME_PLAT.find(([r]) => r.test(u)) || [0, 'Liên kết'])[1];

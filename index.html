@@ -12466,6 +12466,18 @@ document.addEventListener('click', e => {
 .bar .nav .navb[data-go=picex],.bar .menu .mi[data-go=picex]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='2'/%3E%3Ccircle cx='9' cy='10' r='1.8'/%3E%3Cpath d='M21 16l-5-5-8 9'/%3E%3C/svg%3E")}
 .bar .nav .navb[data-go=exam],.bar .menu .mi[data-go=exam]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h6l1 2h3v16H5V5h3z'/%3E%3Cpath d='M9 13l2 2 4-4'/%3E%3C/svg%3E")}
 .bar .menu .mi[data-go=docs],.bar .nav .navb[data-go=docs]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E")}
+/* toast v5: gọn, nổi ở trên cùng */
+.toasts{position:fixed!important;top:calc(12px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:50%!important;right:auto!important;translate:-50% 0!important;transform:none!important;width:min(92vw,400px)!important;gap:8px!important;align-items:stretch;z-index:9999!important;pointer-events:none}
+.toast{pointer-events:auto;grid-template-columns:30px 1fr 22px!important;align-items:center!important;gap:10px!important;padding:10px 10px 12px 10px!important;border:1px solid rgba(20,38,63,.08)!important;border-radius:16px!important;background:rgba(255,255,255,.96)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 12px 32px -10px rgba(20,38,63,.35),0 2px 6px rgba(20,38,63,.08)!important;font-size:.88rem!important;font-weight:600!important;line-height:1.35!important;color:#1d2433!important;animation:tdrop .35s cubic-bezier(.2,.9,.3,1.15)!important}
+.toast::before{display:none!important}
+.toast .t-ic{width:30px!important;height:30px!important;background:var(--tc)!important;color:#fff!important;box-shadow:0 4px 10px -3px var(--tc)}
+.toast .t-ic svg{width:17px!important;height:17px!important}
+.toast .t-tx{padding:0!important}
+.toast.bad,.toast.warn,.toast.ok{color:#1d2433!important}
+.toast .t-bar{height:3px!important;opacity:.35!important;border-radius:0 3px 3px 0}
+.toast.pop{animation:tpop .3s!important}.toast.out{animation:tup .22s forwards!important}
+@keyframes tdrop{from{transform:translateY(-18px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes tup{to{transform:translateY(-14px);opacity:0}}
 </style>
 
 <script>

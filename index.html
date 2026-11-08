@@ -1468,6 +1468,7 @@ body:has(.rm-paper){background:#E4E7EB}
 .ie-c1 h1{color:#111;font-size:1.5rem}.ie-eye{font-size:0}.ie-eye::before{content:'';display:inline-block;width:18px;height:18px;background:#333;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l3 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat}
 .rm-lb{margin-top:14px}.rm-lb h4{margin:0 0 6px;font-size:.92rem;color:#0B5CA8}.rm-lb ol{list-style:none;margin:0;padding:0}.rm-lb li{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}.rm-lb li:nth-child(odd){background:#F4F9FF}.rm-lb li.me{outline:2px solid #F26522}.rm-lb .rk{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0B5CA8;color:#fff;font-size:.8rem;font-weight:700}.rm-lb li:nth-child(1) .rk{background:#E0A800}.rm-lb li:nth-child(2) .rk{background:#8E99A8}.rm-lb li:nth-child(3) .rk{background:#B5733A}.rm-lb small{color:#778}
 #upd-bn{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:300;display:flex;gap:12px;align-items:center;background:#14263F;color:#fff;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px -8px rgba(0,0,0,.5);font-size:.92rem;max-width:calc(100vw - 24px)}#upd-bn button{background:#F26522;color:#fff;border:0;border-radius:999px;padding:6px 14px;font:inherit;font-weight:600;cursor:pointer}#upd-bn i{cursor:pointer;opacity:.7;font-style:normal;font-size:1.2rem}
+main select,main input[type=text],main input[type=search]{max-width:100%}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -5796,7 +5797,7 @@ function mountMind(el, { lesson, words }) {
   const t = esc(lesson.title).slice(0, 34);
   el.innerHTML = `<p class="muted" style="margin-bottom:8px">Sơ đồ được tự tạo từ ${shown}/${words.length} từ của bài, nhóm theo loại từ và cụm từ. Bấm vào một từ để nghe phát âm.</p><div class="mind"><svg viewBox="0 0 960 760" role="img" aria-label="Sơ đồ kiến thức ${esc(lesson.title)}">${svg}<circle cx="${cx}" cy="${cy}" r="62" fill="#C8142D"/><foreignObject x="${cx - 56}" y="${cy - 40}" width="112" height="80"><div xmlns="http://www.w3.org/1999/xhtml" style="height:80px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font:700 13px/1.25 sans-serif">${t}</div></foreignObject>${leaves.join('')}</svg></div>`;
   el.querySelector('svg').onclick = e => { const n = e.target.closest('[data-sp]'); if (n) speak(n.dataset.sp); };
-  award(lesson.id, 5, { mind: true });
+  if (!((S.profile.progress || {})[lesson.id] || {}).mind) award(lesson.id, 5, { mind: true });
 }
 
 /* ----- (15) đánh giá mức độ hiểu bài ----- */

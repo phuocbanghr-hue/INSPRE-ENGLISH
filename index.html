@@ -1486,6 +1486,12 @@ main select,main input[type=text],main input[type=search]{max-width:100%}
 .ask-b{display:flex;gap:10px;justify-content:center}.ask-b .btn{min-width:120px}.ask-d{background:#D6304A!important}
 @keyframes askin{from{transform:translateY(14px) scale(.95);opacity:0}to{transform:none;opacity:1}}@keyframes fadein{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.toast,.ask,.ask-ov{animation:none!important}}
+@media(max-width:700px){
+body:has(.ovl:not([hidden])) .bar .nav,body:has(.ovl:not([hidden])) .bar .menu,body:has(.ovl:not([hidden])) .tools-fab,body:has(.dl-ov) .bar .nav{display:none!important}
+.ovl{height:100vh;height:100dvh;align-items:flex-end!important;padding:0!important;overflow:hidden}
+.ovl>.mdl,.ovl>.modal{width:100%!important;max-width:none!important;max-height:88vh;max-height:88dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+.ovl input,.ovl select,.ovl textarea{font-size:16px!important}
+}
 </style>
 <style>
 .cv-box{background:#fff;border:1px solid #ECECF0;border-radius:14px;padding:16px}
@@ -9069,6 +9075,7 @@ function openDocView(it) {
 }
 
 document.addEventListener('click', e => { const b = e.target.closest('[data-dlg]'); if (b) { S.dlGrade = b.dataset.dlg; S.dlMode = b.dataset.dlm; go('docs'); } });
+document.addEventListener('focusin', e => { const t = e.target; if (t && t.closest && t.closest('.ovl') && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { } }, 300); });
 /* ---------- Kho tài liệu (GV in / HS tham khảo) ---------- */
 let _docLib = null; const dlIsExam = t => /(^|[^a-z])(de|test|kiem tra|ktra|thi|exam|hsg|key|dap an|ôn thi|on thi|cuong|midterm|mid|final|revision)([^a-z]|$)|giua (ki|ky|hk)|cuoi (ki|ky|hk)|bo de|hk ?(i|1|2|ii)\b/.test(String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'));
 const dlSize = n => !n ? '' : n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';

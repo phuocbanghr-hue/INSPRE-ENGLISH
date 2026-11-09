@@ -1555,6 +1555,8 @@ body:has(.ovl:not([hidden])) .bar .nav,body:has(.ovl:not([hidden])) .bar .menu,b
 @keyframes inHalo{50%{transform:scale(1.08);opacity:.8}}
 @keyframes inBk{from{transform:translate(0,0) scale(1)}to{transform:translate(var(--dx),-40px) scale(1.25)}}
 @keyframes inRip{from{transform:scale(.55);opacity:1}to{transform:scale(1.25);opacity:0}}
+#intro .cd.w{height:calc(var(--h)*.62)}
+@media (max-aspect-ratio:1/1){#intro{--h:clamp(150px,52vw,300px)}#intro .pw{top:-9vh}#intro .tt b{font-size:clamp(1.7rem,8.4vw,2.6rem)}#intro .tt{bottom:10%}#intro .fr{top:calc(50% + var(--h)*.5 - 9vh)}#intro .hl{top:40%}}
 #intro.bye{animation:inOut .45s forwards}
 @keyframes inFade{from{opacity:0}to{opacity:1}}
 @keyframes inOut{to{opacity:0;visibility:hidden;transform:scale(1.1)}}
@@ -1579,7 +1581,7 @@ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
 var B=['8nam','cung-inspire','khoi-dau','hoi-chieu','tuyen-sinh-10','on-thi-10'],d=document.createElement('div');d.id='intro';
 var T='Inspire English'.split('').map(function(c,k){return '<i style="--k:'+k+'">'+(c===' '?'&nbsp;':c)+'</i>'}).join('');
 var bk='';[[8,18,70,5],[78,12,110,7],[20,70,90,6],[88,64,60,8],[50,86,130,9],[62,30,50,5]].forEach(function(b,i){bk+='<div class="bk" style="left:'+b[0]+'%;top:'+b[1]+'%;width:'+b[2]+'px;height:'+b[2]+'px;--d:'+b[3]+'s;--dx:'+(i%2?-30:30)+'px"></div>'});
-d.innerHTML='<div class="hl"></div><div class="rays"></div>'+bk+'<div class="fr"></div><canvas class="pc"></canvas><div class="pl"><div class="pw"><div class="st">'+B.map(function(n,i){return '<div class="cd" style="--i:'+i+'"><img src="img/banners/'+n+'.jpg" alt=""></div>'}).join('')+'</div></div></div><img class="lg" src="img/icon-192.png" alt=""><div class="tt"><b>'+T+'</b><span>Together, We Grow!</span><em class="yr" style="font-style:normal">8 NĂM ĐỒNG HÀNH · 2018 – 2026</em></div><div class="pb"><i></i></div><div class="vg"></div><div class="fl"></div><button class="sk" type="button">Bỏ qua ›</button>';
+d.innerHTML='<div class="hl"></div><div class="rays"></div>'+bk+'<div class="fr"></div><canvas class="pc"></canvas><div class="pl"><div class="pw"><div class="st">'+B.map(function(n,i){return '<div class="cd'+(i?'':' w')+'" style="--i:'+i+'"><img src="img/banners/'+n+'.jpg" alt=""></div>'}).join('')+'</div></div></div><img class="lg" src="img/icon-192.png" alt=""><div class="tt"><b>'+T+'</b><span>Together, We Grow!</span><em class="yr" style="font-style:normal">8 NĂM ĐỒNG HÀNH · 2018 – 2026</em></div><div class="pb"><i></i></div><div class="vg"></div><div class="fl"></div><button class="sk" type="button">Bỏ qua ›</button>';
 document.body.appendChild(d);var raf,done=function(){cancelAnimationFrame(raf);removeEventListener('pointermove',mv);if(d.parentNode)d.remove()},bye=function(){d.classList.add('bye');setTimeout(done,500)};
 d.querySelector('.sk').onclick=bye;setTimeout(done,6300);
 function mv(e){d.style.setProperty('--px',(e.clientX/innerWidth-.5)*2);d.style.setProperty('--py',(e.clientY/innerHeight-.5)*2)}addEventListener('pointermove',mv);

@@ -9084,7 +9084,7 @@ function setTab(k) { S.tab = k; if (k) store.set('last_' + S.user.uid, JSON.stri
 function drawLessonBody() {
   if (S.view !== 'lesson' || !S.wordsLoaded) return;
   if (S.lesson && S.lesson.docsOnly && S.tab !== 'docs') S.tab = 'docs';
-  if (S.lesson && S.lesson.lisOnly && S.tab !== 'exlis') S.tab = 'exlis';
+  if (S.lesson && S.lesson.lisOnly && S.tab !== (S.lesson.rdOnly ? 'exrea' : 'exlis')) S.tab = S.lesson.rdOnly ? 'exrea' : 'exlis';
   drawLessonHead();
   const body = $('#lbody'), l = S.lesson, p = prog(l.id), hasW = S.words.length > 0, mats = (l.materials || []).length, imgW = S.words.filter(w => w.img).length, nEx = (l.exs || []).length;
   if (!S.tab) {
@@ -9901,8 +9901,19 @@ function setCatalog(docs) {
   out.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
   COURSES.length = 0; COURSES.push(...out);
 }
+let RDX = [];
+const RD_TOP = { gs9: 'Tiếng Anh 9 · Global Success · Đọc hiểu chuyên', gs8: 'Tiếng Anh 8 · Global Success 8 · Đọc hiểu chuyên' };
+(async () => { try {
+  const r = await fetch('docs/reading/chuyen.json'); if (!r.ok) return; const P = await r.json(), per = 10, out = [];
+  ['gs9', 'gs8'].forEach((cid, ci) => { for (let i = 0; i * per < P.length; i++) {
+    const part = P.slice(i * per, i * per + per), psg = {}, exs = [];
+    part.forEach(x => { const pk = 'p' + x.n; psg[pk] = { text: x.ins + '\n\n' + x.text, title: 'Passage ' + x.n }; x.qs.forEach(q => exs.push({ k: 'rea', q: q.q, o: q.o, a: q.a, p: pk })); });
+    out.push({ id: 'rd_' + cid + '_' + (i + 1), order: 9300 + ci * 100 + i, icon: '', topic: RD_TOP[cid], title: 'Đọc hiểu chuyên số ' + (i + 1), description: `Passage ${part[0].n}–${part[part.length - 1].n} · ${exs.length} câu (đáp án do AI giải, thầy cô sẽ rà lại)`, published: true, materials: [], words: [], wordCount: 0, rdOnly: true, lisOnly: true, noAudio: true, psg, exs });
+  } });
+  RDX = out; if (S.allLessons) { recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }
+} catch (e) { } })();
 function recalcLessons() {
-  S.allLessons = [...(S.rawLessons || []).filter(l => l.published !== false), ...GS9L, ...GS6L, ...GS6LIS, ...GS9PT, ...GS7U, ...GS8L, ...GS9P, ...UL7P, ...UL7L, ...UL7H, ...UL7W, ...G7LIS, ...G8TEST, ...G7KT].filter(courseOf).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  S.allLessons = [...(S.rawLessons || []).filter(l => l.published !== false), ...GS9L, ...GS6L, ...GS6LIS, ...GS9PT, ...GS7U, ...GS8L, ...GS9P, ...UL7P, ...UL7L, ...UL7H, ...UL7W, ...G7LIS, ...G8TEST, ...G7KT, ...RDX].filter(courseOf).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   applyLessons();
 }
 function redrawCat() {

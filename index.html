@@ -6373,6 +6373,214 @@ function beat(sy, onStep) {
 }
 const sylHTML = (sy, on = -1, bars = null) => `<div class="syls">${sy.map((s, i) => `<span class="sylw ${s.gap ? 'gap' : ''}"><span class="syl s${s.st} ${i === on ? 'on' : ''}" data-i="${i}">${esc(s.ipa)}</span>${bars ? `<span class="sbar"><i style="height:${Math.round(bars[i] * 100)}%"></i></span>` : ''}</span>`).join('')}</div>`;
 
+/* ===== Học tư duy: 4 bước từ vựng · viết câu · đọc rút gọn · làm rõ đề & phát triển ý ===== */
+const THK = {
+  coll: [
+    { q: '___ homework', o: ['do', 'make', 'take'], a: 0, tip: 'do homework' },
+    { q: '___ a mistake', o: ['do', 'make', 'have'], a: 1, tip: 'make a mistake' },
+    { q: '___ a photo', o: ['make', 'do', 'take'], a: 2, tip: 'take a photo' },
+    { q: '___ friends with someone', o: ['make', 'do', 'get'], a: 0, tip: 'make friends with' },
+    { q: '___ breakfast', o: ['have', 'make up', 'do'], a: 0, tip: 'have breakfast' },
+    { q: 'She enjoys ___ music.', o: ['listen to', 'listening to', 'to listen to'], a: 1, tip: 'enjoy + V-ing' },
+    { q: 'He wants ___ a doctor.', o: ['be', 'being', 'to be'], a: 2, tip: 'want + to V' },
+    { q: 'She is good ___ English.', o: ['at', 'in', 'on'], a: 0, tip: 'good at' },
+    { q: 'I am interested ___ science.', o: ['on', 'in', 'at'], a: 1, tip: 'interested in' },
+    { q: 'It depends ___ the weather.', o: ['on', 'in', 'of'], a: 0, tip: 'depend on' },
+    { q: 'Look ___ this word in a dictionary.', o: ['for', 'up', 'after'], a: 1, tip: 'look up = tra cứu' },
+    { q: 'She takes care ___ her little brother.', o: ['of', 'for to', 'at'], a: 0, tip: 'take care of' },
+    { q: 'Please pay attention ___ the teacher.', o: ['for', 'to', 'at'], a: 1, tip: 'pay attention to' },
+    { q: 'There was ___ rain last night.', o: ['strong', 'heavy', 'big'], a: 1, tip: 'heavy rain' },
+    { q: 'I think I am going to ___ a cold.', o: ['take', 'catch', 'do'], a: 1, tip: 'catch a cold' },
+    { q: 'My grandma likes to ___ stories.', o: ['tell', 'say', 'speak'], a: 0, tip: 'tell a story' },
+    { q: 'They go to school ___ foot.', o: ['by', 'on', 'with'], a: 1, tip: 'on foot' },
+    { q: 'Can I ask you ___ help?', o: ['to', 'for', 'about'], a: 1, tip: 'ask for help' },
+    { q: 'He spends two hours ___ homework every day.', o: ['do', 'to do', 'doing'], a: 2, tip: 'spend time + V-ing' },
+    { q: 'You should ___ your teeth twice a day.', o: ['wash', 'brush', 'clean up'], a: 1, tip: 'brush your teeth' }
+  ],
+  wtype: [
+    { q: 'The **dog** runs fast.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Trạng từ'], a: 0, tip: 'dog: người/vật → danh từ (noun)' },
+    { q: 'She **reads** a book every night.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Giới từ'], a: 1, tip: 'reads: hành động → động từ (verb)' },
+    { q: 'It is a **beautiful** garden.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Trạng từ'], a: 2, tip: 'beautiful miêu tả garden → tính từ (adj)' },
+    { q: 'He speaks **slowly**.', o: ['Tính từ', 'Trạng từ', 'Danh từ', 'Giới từ'], a: 1, tip: 'slowly bổ nghĩa động từ speaks → trạng từ (adv)' },
+    { q: 'The cat is **under** the table.', o: ['Trạng từ', 'Động từ', 'Giới từ', 'Tính từ'], a: 2, tip: 'under chỉ vị trí → giới từ (prep)' },
+    { q: 'My **brother** plays football.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Giới từ'], a: 0, tip: 'brother: người → danh từ' },
+    { q: 'They **are** students.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Trạng từ'], a: 1, tip: 'are là động từ to be' },
+    { q: 'We have a **big** house.', o: ['Tính từ', 'Danh từ', 'Trạng từ', 'Động từ'], a: 0, tip: 'big miêu tả house → tính từ' },
+    { q: 'She **quickly** finished her homework.', o: ['Tính từ', 'Giới từ', 'Trạng từ', 'Danh từ'], a: 2, tip: 'quickly bổ nghĩa finished → trạng từ' },
+    { q: 'I go to school **by** bus.', o: ['Giới từ', 'Động từ', 'Danh từ', 'Trạng từ'], a: 0, tip: 'by + phương tiện → giới từ' },
+    { q: '**Health** is important.', o: ['Động từ', 'Tính từ', 'Danh từ', 'Giới từ'], a: 2, tip: 'Health làm chủ ngữ → danh từ' },
+    { q: 'Tom is very **tall**.', o: ['Tính từ', 'Trạng từ', 'Danh từ', 'Động từ'], a: 0, tip: 'tall đứng sau to be → tính từ' }
+  ],
+  conn: [
+    { q: 'I was tired, ___ I went to bed early.', o: ['so', 'but', 'because'], a: 0, tip: 'so = vì vậy (chỉ kết quả)' },
+    { q: 'I like tea, ___ my brother likes coffee.', o: ['so', 'but', 'because'], a: 1, tip: 'but = nhưng (đối lập)' },
+    { q: 'She stayed at home ___ it was raining.', o: ['because', 'but', 'or'], a: 0, tip: 'because = bởi vì (chỉ lý do)' },
+    { q: 'He studied hard, ___ he passed the exam.', o: ['because', 'so', 'or'], a: 1, tip: 'so → kết quả' },
+    { q: 'You can walk ___ take the bus.', o: ['and', 'but', 'or'], a: 2, tip: 'or = hoặc (lựa chọn)' },
+    { q: '___ it was cold, we went swimming.', o: ['Although', 'Because', 'So'], a: 0, tip: 'Although = mặc dù' }
+  ],
+  order: [
+    { w: ['I', 'like', 'playing', 'chess'], t: 'I like playing chess.' },
+    { w: ['She', 'goes', 'to', 'school', 'by', 'bike'], t: 'She goes to school by bike.' },
+    { w: ['My', 'father', 'works', 'in', 'a', 'hospital'], t: 'My father works in a hospital.' },
+    { w: ['They', 'are', 'watching', 'TV', 'now'], t: 'They are watching TV now.' },
+    { w: ['We', "don't", 'have', 'any', 'homework'], t: "We don't have any homework." },
+    { w: ['She', 'has', 'never', 'been', 'to', 'Hanoi'], t: 'She has never been to Hanoi.' },
+    { w: ['There', 'are', 'three', 'books', 'on', 'the', 'desk'], t: 'There are three books on the desk.' },
+    { w: ['Would', 'you', 'like', 'some', 'tea'], t: 'Would you like some tea?' }
+  ],
+  para: [
+    ['My best friend is Lan.', 'She is kind and helpful.', 'For example, she often shares her notes with me.', 'That is why I like her very much.'],
+    ['Reading is a good habit.', 'It helps us learn new words.', 'For example, I learned many words from stories.', 'So I read for thirty minutes every day.'],
+    ['I want to protect the environment.', 'First, I turn off the lights when I leave a room.', 'Second, I use paper bags instead of plastic bags.', 'In short, small actions can make a big difference.']
+  ],
+  simp: [
+    [['The tall boy', 1], ['who lives next door', 0], ['plays', 1], ['football', 1], ['every afternoon', 0], ['in the park.', 0]],
+    [['My sister,', 1], ['who is a nurse,', 0], ['works', 1], ['at a big hospital', 0], ['in Hue.', 0]],
+    [['Many students', 1], ['in our school', 0], ['enjoy', 1], ['learning English', 1], ['because it is useful.', 0]],
+    [['The book', 1], ['that I bought yesterday', 0], ['is', 1], ['very interesting.', 1]],
+    [['Although it was raining,', 0], ['we', 1], ['went', 1], ['to the park.', 1]],
+    [['Reducing plastic waste', 1], ['is', 1], ['important', 1], ['for our planet', 0], ['and future generations.', 0]],
+    [['The man', 1], ['standing at the door', 0], ['is', 1], ['my uncle.', 1]],
+    [['Students', 1], ['who study regularly', 0], ['usually', 0], ['get', 1], ['better marks.', 1]]
+  ],
+  conx: [
+    { q: 'Lan lost her key. She looked for it everywhere. — “it” là gì?', o: ['her key', 'Lan', 'everywhere'], a: 0, tip: '“it” thay cho danh từ số ít chỉ vật vừa nhắc: her key.' },
+    { q: 'Tom likes football. However, his sister prefers tennis. — “However” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 0, tip: 'However = nhưng/tuy nhiên → đối lập.' },
+    { q: 'Many rivers are polluted. As a result, fish are dying. — “As a result” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 1, tip: 'As a result = kết quả là → nguyên nhân → kết quả.' },
+    { q: 'Sports are good for health. For instance, swimming strengthens the body. — “For instance” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 2, tip: 'For instance = ví dụ.' },
+    { q: 'Minh and Hoa are friends. They study together. — “They” là ai?', o: ['Minh', 'Minh và Hoa', 'Hoa'], a: 1, tip: '“They” thay cho 2 người trở lên.' }
+  ],
+  wr: [
+    { g: 'Is social media good or bad for teenagers?', o: ['Does using social media for two hours a day help or harm a student’s study?', 'Is social media good?', 'What is social media?'], a: 0,
+      m: 'I think using social media for two hours a day harms a student’s study. First, students spend less time on homework because they keep checking messages. For example, my cousin often stays up late chatting, so he feels sleepy in class. So students should limit their time online.' },
+    { g: 'Should students wear uniforms?', o: ['Do school uniforms help students feel equal and save time every morning?', 'Are uniforms nice?', 'What is a uniform?'], a: 0,
+      m: 'I think uniforms are useful. They make all students feel equal, so nobody worries about expensive clothes. They also save time because I do not need to choose what to wear. For example, I can get ready in ten minutes every morning.' },
+    { g: 'Describe your favourite place.', o: ['Where do I feel happiest in my town, and what do I do there?', 'Which place is nice?', 'Where is my town?'], a: 0,
+      m: 'My favourite place is the library near my house. I feel calm there because it is quiet. For example, I can finish my homework and read comics for an hour. That is why I go there every weekend.' },
+    { g: 'Is it important to learn English?', o: ['How does English help students at school and in their future jobs?', 'Is English hard?', 'Why do people speak English?'], a: 0,
+      m: 'English is important for students. At school, it helps us understand lessons and read books on the Internet. In the future, it helps us find better jobs because many companies work with foreign partners. For example, my uncle got a good job because he speaks English well.' },
+    { g: 'Do you prefer studying alone or in a group?', o: ['Do I remember lessons better when I study alone or with friends?', 'Is studying good?', 'Who studies in a group?'], a: 0,
+      m: 'I prefer studying in a group. When I do not understand something, my friends explain it to me, so I learn faster. For example, last week Hoa taught me a hard maths problem in five minutes.' },
+    { g: 'How can we protect the environment?', o: ['What can students do at school and at home every day to reduce rubbish?', 'Is the environment important?', 'What is pollution?'], a: 0,
+      m: 'Students can reduce rubbish in simple ways. At school, they can bring a water bottle instead of buying plastic bottles. At home, they can sort rubbish for recycling. For example, my class collects old paper every month, so we save many trees.' }
+  ]
+};
+const thFmt = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+function thQuiz(el, items, onDone) {
+  let i = 0, ok = 0; const list = shuffle(items).slice(0, 10);
+  const draw = () => {
+    if (i >= list.length) { el.innerHTML = `<div class="th-res"><b>${ok}/${list.length}</b><p>${ok === list.length ? 'Tuyệt vời! Em nắm chắc phần này.' : ok >= list.length * .7 ? 'Khá tốt! Xem lại các câu sai nhé.' : 'Cố lên! Làm lại để nhớ lâu hơn.'}</p><button class="btn" data-again>Làm lại</button></div>`; el.querySelector('[data-again]').onclick = () => { i = 0; ok = 0; shuffle(list); draw(); }; onDone && onDone(ok, list.length); return; }
+    const q = list[i], idx = shuffle(q.o.map((_, k) => k));
+    el.innerHTML = `<div class="th-pg"><i style="width:${i / list.length * 100}%"></i></div><small class="muted">Câu ${i + 1}/${list.length}</small><p class="th-q">${thFmt(q.q)}</p><div class="th-opts">${idx.map(k => `<button class="th-o" data-k="${k}">${esc(q.o[k])}</button>`).join('')}</div><div class="th-fb" hidden></div>`;
+    el.onclick = e => { const b = e.target.closest('.th-o'); if (!b || el.querySelector('.th-o[disabled]')) return; const good = +b.dataset.k === q.a; if (good) ok++;
+      el.querySelectorAll('.th-o').forEach(x => { x.disabled = true; if (+x.dataset.k === q.a) x.classList.add('ok'); }); if (!good) b.classList.add('bad');
+      const fb = el.querySelector('.th-fb'); fb.hidden = false; fb.innerHTML = `<b>${good ? 'Đúng rồi!' : 'Chưa đúng.'}</b> ${thFmt(q.tip || '')}<br><button class="btn sm" data-next>${i + 1 >= list.length ? 'Xem kết quả' : 'Câu tiếp'}</button>`;
+      fb.querySelector('[data-next]').onclick = () => { i++; draw(); }; };
+  }; draw();
+}
+function thOrder(el, items, joiner) {
+  let i = 0; const list = shuffle(items);
+  const draw = () => {
+    if (i >= list.length) { el.innerHTML = `<div class="th-res"><b>Hoàn thành!</b><p>Em đã sắp xong ${list.length} bài.</p><button class="btn" data-again>Làm lại</button></div>`; el.querySelector('[data-again]').onclick = () => { i = 0; shuffle(list); draw(); }; return; }
+    const it = list[i], ans = it.w, pool = shuffle(ans.map((t, k) => ({ t, k }))); let pick = [];
+    el.innerHTML = `<small class="muted">Bài ${i + 1}/${list.length} · Bấm lần lượt để xếp đúng thứ tự</small><div class="th-slot" id="ts"></div><div class="th-bank" id="tb"></div><div class="th-fb" hidden></div><div class="row" style="gap:8px;margin-top:10px"><button class="btn sm soft" data-undo>↶ Gỡ</button><button class="btn sm" data-chk>Kiểm tra</button></div>`;
+    const sync = () => { $('#ts', el).innerHTML = pick.map(p => `<span class="th-t">${esc(p.t)}</span>`).join('') || '<span class="muted">…</span>'; $('#tb', el).innerHTML = pool.map(p => `<button class="th-t b" data-k="${p.k}" ${pick.includes(p) ? 'disabled' : ''}>${esc(p.t)}</button>`).join(''); };
+    sync();
+    el.onclick = e => { const b = e.target.closest('.th-t.b'); if (b) { const p = pool.find(x => x.k === +b.dataset.k); if (!pick.includes(p)) pick.push(p); sync(); return; }
+      if (e.target.closest('[data-undo]')) { pick.pop(); sync(); return; }
+      if (e.target.closest('[data-chk]')) { const fb = $('.th-fb', el); fb.hidden = false; const good = pick.length === ans.length && pick.every((p, n) => p.k === n);
+        fb.innerHTML = good ? `<b>Đúng rồi!</b> ${esc(it.t || ans.join(joiner || ' '))}<br><button class="btn sm" data-n>Bài tiếp</button>` : `<b>Chưa đúng.</b> Gợi ý: chủ ngữ → động từ → phần còn lại. <button class="btn sm soft" data-show>Xem đáp án</button>`;
+        const n = fb.querySelector('[data-n]'); if (n) n.onclick = () => { i++; draw(); };
+        const sh = fb.querySelector('[data-show]'); if (sh) sh.onclick = () => { fb.innerHTML = `<b>Đáp án:</b> ${esc(it.t || ans.join(joiner || ' '))}<br><button class="btn sm" data-n>Bài tiếp</button>`; fb.querySelector('[data-n]').onclick = () => { i++; draw(); }; }; } };
+  }; draw();
+}
+function thSimplify(el) {
+  let i = 0; const list = shuffle(THK.simp);
+  const draw = () => {
+    if (i >= list.length) { el.innerHTML = `<div class="th-res"><b>Hoàn thành!</b><p>Em đã rút gọn ${list.length} câu.</p><button class="btn" data-again>Làm lại</button></div>`; el.querySelector('[data-again]').onclick = () => { i = 0; shuffle(list); draw(); }; return; }
+    const ch = list[i], sel = new Set();
+    el.innerHTML = `<small class="muted">Câu ${i + 1}/${list.length} · Bấm vào các cụm <b>chính</b> (ai – làm gì – cái gì). Bỏ qua cụm phụ.</small><div class="th-sent">${ch.map((c, k) => `<button class="th-ch" data-k="${k}">${esc(c[0])}</button>`).join(' ')}</div><div class="th-fb" hidden></div><div class="row" style="gap:8px;margin-top:10px"><button class="btn sm" data-chk>Kiểm tra</button></div>`;
+    el.onclick = e => { const b = e.target.closest('.th-ch'); if (b && !b.disabled) { const k = +b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); return; }
+      if (e.target.closest('[data-chk]')) { let good = 0; ch.forEach((c, k) => { const b = el.querySelector(`.th-ch[data-k="${k}"]`); b.disabled = true; const right = !!c[1] === sel.has(k); if (right) good++; b.classList.remove('on'); b.classList.add(c[1] ? 'core' : 'side'); if (!right) b.classList.add('miss'); });
+        const fb = $('.th-fb', el); fb.hidden = false; fb.innerHTML = `<b>${good === ch.length ? 'Chính xác!' : 'Gần đúng — xem phần tô màu.'}</b><br>Câu gọn: <i>${esc(ch.filter(c => c[1]).map(c => c[0]).join(' ').replace(/,\s*/g, ' ').replace(/\.?$/, '.'))}</i><br><small class="muted">Xanh = cụm chính · Xám = cụm phụ có thể bỏ · Viền đỏ = em chọn chưa đúng</small><br><button class="btn sm" data-n>Câu tiếp</button>`;
+        fb.querySelector('[data-n]').onclick = () => { i++; draw(); }; } };
+  }; draw();
+}
+function thWrite(el) {
+  let i = 0, step = 1; const key = 'th_wr_';
+  const draw = () => {
+    const p = THK.wr[i], opts = shuffle(p.o.map((t, k) => ({ t, k })));
+    el.innerHTML = `<div class="th-wrh"><label>Đề bài <select id="th-wp">${THK.wr.map((x, k) => `<option value="${k}" ${k === i ? 'selected' : ''}>${esc(x.g)}</option>`).join('')}</select></label></div>
+    <div class="th-stp"><b class="${step === 1 ? 'on' : ''}">1 · Làm rõ đề</b><b class="${step === 2 ? 'on' : ''}">2 · Phát triển ý</b></div>
+    <div id="th-w1" ${step === 1 ? '' : 'hidden'}><p class="th-q">Đề này còn chung chung. Câu hỏi nào cụ thể, dễ nghĩ ý nhất?</p><div class="th-opts">${opts.map(o => `<button class="th-o" data-k="${o.k}">${esc(o.t)}</button>`).join('')}</div><div class="th-fb" hidden></div></div>
+    <div id="th-w2" ${step === 2 ? '' : 'hidden'}><p class="muted">Viết 3 phần, mỗi phần 1–2 câu (có thể viết tiếng Việt trước rồi chuyển sang tiếng Anh).</p>
+      <label class="th-f">① Ý chính của em<textarea class="note" rows="2" data-f="a" placeholder="I think … / My favourite … is …"></textarea></label>
+      <label class="th-f">② Vì sao? (nguyên nhân – kết quả)<textarea class="note" rows="2" data-f="b" placeholder="because … / so … / As a result, …"></textarea></label>
+      <label class="th-f">③ Ví dụ cụ thể<textarea class="note" rows="2" data-f="c" placeholder="For example, … / For instance, …"></textarea></label>
+      <div class="th-chips"><span>Nguyên nhân–kết quả: because · so · as a result</span><span>Giải thích: this means · in other words</span><span>Ví dụ: for example · for instance</span></div>
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn sm" data-model>Xem bài mẫu</button><button class="btn sm soft" data-back>← Đổi đề</button></div><div class="th-model" hidden></div></div>`;
+    $('#th-wp', el).onchange = e => { i = +e.target.value; step = 1; draw(); };
+    el.querySelectorAll('[data-f]').forEach(t => { t.value = store.get(key + i + t.dataset.f) || ''; t.oninput = () => store.set(key + i + t.dataset.f, t.value); });
+    el.onclick = e => { const b = e.target.closest('.th-o');
+      if (b && !el.querySelector('.th-o[disabled]')) { const good = +b.dataset.k === p.a; el.querySelectorAll('.th-o').forEach(x => { x.disabled = true; if (+x.dataset.k === p.a) x.classList.add('ok'); }); if (!good) b.classList.add('bad');
+        const fb = $('#th-w1 .th-fb', el); fb.hidden = false; fb.innerHTML = `<b>${good ? 'Đúng rồi!' : 'Chưa đúng.'}</b> Câu cụ thể có <u>ai – làm gì – ở đâu/khi nào</u>, nên em nghĩ ra ví dụ dễ hơn.<br><button class="btn sm" data-go2>Sang bước 2 →</button>`; fb.querySelector('[data-go2]').onclick = () => { step = 2; draw(); }; return; }
+      if (e.target.closest('[data-model]')) { const m = $('.th-model', el); m.hidden = !m.hidden; m.innerHTML = `<b>Bài mẫu</b><p>${esc(p.m)}</p>`; }
+      if (e.target.closest('[data-back]')) { step = 1; draw(); } };
+  }; draw();
+}
+function viewThink() {
+  const tabs = [['vocab', 'Từ vựng 3 cấp'], ['gram', 'Viết câu đúng'], ['read', 'Đọc rút gọn'], ['write', 'Làm rõ đề & ý']];
+  S.thTab = S.thTab || 'vocab';
+  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Học tư duy</h2><p class="muted">4 bước học có hệ thống: biết từ → dùng đúng trong câu → đọc nhanh bằng cách rút gọn → làm rõ đề rồi phát triển ý.</p>
+  <div class="rank-tabs th-tabs" style="margin-top:14px">${tabs.map(t => `<button class="btn sm ${S.thTab === t[0] ? '' : 'soft'}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div><section class="card th-box" id="th-b" style="margin:12px 0 50px"></section>`;
+  main.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.thTab = b.dataset.t; viewThink(); });
+  const box = $('#th-b'), sub = (items, cur, fn) => { box.innerHTML = `<div class="th-sub">${items.map(x => `<button class="btn sm ${cur === x[0] ? '' : 'soft'}" data-s="${x[0]}">${x[1]}</button>`).join('')}</div><div id="th-in"></div>`; box.querySelectorAll('[data-s]').forEach(b => b.onclick = () => fn(b.dataset.s)); return $('#th-in'); };
+  if (S.thTab === 'vocab') {
+    const ls = (S.lessons || []).filter(l => (l.words || []).filter(w => w.en && w.vi).length >= 4);
+    const lv = S.thLv || '1';
+    const inn = sub([['1', 'Cấp 1 · Nghĩa'], ['2', 'Cấp 2 · Cách dùng'], ['3', 'Cấp 3 · Hệ thống']], lv, v => { S.thLv = v; viewThink(); });
+    if (lv === '1') {
+      if (!ls.length) { inn.innerHTML = empty('Em ghi danh một khoá học có từ vựng để luyện cấp 1 nhé.'); return; }
+      const cur = ls.find(l => l.id === S.thLes) || ls[0]; S.thLes = cur.id;
+      inn.innerHTML = `<p class="muted">Cấp 1: nhớ <b>nghĩa</b> của từ.</p><select id="th-ls" class="note" style="max-width:420px">${ls.map(l => `<option value="${esc(l.id)}" ${l.id === cur.id ? 'selected' : ''}>${esc(l.title)}</option>`).join('')}</select><div id="th-q" style="margin-top:12px"></div>`;
+      $('#th-ls').onchange = e => { S.thLes = e.target.value; viewThink(); };
+      const ws = cur.words.filter(w => w.en && w.vi), all = ls.flatMap(l => l.words).filter(w => w.vi);
+      const items = ws.map(w => { const d = shuffle(all.filter(x => x.vi !== w.vi).map(x => x.vi)).slice(0, 3); const o = [w.vi, ...d]; return { q: `**${w.en}** nghĩa là gì?`, o, a: 0, tip: `${w.en} ${w.ipa || ''} = ${w.vi}` }; });
+      thQuiz($('#th-q'), items);
+    } else if (lv === '2') {
+      inn.innerHTML = `<p class="muted">Cấp 2: biết <b>dùng từ trong câu</b> — học theo cụm (collocation) và cấu trúc đi kèm.</p><div id="th-q"></div>`; thQuiz($('#th-q'), THK.coll);
+    } else {
+      const cand = ls.filter(l => l.words.length >= 4);
+      if (cand.length < 2) { inn.innerHTML = empty('Cần ít nhất 2 bài có từ vựng để luyện cấp 3.'); return; }
+      inn.innerHTML = `<p class="muted">Cấp 3: <b>sắp xếp từ vào đúng chủ đề</b> để nhớ theo hệ thống, không học rời rạc.</p><button class="btn sm" id="th-new">Bộ mới</button><div id="th-q" style="margin-top:12px"></div>`;
+      const mk = () => { const [A, B] = shuffle(cand).slice(0, 2), pick = (l, t) => shuffle(l.words.filter(w => w.en && w.vi)).slice(0, 4).map(w => ({ w, t }));
+        const cards = shuffle([...pick(A, 0), ...pick(B, 1)]); let ok = 0, done = 0; const q = $('#th-q');
+        q.innerHTML = `<div class="th-cats"><b>A · ${esc(A.title)}</b><b>B · ${esc(B.title)}</b></div>` + cards.map((c, k) => `<div class="th-srt" data-k="${k}"><span><b>${esc(c.w.en)}</b> <small class="muted">${esc(c.w.vi)}</small></span><span><button class="th-o" data-p="0">A</button><button class="th-o" data-p="1">B</button></span></div>`).join('') + '<div class="th-fb" id="th-r" hidden></div>';
+        q.onclick = e => { const b = e.target.closest('[data-p]'); if (!b || b.disabled) return; const row = b.closest('.th-srt'), c = cards[+row.dataset.k], good = +b.dataset.p === c.t; row.querySelectorAll('[data-p]').forEach(x => { x.disabled = true; if (+x.dataset.p === c.t) x.classList.add('ok'); }); if (!good) b.classList.add('bad'); else ok++; done++;
+          if (done === cards.length) { const r = $('#th-r'); r.hidden = false; r.innerHTML = `<b>${ok}/${cards.length} đúng.</b> ${ok === cards.length ? 'Em đã nắm hệ thống từ theo chủ đề!' : 'Xem lại các từ bị sai rồi bấm “Bộ mới”.'}`; } }; };
+      $('#th-new').onclick = mk; mk();
+    }
+  } else if (S.thTab === 'gram') {
+    const g = S.thG || 'map';
+    const inn = sub([['map', 'Bản đồ câu'], ['type', 'Nhận diện loại từ'], ['build', 'Xếp câu'], ['join', 'Nối câu'], ['para', 'Xếp đoạn']], g, v => { S.thG = v; viewThink(); });
+    if (g === 'map') inn.innerHTML = `<p class="muted">Mọi câu đều được ghép từ vài “viên gạch”. Nắm sơ đồ này là viết câu đúng.</p>
+      <div class="th-map"><div class="th-blk b1"><b>S</b><small>Chủ ngữ<br>(danh từ / đại từ)</small><em>My sister</em></div><span>+</span><div class="th-blk b2"><b>V</b><small>Động từ<br>(hành động / to be)</small><em>plays</em></div><span>+</span><div class="th-blk b3"><b>O / C</b><small>Tân ngữ / bổ ngữ</small><em>tennis</em></div><span>+</span><div class="th-blk b4"><b>Mở rộng</b><small>Trạng từ · giới từ</small><em>every day</em></div></div>
+      <div class="th-lv"><div><b>Cấp 1 · 1 câu</b><p>My sister plays tennis.</p></div><div><b>Cấp 2 · 2 câu liền nhau</b><p>My sister plays tennis, <u>so</u> she is healthy.</p></div><div><b>Cấp 3 · 1 đoạn</b><p>Ý chính → lý do → ví dụ → kết luận.</p></div></div>
+      <div class="th-wt"><span class="n">Danh từ: người, vật</span><span class="v">Động từ: hành động</span><span class="a">Tính từ: miêu tả danh từ</span><span class="d">Trạng từ: bổ nghĩa động từ</span><span class="p">Giới từ: vị trí, thời gian</span></div>`;
+    else if (g === 'type') { inn.innerHTML = '<div id="th-q"></div>'; thQuiz($('#th-q'), THK.wtype); }
+    else if (g === 'build') { inn.innerHTML = '<div id="th-q"></div>'; thOrder($('#th-q'), THK.order); }
+    else if (g === 'join') { inn.innerHTML = '<p class="muted">Cấp 2: chọn từ nối đúng giữa hai ý.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conn); }
+    else { inn.innerHTML = '<p class="muted">Cấp 3: xếp các câu thành đoạn: ý chính → lý do → ví dụ → kết luận.</p><div id="th-q"></div>'; thOrder($('#th-q'), THK.para.map(p => ({ w: p, t: p.join(' ') })), ' '); }
+  } else if (S.thTab === 'read') {
+    const g = S.thR || 'simp';
+    const inn = sub([['simp', 'Rút gọn câu'], ['conx', 'Đọc mối liên hệ']], g, v => { S.thR = v; viewThink(); });
+    if (g === 'simp') { inn.innerHTML = '<p class="muted">Câu dài thường chỉ có 1 “lõi” (ai – làm gì). Tìm lõi trước, phần còn lại chỉ bổ sung thông tin.</p><div id="th-q"></div>'; thSimplify($('#th-q')); }
+    else { inn.innerHTML = '<p class="muted">Các từ như <i>it, they, however, as a result, for instance</i> nối các câu lại. Hiểu chúng là hiểu cả đoạn.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conx); }
+  } else {
+    box.innerHTML = '<p class="muted">Viết/nói không bí ý: <b>bước 1</b> biến đề chung chung thành câu hỏi cụ thể; <b>bước 2</b> phát triển ý bằng nguyên nhân–kết quả, giải thích, ví dụ.</p><div id="th-in"></div>'; thWrite($('#th-in'));
+  }
+}
 function viewPron() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mode = 'word', lid = 'all', cur = null, meter = null;
@@ -7275,7 +7483,7 @@ function go(v) {
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
-  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, picall: viewPicAll, docs: viewDocLib, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
+  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, think: viewThink, picall: viewPicAll, docs: viewDocLib, courses: viewCourses, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames })[v]();
   scrollTo(0, 0);
 }
 /* ===== Phòng thi thử: đề trộn từ ngân hàng câu hỏi của lớp, mã đề, bấm giờ, bút highlight ===== */
@@ -7783,7 +7991,7 @@ function renderTop() {
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
   if (!S.user) { topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}</div></div><div class="wrap bar">${brandHTML(false)}</div>`; return; }
   const p = S.profile || {}, v = S.view;
-    const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['docs', 'Tài liệu &amp; đề thi', v === 'docs'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['games', 'Trò chơi', v === 'games'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['room', 'Phòng thi', v === 'room'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['review', 'Ôn tập', v === 'review']];
+    const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['docs', 'Tài liệu &amp; đề thi', v === 'docs'], ['think', 'Học tư duy', v === 'think'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['games', 'Trò chơi', v === 'games'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['room', 'Phòng thi', v === 'room'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['review', 'Ôn tập', v === 'review']];
   const NM = isMob() ? 4 : 6, MAIN = N.slice(0, NM), MORE = N.slice(NM), mon = MORE.some(x => x[2]);
   const nb = ([g, n, on], c = '') => `<button class="navb ${c} ${on ? 'on' : ''}" data-go="${g}">${n}</button>`;
   topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}
@@ -12478,6 +12686,31 @@ document.addEventListener('click', e => {
 .toast.pop{animation:tpop .3s!important}.toast.out{animation:tup .22s forwards!important}
 @keyframes tdrop{from{transform:translateY(-18px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 @keyframes tup{to{transform:translateY(-14px);opacity:0}}
+/* học tư duy */
+.th-tabs{flex-wrap:wrap}.th-sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.th-q{font-size:1.2rem;font-weight:700;margin:8px 0 12px;color:#1d2433;line-height:1.4}
+.th-opts{display:grid;gap:8px}
+.th-o{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:11px 14px;text-align:left;font:inherit;font-weight:600;cursor:pointer;color:#1d2433}
+.th-o:hover:not([disabled]){border-color:#0B5CA8;background:#F2F7FD}.th-o.ok{border-color:#1E9E57;background:#E9F8F0;color:#136B3B}.th-o.bad{border-color:#D6304A;background:#FDECEF;color:#8F1326}
+.th-fb{margin-top:12px;padding:12px 14px;border-radius:12px;background:#F4F6FA;line-height:1.5}.th-fb .btn{margin-top:8px}
+.th-pg{height:6px;border-radius:9px;background:#E9ECEF;overflow:hidden;margin-bottom:8px}.th-pg i{display:block;height:100%;background:#0B5CA8;transition:width .3s}
+.th-res{text-align:center;padding:24px 10px}.th-res b{font-size:2.4rem;display:block;color:#0B5CA8}
+.th-slot,.th-bank,.th-sent{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.th-slot{min-height:48px;padding:8px;border:2px dashed var(--line);border-radius:12px;align-items:center}
+.th-t{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-weight:600;color:#1d2433}.th-t.b{cursor:pointer}.th-t.b:disabled{opacity:.3}
+.th-ch{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;color:#1d2433}
+.th-ch.on{border-color:#0B5CA8;background:#E8F1FB}.th-ch.core{border-color:#1E9E57;background:#E9F8F0}.th-ch.side{border-color:#C9CFD8;background:#F1F3F6;color:#7a8394}.th-ch.miss{outline:2px solid #D6304A}
+.th-wrh select,#th-ls{max-width:100%}.th-stp{display:flex;gap:8px;margin:10px 0}.th-stp b{padding:5px 12px;border-radius:99px;background:#EEF1F6;color:#7a8394;font-size:.85rem}.th-stp b.on{background:#0B5CA8;color:#fff}
+.th-f{display:block;font-weight:700;margin-top:10px}.th-f textarea{margin-top:4px;width:100%}
+.th-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.th-chips span{font-size:.8rem;padding:4px 10px;border-radius:99px;background:#FFF4E0;color:#8a5a00}
+.th-model{margin-top:12px;padding:12px 14px;border-radius:12px;background:#E9F8F0;line-height:1.55}
+.th-map{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}.th-map>span{font-size:1.4rem;font-weight:800;color:#7a8394}
+.th-blk{border-radius:14px;padding:10px 14px;text-align:center;min-width:110px}.th-blk b{display:block;font-size:1.4rem}.th-blk small{display:block;color:#4a5568;line-height:1.3}.th-blk em{display:block;margin-top:4px;font-weight:700}
+.b1{background:#E8F1FB;color:#0B5CA8}.b2{background:#FDECEF;color:#B3212F}.b3{background:#E9F8F0;color:#136B3B}.b4{background:#FFF4E0;color:#8a5a00}
+.th-lv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}.th-lv>div{background:#F4F6FA;border-radius:12px;padding:12px}.th-lv p{margin-top:4px}
+.th-wt{display:flex;flex-wrap:wrap;gap:8px}.th-wt span{padding:6px 12px;border-radius:99px;font-weight:700;font-size:.85rem}
+.th-wt .n{background:#E8F1FB;color:#0B5CA8}.th-wt .v{background:#FDECEF;color:#B3212F}.th-wt .a{background:#E9F8F0;color:#136B3B}.th-wt .d{background:#FFF4E0;color:#8a5a00}.th-wt .p{background:#F1E9FB;color:#6a3aa8}
+.th-cats{display:grid;gap:4px;margin-bottom:10px}.th-srt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-s)}.th-srt .th-o{padding:6px 14px;text-align:center}
+.bar .nav .navb[data-go=think],.bar .menu .mi[data-go=think]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z'/%3E%3C/svg%3E")}
 </style>
 
 <script>

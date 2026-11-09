@@ -6426,7 +6426,17 @@ const THK = {
     { q: 'They go to school ___ foot.', o: ['by', 'on', 'with'], a: 1, tip: 'on foot' },
     { q: 'Can I ask you ___ help?', o: ['to', 'for', 'about'], a: 1, tip: 'ask for help' },
     { q: 'He spends two hours ___ homework every day.', o: ['do', 'to do', 'doing'], a: 2, tip: 'spend time + V-ing' },
-    { q: 'You should ___ your teeth twice a day.', o: ['wash', 'brush', 'clean up'], a: 1, tip: 'brush your teeth' }
+    { q: 'You should ___ your teeth twice a day.', o: ['wash', 'brush', 'clean up'], a: 1, tip: 'brush your teeth' },
+    { q: 'We need to ___ the rubbish before we leave.', o: ['take out', 'put out', 'make out'], a: 0, tip: 'take out the rubbish' },
+    { q: 'Please ___ a seat.', o: ['have', 'make', 'sit'], a: 0, tip: 'have a seat' },
+    { q: 'She is afraid ___ spiders.', o: ['of', 'at', 'for'], a: 0, tip: 'afraid of' },
+    { q: 'He is famous ___ his songs.', o: ['of', 'for', 'with'], a: 1, tip: 'famous for' },
+    { q: 'I look forward to ___ you soon.', o: ['see', 'seeing', 'saw'], a: 1, tip: 'look forward to + V-ing' },
+    { q: 'He decided ___ abroad.', o: ['study', 'studying', 'to study'], a: 2, tip: 'decide + to V' },
+    { q: 'Our class ___ a trip to Hoi An last month.', o: ['made', 'took', 'did'], a: 1, tip: 'take a trip' },
+    { q: 'You must ___ the rules.', o: ['follow', 'make', 'catch'], a: 0, tip: 'follow the rules' },
+    { q: 'He is tired ___ doing the same thing every day.', o: ['of', 'with', 'to'], a: 0, tip: 'tired of' },
+    { q: 'We should save ___ and water.', o: ['energy', 'energies', 'an energy'], a: 0, tip: 'energy là danh từ không đếm được' }
   ],
   wtype: [
     { q: 'The **dog** runs fast.', o: ['Danh từ', 'Động từ', 'Tính từ', 'Trạng từ'], a: 0, tip: 'dog: người/vật → danh từ (noun)' },
@@ -6440,7 +6450,12 @@ const THK = {
     { q: 'She **quickly** finished her homework.', o: ['Tính từ', 'Giới từ', 'Trạng từ', 'Danh từ'], a: 2, tip: 'quickly bổ nghĩa finished → trạng từ' },
     { q: 'I go to school **by** bus.', o: ['Giới từ', 'Động từ', 'Danh từ', 'Trạng từ'], a: 0, tip: 'by + phương tiện → giới từ' },
     { q: '**Health** is important.', o: ['Động từ', 'Tính từ', 'Danh từ', 'Giới từ'], a: 2, tip: 'Health làm chủ ngữ → danh từ' },
-    { q: 'Tom is very **tall**.', o: ['Tính từ', 'Trạng từ', 'Danh từ', 'Động từ'], a: 0, tip: 'tall đứng sau to be → tính từ' }
+    { q: 'Tom is very **tall**.', o: ['Tính từ', 'Trạng từ', 'Danh từ', 'Động từ'], a: 0, tip: 'tall đứng sau to be → tính từ' },
+    { q: 'He is **very** tall.', o: ['Trạng từ', 'Tính từ', 'Danh từ', 'Giới từ'], a: 0, tip: 'very bổ nghĩa cho tính từ tall → trạng từ' },
+    { q: 'We live **in** Da Nang.', o: ['Giới từ', 'Trạng từ', 'Động từ', 'Danh từ'], a: 0, tip: 'in + địa điểm → giới từ' },
+    { q: 'She sings **beautifully**.', o: ['Tính từ', 'Trạng từ', 'Danh từ', 'Động từ'], a: 1, tip: 'beautifully bổ nghĩa sings → trạng từ' },
+    { q: 'I have two **brothers**.', o: ['Danh từ', 'Động từ', 'Trạng từ', 'Giới từ'], a: 0, tip: 'brothers = danh từ số nhiều' },
+    { q: 'My mother is a **kind** woman.', o: ['Tính từ', 'Danh từ', 'Động từ', 'Trạng từ'], a: 0, tip: 'kind miêu tả woman → tính từ' }
   ],
   conn: [
     { q: 'I was tired, ___ I went to bed early.', o: ['so', 'but', 'because'], a: 0, tip: 'so = vì vậy (chỉ kết quả)' },
@@ -6448,7 +6463,13 @@ const THK = {
     { q: 'She stayed at home ___ it was raining.', o: ['because', 'but', 'or'], a: 0, tip: 'because = bởi vì (chỉ lý do)' },
     { q: 'He studied hard, ___ he passed the exam.', o: ['because', 'so', 'or'], a: 1, tip: 'so → kết quả' },
     { q: 'You can walk ___ take the bus.', o: ['and', 'but', 'or'], a: 2, tip: 'or = hoặc (lựa chọn)' },
-    { q: '___ it was cold, we went swimming.', o: ['Although', 'Because', 'So'], a: 0, tip: 'Although = mặc dù' }
+    { q: '___ it was cold, we went swimming.', o: ['Although', 'Because', 'So'], a: 0, tip: 'Although = mặc dù' },
+    { q: 'I want to buy that book, ___ I have no money.', o: ['so', 'but', 'because'], a: 1, tip: 'but → đối lập' },
+    { q: 'She was late ___ the bus was broken.', o: ['because', 'so', 'but'], a: 0, tip: 'because → lý do' },
+    { q: 'It was raining, ___ we stayed at home.', o: ['so', 'because', 'although'], a: 0, tip: 'so → kết quả' },
+    { q: 'Do you want tea ___ coffee?', o: ['and', 'or', 'so'], a: 1, tip: 'or → lựa chọn' },
+    { q: '___ he is young, he is very clever.', o: ['Although', 'Because', 'So'], a: 0, tip: 'Although = mặc dù' },
+    { q: 'He studies hard ___ he wants to pass the exam.', o: ['because', 'but', 'or'], a: 0, tip: 'because → lý do' }
   ],
   order: [
     { w: ['I', 'like', 'playing', 'chess'], t: 'I like playing chess.' },
@@ -6458,12 +6479,20 @@ const THK = {
     { w: ['We', "don't", 'have', 'any', 'homework'], t: "We don't have any homework." },
     { w: ['She', 'has', 'never', 'been', 'to', 'Hanoi'], t: 'She has never been to Hanoi.' },
     { w: ['There', 'are', 'three', 'books', 'on', 'the', 'desk'], t: 'There are three books on the desk.' },
-    { w: ['Would', 'you', 'like', 'some', 'tea'], t: 'Would you like some tea?' }
+    { w: ['Would', 'you', 'like', 'some', 'tea'], t: 'Would you like some tea?' },
+    { w: ['My', 'mother', 'cooks', 'dinner', 'every', 'day'], t: 'My mother cooks dinner every day.' },
+    { w: ['I', 'am', 'going', 'to', 'visit', 'my', 'grandparents'], t: 'I am going to visit my grandparents.' },
+    { w: ['Do', 'you', 'like', 'English'], t: 'Do you like English?' },
+    { w: ['The', 'students', 'are', 'playing', 'in', 'the', 'yard'], t: 'The students are playing in the yard.' },
+    { w: ['He', 'can', 'swim', 'very', 'well'], t: 'He can swim very well.' },
+    { w: ['What', 'time', 'does', 'the', 'film', 'start'], t: 'What time does the film start?' }
   ],
   para: [
     ['My best friend is Lan.', 'She is kind and helpful.', 'For example, she often shares her notes with me.', 'That is why I like her very much.'],
     ['Reading is a good habit.', 'It helps us learn new words.', 'For example, I learned many words from stories.', 'So I read for thirty minutes every day.'],
-    ['I want to protect the environment.', 'First, I turn off the lights when I leave a room.', 'Second, I use paper bags instead of plastic bags.', 'In short, small actions can make a big difference.']
+    ['I want to protect the environment.', 'First, I turn off the lights when I leave a room.', 'Second, I use paper bags instead of plastic bags.', 'In short, small actions can make a big difference.'],
+    ['I love my hometown.', 'It is quiet and green.', 'For example, there is a big park near my house.', 'That is why I often go there at weekends.'],
+    ['Sport is good for teenagers.', 'It keeps our body strong.', 'For instance, swimming makes our muscles stronger.', 'Therefore, we should exercise every day.']
   ],
   simp: [
     [['The tall boy', 1], ['who lives next door', 0], ['plays', 1], ['football', 1], ['every afternoon', 0], ['in the park.', 0]],
@@ -6473,14 +6502,23 @@ const THK = {
     [['Although it was raining,', 0], ['we', 1], ['went', 1], ['to the park.', 1]],
     [['Reducing plastic waste', 1], ['is', 1], ['important', 1], ['for our planet', 0], ['and future generations.', 0]],
     [['The man', 1], ['standing at the door', 0], ['is', 1], ['my uncle.', 1]],
-    [['Students', 1], ['who study regularly', 0], ['usually', 0], ['get', 1], ['better marks.', 1]]
+    [['Students', 1], ['who study regularly', 0], ['usually', 0], ['get', 1], ['better marks.', 1]],
+    [['The girl', 1], ['wearing a red dress', 0], ['is', 1], ['my cousin.', 1]],
+    [['We', 1], ['visited', 1], ['the museum', 1], ['which was built in 1900', 0], ['last week.', 0]],
+    [['Reading', 1], ['before bed', 0], ['helps', 1], ['me', 1], ['relax.', 1]],
+    [['My teacher,', 1], ['Mr Nam,', 0], ['teaches', 1], ['English', 1], ['at our school.', 0]],
+    [['Plastic bags', 1], ['that we throw away', 0], ['pollute', 1], ['the sea.', 1]],
+    [['After finishing homework,', 0], ['Lan', 1], ['watches', 1], ['TV.', 1]]
   ],
   conx: [
     { q: 'Lan lost her key. She looked for it everywhere. — “it” là gì?', o: ['her key', 'Lan', 'everywhere'], a: 0, tip: '“it” thay cho danh từ số ít chỉ vật vừa nhắc: her key.' },
     { q: 'Tom likes football. However, his sister prefers tennis. — “However” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 0, tip: 'However = nhưng/tuy nhiên → đối lập.' },
     { q: 'Many rivers are polluted. As a result, fish are dying. — “As a result” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 1, tip: 'As a result = kết quả là → nguyên nhân → kết quả.' },
     { q: 'Sports are good for health. For instance, swimming strengthens the body. — “For instance” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 2, tip: 'For instance = ví dụ.' },
-    { q: 'Minh and Hoa are friends. They study together. — “They” là ai?', o: ['Minh', 'Minh và Hoa', 'Hoa'], a: 1, tip: '“They” thay cho 2 người trở lên.' }
+    { q: 'Minh and Hoa are friends. They study together. — “They” là ai?', o: ['Minh', 'Minh và Hoa', 'Hoa'], a: 1, tip: '“They” thay cho 2 người trở lên.' },
+    { q: 'The film was long. Nevertheless, we enjoyed it. — “Nevertheless” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 0, tip: 'Nevertheless = tuy vậy → đối lập.' },
+    { q: 'Nam loves football. He plays it every day. — “it” là gì?', o: ['football', 'Nam', 'every day'], a: 0, tip: '“it” thay cho football.' },
+    { q: 'She studied late. Consequently, she was tired. — “Consequently” báo hiệu gì?', o: ['Đối lập', 'Kết quả', 'Ví dụ'], a: 1, tip: 'Consequently = vì vậy → kết quả.' }
   ],
   wr: [
     { g: 'Is social media good or bad for teenagers?', o: ['Does using social media for two hours a day help or harm a student’s study?', 'Is social media good?', 'What is social media?'], a: 0,
@@ -6494,14 +6532,19 @@ const THK = {
     { g: 'Do you prefer studying alone or in a group?', o: ['Do I remember lessons better when I study alone or with friends?', 'Is studying good?', 'Who studies in a group?'], a: 0,
       m: 'I prefer studying in a group. When I do not understand something, my friends explain it to me, so I learn faster. For example, last week Hoa taught me a hard maths problem in five minutes.' },
     { g: 'How can we protect the environment?', o: ['What can students do at school and at home every day to reduce rubbish?', 'Is the environment important?', 'What is pollution?'], a: 0,
-      m: 'Students can reduce rubbish in simple ways. At school, they can bring a water bottle instead of buying plastic bottles. At home, they can sort rubbish for recycling. For example, my class collects old paper every month, so we save many trees.' }
+      m: 'Students can reduce rubbish in simple ways. At school, they can bring a water bottle instead of buying plastic bottles. At home, they can sort rubbish for recycling. For example, my class collects old paper every month, so we save many trees.' },
+    { g: 'Do you prefer living in the city or the countryside?', o: ['Is it better for a teenager to live in the city or in the countryside, and why?', 'Is the city big?', 'Where do people live?'], a: 0,
+      m: 'I prefer living in the countryside. The air is fresh, so I feel healthy and calm. For example, I can ride my bike to school without heavy traffic. That is why I think the countryside is better for students.' },
+    { g: 'What is your favourite subject at school?', o: ['Which subject helps me most in daily life, and why do I enjoy it?', 'What are school subjects?', 'Is school fun?'], a: 0,
+      m: 'My favourite subject is English. It helps me talk to foreign friends, so I feel confident. For example, last summer I helped a tourist find the way to the beach. That is why I study English every day.' }
   ]
 };
 const thFmt = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-function thQuiz(el, items, onDone) {
-  let i = 0, ok = 0; const list = shuffle(items).slice(0, 10);
+function thQuiz(el, items, key) {
+  let i = 0, ok = 0, list = shuffle(items).slice(0, 10);
   const draw = () => {
-    if (i >= list.length) { el.innerHTML = `<div class="th-res"><b>${ok}/${list.length}</b><p>${ok === list.length ? 'Tuyệt vời! Em nắm chắc phần này.' : ok >= list.length * .7 ? 'Khá tốt! Xem lại các câu sai nhé.' : 'Cố lên! Làm lại để nhớ lâu hơn.'}</p><button class="btn" data-again>Làm lại</button></div>`; el.querySelector('[data-again]').onclick = () => { i = 0; ok = 0; shuffle(list); draw(); }; onDone && onDone(ok, list.length); return; }
+    if (i >= list.length) { const bk = 'th_best_' + (key || 'x'), pb = +store.get(bk) || 0, pct = Math.round(ok / list.length * 100), nb = pct > pb; if (nb) store.set(bk, pct);
+      el.innerHTML = `<div class="th-res"><b>${ok}/${list.length}</b><small class="muted">${nb ? '🎉 Kỷ lục mới: ' + pct + '%' : 'Kỷ lục của em: ' + pb + '%'}</small><p>${ok === list.length ? 'Tuyệt vời! Em nắm chắc phần này.' : ok >= list.length * .7 ? 'Khá tốt! Xem lại các câu sai nhé.' : 'Cố lên! Làm lại để nhớ lâu hơn.'}</p><button class="btn" data-again>Làm lại</button></div>`; el.querySelector('[data-again]').onclick = () => { i = 0; ok = 0; list = shuffle(items).slice(0, 10); draw(); }; return; }
     const q = list[i], idx = shuffle(q.o.map((_, k) => k));
     el.innerHTML = `<div class="th-pg"><i style="width:${i / list.length * 100}%"></i></div><small class="muted">Câu ${i + 1}/${list.length}</small><p class="th-q">${thFmt(q.q)}</p><div class="th-opts">${idx.map(k => `<button class="th-o" data-k="${k}">${esc(q.o[k])}</button>`).join('')}</div><div class="th-fb" hidden></div>`;
     el.onclick = e => { const b = e.target.closest('.th-o'); if (!b || el.querySelector('.th-o[disabled]')) return; const good = +b.dataset.k === q.a; if (good) ok++;
@@ -6578,9 +6621,9 @@ function viewThink() {
       $('#th-ls').onchange = e => { S.thLes = e.target.value; viewThink(); };
       const ws = cur.words.filter(w => w.en && w.vi), all = ls.flatMap(l => l.words).filter(w => w.vi);
       const items = ws.map(w => { const d = shuffle(all.filter(x => x.vi !== w.vi).map(x => x.vi)).slice(0, 3); const o = [w.vi, ...d]; return { q: `**${w.en}** nghĩa là gì?`, o, a: 0, tip: `${w.en} ${w.ipa || ''} = ${w.vi}` }; });
-      thQuiz($('#th-q'), items);
+      thQuiz($('#th-q'), items, 'v1_' + cur.id);
     } else if (lv === '2') {
-      inn.innerHTML = `<p class="muted">Cấp 2: biết <b>dùng từ trong câu</b> — học theo cụm (collocation) và cấu trúc đi kèm.</p><div id="th-q"></div>`; thQuiz($('#th-q'), THK.coll);
+      inn.innerHTML = `<p class="muted">Cấp 2: biết <b>dùng từ trong câu</b> — học theo cụm (collocation) và cấu trúc đi kèm.</p><div id="th-q"></div>`; thQuiz($('#th-q'), THK.coll, 'coll');
     } else {
       const cand = ls.filter(l => l.words.length >= 4);
       if (cand.length < 2) { inn.innerHTML = empty('Cần ít nhất 2 bài có từ vựng để luyện cấp 3.'); return; }
@@ -6599,15 +6642,15 @@ function viewThink() {
       <div class="th-map"><div class="th-blk b1"><b>S</b><small>Chủ ngữ<br>(danh từ / đại từ)</small><em>My sister</em></div><span>+</span><div class="th-blk b2"><b>V</b><small>Động từ<br>(hành động / to be)</small><em>plays</em></div><span>+</span><div class="th-blk b3"><b>O / C</b><small>Tân ngữ / bổ ngữ</small><em>tennis</em></div><span>+</span><div class="th-blk b4"><b>Mở rộng</b><small>Trạng từ · giới từ</small><em>every day</em></div></div>
       <div class="th-lv"><div><b>Cấp 1 · 1 câu</b><p>My sister plays tennis.</p></div><div><b>Cấp 2 · 2 câu liền nhau</b><p>My sister plays tennis, <u>so</u> she is healthy.</p></div><div><b>Cấp 3 · 1 đoạn</b><p>Ý chính → lý do → ví dụ → kết luận.</p></div></div>
       <div class="th-wt"><span class="n">Danh từ: người, vật</span><span class="v">Động từ: hành động</span><span class="a">Tính từ: miêu tả danh từ</span><span class="d">Trạng từ: bổ nghĩa động từ</span><span class="p">Giới từ: vị trí, thời gian</span></div>`;
-    else if (g === 'type') { inn.innerHTML = '<div id="th-q"></div>'; thQuiz($('#th-q'), THK.wtype); }
+    else if (g === 'type') { inn.innerHTML = '<div id="th-q"></div>'; thQuiz($('#th-q'), THK.wtype, 'wtype'); }
     else if (g === 'build') { inn.innerHTML = '<div id="th-q"></div>'; thOrder($('#th-q'), THK.order); }
-    else if (g === 'join') { inn.innerHTML = '<p class="muted">Cấp 2: chọn từ nối đúng giữa hai ý.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conn); }
+    else if (g === 'join') { inn.innerHTML = '<p class="muted">Cấp 2: chọn từ nối đúng giữa hai ý.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conn, 'conn'); }
     else { inn.innerHTML = '<p class="muted">Cấp 3: xếp các câu thành đoạn: ý chính → lý do → ví dụ → kết luận.</p><div id="th-q"></div>'; thOrder($('#th-q'), THK.para.map(p => ({ w: p, t: p.join(' ') })), ' '); }
   } else if (S.thTab === 'read') {
     const g = S.thR || 'simp';
     const inn = sub([['simp', 'Rút gọn câu'], ['conx', 'Đọc mối liên hệ']], g, v => { S.thR = v; viewThink(); });
     if (g === 'simp') { inn.innerHTML = '<p class="muted">Câu dài thường chỉ có 1 “lõi” (ai – làm gì). Tìm lõi trước, phần còn lại chỉ bổ sung thông tin.</p><div id="th-q"></div>'; thSimplify($('#th-q')); }
-    else { inn.innerHTML = '<p class="muted">Các từ như <i>it, they, however, as a result, for instance</i> nối các câu lại. Hiểu chúng là hiểu cả đoạn.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conx); }
+    else { inn.innerHTML = '<p class="muted">Các từ như <i>it, they, however, as a result, for instance</i> nối các câu lại. Hiểu chúng là hiểu cả đoạn.</p><div id="th-q"></div>'; thQuiz($('#th-q'), THK.conx, 'conx'); }
   } else {
     box.innerHTML = '<p class="muted">Viết/nói không bí ý: <b>bước 1</b> biến đề chung chung thành câu hỏi cụ thể; <b>bước 2</b> phát triển ý bằng nguyên nhân–kết quả, giải thích, ví dụ.</p><div id="th-in"></div>'; thWrite($('#th-in'));
   }

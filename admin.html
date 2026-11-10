@@ -4907,14 +4907,14 @@ function studentModal(u) {
   if (!u) return; const L = sortedLessons(), ck = v => v ? '✔' : '–', sc = v => typeof v === 'number' ? v + '%' : ck(v === true);
   const { ov, close } = modal(`<h3>${avH(u)}${esc(u.name)}</h3>
     <p style="margin-bottom:12px">${esc(u.email)} ·  ${u.xp || 0} XP ·  ${u.streak || 0} ngày</p>
-    <div class="g2b"><label class="field"><span>Tên</span><input id="s-name" value="${esc(u.name || '')}"></label><label class="field"><span>Lớp</span><input id="s-cls" value="${esc(u.className || '')}"></label><label class="field"><span>XP</span><input id="s-xp" type="number" min="0" value="${u.xp || 0}"></label><label class="field"><span>Chuỗi ngày</span><input id="s-str" type="number" min="0" value="${u.streak || 0}"></label></div><div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="s-off" ${u.disabled ? 'checked' : ''}><i></i></span> Khoá tài khoản (không vào học được)</label><button class="btn soft sm" data-mail="${esc(u.email || '')}">Gửi mail đặt lại mật khẩu</button></div>
+    <div class="g2b"><label class="field"><span>Tên</span><input id="s-name" value="${esc(u.name || '')}"></label><label class="field"><span>Lớp</span><input id="s-cls" value="${esc(u.className || '')}"></label><label class="field"><span>XP</span><input id="s-xp" type="number" min="0" value="${xpNow(u)}"></label><label class="field"><span>Chuỗi ngày</span><input id="s-str" type="number" min="0" value="${u.streak || 0}"></label></div><div class="row"><label style="display:flex;gap:10px;align-items:center;font-weight:800"><span class="sw"><input type="checkbox" id="s-off" ${u.disabled ? 'checked' : ''}><i></i></span> Khoá tài khoản (không vào học được)</label><button class="btn soft sm" data-mail="${esc(u.email || '')}">Gửi mail đặt lại mật khẩu</button></div>
     <div class="row" style="margin:4px 0 12px"><b>Cho học sinh xem ở trang Học tập:</b><label style="display:flex;gap:8px;align-items:center;font-weight:700"><span class="sw"><input type="checkbox" id="s-sr" ${u.show?.results ? 'checked' : ''}><i></i></span> Kết quả học</label><label style="display:flex;gap:8px;align-items:center;font-weight:700"><span class="sw"><input type="checkbox" id="s-sn" ${u.show?.reminders ? 'checked' : ''}><i></i></span> Lời nhắc</label></div>
     <div class="tbl-wrap"><table><thead><tr><th>Bài</th>${Object.values(ACTS).map(n => `<th>${n}</th>`).join('')}</tr></thead><tbody>
     ${L.map(l => { const p = u.progress?.[l.id] || {}; return `<tr><td style="white-space:nowrap">${esc(l.icon || '')} ${esc(l.title)}</td>${Object.keys(ACTS).map(k => `<td>${isDone(p, k) ? sc(p[k]) : '–'}</td>`).join('')}</tr>`; }).join('') || '<tr><td colspan="12" class="empty">Chưa có bài học.</td></tr>'}</tbody></table></div>
     <div class="row" style="margin:16px 0 0"><button class="btn soft sm" id="s-reset">Đặt lại điểm & tiến độ</button><button class="btn soft sm" id="s-del">Xoá hồ sơ</button><span class="grow"></span><button class="btn soft" id="s-close">Đóng</button><button class="btn" id="s-save">Lưu thay đổi</button></div>
     <p style="font-size:.82rem;color:var(--mute);margin-top:10px">"Xoá hồ sơ" chỉ xoá điểm và thông tin trong Firestore. Muốn xoá hẳn tài khoản đăng nhập, vào Firebase Console → Authentication.</p>`);
   $('#s-close', ov).onclick = close;
-  $('#s-save', ov).onclick = async () => { try { await api.update('users', u.id, { className: $('#s-cls', ov).value.trim(), name: $('#s-name', ov).value.trim() || u.name, xp: Math.max(0, +$('#s-xp', ov).value || 0), streak: Math.max(0, +$('#s-str', ov).value || 0), disabled: $('#s-off', ov).checked, show: { results: $('#s-sr', ov).checked, reminders: $('#s-sn', ov).checked } }); toast('Đã lưu.'); close(); } catch (er) { toast(er.message, 'bad'); } };
+  $('#s-save', ov).onclick = async () => { try { await api.update('users', u.id, { className: $('#s-cls', ov).value.trim(), name: $('#s-name', ov).value.trim() || u.name, xp: Math.max(0, +$('#s-xp', ov).value || 0), xpWeek: weekInfo().id, streak: Math.max(0, +$('#s-str', ov).value || 0), disabled: $('#s-off', ov).checked, show: { results: $('#s-sr', ov).checked, reminders: $('#s-sn', ov).checked } }); toast('Đã lưu.'); close(); } catch (er) { toast(er.message, 'bad'); } };
   $('#s-reset', ov).onclick = async () => { if (!confirm(`Đặt lại toàn bộ điểm và tiến độ của ${u.name}?`)) return; try { await api.update('users', u.id, { xp: 0, streak: 0, lastDay: '', progress: {}, daily: {}, mistakes: {} }); toast('Đã đặt lại.'); close(); } catch (er) { toast(er.message, 'bad'); } };
   $('#s-del', ov).onclick = async () => { if (!confirm(`Xoá hồ sơ của ${u.name}?`)) return; try { await api.del('users', u.id); toast('Đã xoá hồ sơ.'); close(); } catch (er) { toast(er.message, 'bad'); } };
 }
@@ -5488,6 +5488,23 @@ async function applyRoster() {
 }
 
 /* ---------- v5: quyền tối cao ---------- */
+function weekInfo(ts = Date.now()) {
+  const sh = new Date(ts - 10 * 3600e3), dow = (sh.getUTCDay() + 6) % 7;
+  const s = Date.UTC(sh.getUTCFullYear(), sh.getUTCMonth(), sh.getUTCDate() - dow), d = new Date(s), st = s + 10 * 3600e3;
+  const id = 'w' + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
+  // Đặt lại tay tuần thi đua: mỗi mốc trong WEEK_RESETS mở một tuần mới (XP tuần cũ không tính tiếp)
+  if (id === WEEK_BASE) {
+    const rs = WEEK_RESETS.filter(r => ts >= r.at), cur = rs[rs.length - 1], nx = WEEK_RESETS.find(r => r.at > ts);
+    if (!cur) return { id, start: st, end: WEEK_RESETS[0].at };
+    return { id: cur.id, start: cur.at, end: nx ? nx.at : st + 7 * 864e5 };
+  }
+  return { id, start: st, end: st + 7 * 864e5 };
+}
+const WEEK_BASE = 'w20261102';
+const WEEK_RESETS = [{ id: 'w20261102r', at: Date.parse('2026-11-05T17:45:00+07:00') }, { id: 'w20261102r2', at: Date.parse('2026-11-05T17:55:00+07:00') }];
+/* XP trên web chỉ hiện khi xpWeek trùng tuần hiện tại, nên mọi lần admin ghi XP phải kèm xpWeek (và wxp để tính vào bảng tuần) */
+const xpNow = u => (u && u.xpWeek === weekInfo().id ? (u.xp || 0) : 0);
+const xpGrant = (u, x) => { const wid = weekInfo().id; return { xp: Math.max(0, xpNow(u) + x), xpWeek: wid, ['wxp.' + wid]: Math.max(0, +((u.wxp || {})[wid] || 0) + x) }; };
 const RESET = { xp: 0, streak: 0, lastDay: '', progress: {}, daily: {}, mistakes: {}, cdp: {}, cdq: {} };
 const plain = v => v && typeof v.toMillis === 'function' ? v.toMillis() : Array.isArray(v) ? v.map(plain) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, plain(x)])) : v;
 async function isAdminUser(email) {
@@ -5509,7 +5526,7 @@ async function bulkAct(e) {
   const a = b.dataset.ba, us = S.users.filter(u => ids.includes(u.id)), each = f => Promise.all(us.map(f));
   try {
     if (a === 'cls') { const c = prompt('Chuyển ' + ids.length + ' bạn sang lớp:'); if (c === null) return; await each(u => api.update('users', u.id, { className: c.trim() })); }
-    else if (a === 'xp') { const x = parseInt(prompt('Cộng bao nhiêu XP? (số âm để trừ)'), 10); if (!x) return; await each(u => api.update('users', u.id, { xp: Math.max(0, (u.xp || 0) + x) })); }
+    else if (a === 'xp') { const x = parseInt(prompt('Cộng bao nhiêu XP? (số âm để trừ)'), 10); if (!x) return; await each(u => api.update('users', u.id, xpGrant(u, x))); }
     else if (a === 'note') { const t = (prompt('Nội dung lời nhắn:') || '').trim(); if (!t) return; await each(u => api.update('users', u.id, { teacherNote: { text: t, at: Date.now() } })); }
     else if (a === 'showon' || a === 'showoff') await each(u => api.update('users', u.id, { show: { results: a === 'showon', reminders: a === 'showon' } }));
     else if (a === 'lock' || a === 'unlock') await each(u => api.update('users', u.id, { disabled: a === 'lock' }));

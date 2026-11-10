@@ -1,0 +1,18 @@
+Cho giáo viên ghi bài học (thêm / sửa / ẩn / khôi phục) ở mục "Nội dung học tập" trong trang quản trị.
+
+Firebase Console → Firestore Database → Rules. Trong phần match /databases/{database}/documents { ... }
+tìm khối "match /lessons/{id} { ... }" và thay bằng khối dưới đây (nếu đã có hàm isTeacher() thì dùng lại hàm đó):
+
+    function isTeacher() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/teachers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.active != false;
+    }
+
+    match /lessons/{id} {
+      allow read: if true;                                  // (giữ nguyên quyền đọc hiện có của em)
+      allow create, update, delete: if isAdmin() || isTeacher();
+    }
+
+Lưu ý: isAdmin() là hàm kiểm tra email admin đã có sẵn trong rules của em; nếu tên hàm khác thì giữ đúng tên cũ.
+Bấm "Publish" để áp dụng. Giáo viên nào bị tắt quyền "Nội dung học tập 6–9" trong trang Giáo viên sẽ không thấy mục này.

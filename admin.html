@@ -3238,7 +3238,7 @@ const NAV = [['hub',IC('<path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/><path
    ============================================================ */
 S.classes = []; S.teachers = []; S.role = 'admin'; S.me = null; S.cx = { id: '', tab: 'content' }; S.cxChat = [];
 function TEACHER() { return S.role === 'teacher'; }
-function navList() { if (!TEACHER()) return NAV; const ic = k => (NAV.find(n => n[0] === k) || [])[1]; return [['cls', ic('cls'), 'Lớp của tôi'], ['tcourses', ic('courses'), 'Khoá học của tôi']]; }
+function navList() { if (!TEACHER()) return NAV; const ic = k => (NAV.find(n => n[0] === k) || [])[1]; return [['cls', ic('cls'), 'Lớp của tôi'], ['tcourses', ic('courses'), 'Khoá học của tôi'], ...(can('lessons') ? [['content', ic('content'), 'Nội dung học tập']] : [])]; }
 const nid = p => p + Math.random().toString(36).slice(2, 7) + Date.now().toString(36).slice(-3);
 const normN = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 const okUrl = u => /^https:\/\/\S+$/i.test(u || '');
@@ -4155,12 +4155,13 @@ const PERMS = [
   ['notes', 'Nhắc nhở học sinh', 'Gửi lời nhắn và cảnh báo lớp'],
   ['chat', 'Chat lớp', 'Nhắn và xoá tin trong chat lớp'],
   ['canva', 'Trình chiếu Canva', 'Thêm, xoá bản trình chiếu Canva của lớp'],
-  ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ']
+  ['settings', 'Thiết lập lớp', 'Sửa tên, mô tả, ảnh bìa, lưu trữ'],
+  ['lessons', 'Nội dung học tập 6–9', 'Thêm, sửa bài học và từ vựng của 4 khối']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
 const TABMAP = { arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
-const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
+const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; if (k === 'lessons') return !(S.me && S.me.perms) || S.me.perms.lessons !== false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
 const audit = (action, detail = '') => { try { return api.add('audit', { uid: myUid(), name: myName(), role: S.role, action, detail, atMs: Date.now() }).catch(() => { }); } catch { } };
 function openPerms(t) {
@@ -4306,10 +4307,10 @@ function vTCourses() {
 function shell() {
   const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
   const item = ([k, i, n]) => `<button class="nb" data-v="${k}"><span class="nb-i">${i}</span><span class="nb-n">${n}</span>${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
-  const GROUPS = [['Tổng quan', ['hub', 'today', 'dash']], ['Lớp học', ['cls', 'teachers', 'students', 'chat']], ['Nội dung', ['lessons', 'courses', 'banks', 'games', 'news', 'exam', 'notice']], ['Theo dõi', ['assign', 'hw', 'report', 'risk', 'msg', 'calendar', 'art']], ['Hệ thống', ['site', 'tools', 'admins']]];
+  const GROUPS = [['Tổng quan', ['hub', 'today', 'dash']], ['Lớp học', ['cls', 'teachers', 'students', 'chat']], ['Nội dung', ['content', 'lessons', 'courses', 'banks', 'games', 'news', 'exam', 'notice']], ['Theo dõi', ['assign', 'hw', 'report', 'risk', 'msg', 'calendar', 'art']], ['Hệ thống', ['site', 'tools', 'admins']]];
   const items = navList(), used = new Set();
   const grp = (g, ks) => { const L = ks.map(k => items.find(n => n[0] === k)).filter(Boolean); L.forEach(n => used.add(n[0])); return L.length ? `<div class="grp"><div class="grp-t">${g}</div>${L.map(item).join('')}</div>` : ''; };
-  const navHTML = TEACHER() ? grp('Lớp của tôi', ['cls']) + grp('Khoá học', ['tcourses']) : GROUPS.map(([g, ks]) => grp(g, ks)).join('') + grp('Khác', items.map(n => n[0]).filter(k => !used.has(k)));
+  const navHTML = TEACHER() ? grp('Lớp của tôi', ['cls']) + grp('Khoá học', ['tcourses']) + (can('lessons') ? grp('Nội dung', ['content']) : '') : GROUPS.map(([g, ks]) => grp(g, ks)).join('') + grp('Khác', items.map(n => n[0]).filter(k => !used.has(k)));
   const ini = String((S.me && S.me.name) || S.user.email || '?').trim().charAt(0).toUpperCase();
   root.innerHTML = `<div class="app"><header class="atop"><div class="brand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>${TEACHER() ? 'Cổng giáo viên' : 'Quản trị'}</small></span></div>
     <div class="atop-r">${env}<span class="me-chip"><span class="av">${esc(ini)}</span><span class="em">${esc(S.user.email)}</span></span><button class="btn soft sm" id="out">Đăng xuất</button></div></header>
@@ -4323,7 +4324,7 @@ function draw() {
   if (S.view !== 'chat') stopThread();
   root.querySelectorAll('.nb[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
   $('#content').onclick = null; $('#content').onchange = null;
-  ({ hub: vHub, today: vToday, calendar: vCalendar, art: vArt, cls: vClasses, teachers: vTeachers, tcourses: vTCourses, report: vReport, room: vRoom, dash: () => { vDash(); dashExtra(); }, site: () => { vSite(); siteExtra(); }, games: () => { vSite(); const c = $('#content'); c.querySelector('.card').remove(); c.querySelector('h2').textContent = 'Trò chơi luyện từ'; }, tools: vTools, admins: vAdmins, hw: vHW, lessons: vLessons, courses: vCourses, news: vNews, banks: vBanks, assign: vAssign, students: vStudents, notice: vNotice, exam: vExam, msg: vMsg, chat: vChat, risk: vRisk })[S.view]();
+  ({ hub: vHub, today: vToday, calendar: vCalendar, art: vArt, cls: vClasses, teachers: vTeachers, tcourses: vTCourses, report: vReport, room: vRoom, dash: () => { vDash(); dashExtra(); }, site: () => { vSite(); siteExtra(); }, games: () => { vSite(); const c = $('#content'); c.querySelector('.card').remove(); c.querySelector('h2').textContent = 'Trò chơi luyện từ'; }, tools: vTools, admins: vAdmins, hw: vHW, lessons: vLessons, content: vContent, courses: vCourses, news: vNews, banks: vBanks, assign: vAssign, students: vStudents, notice: vNotice, exam: vExam, msg: vMsg, chat: vChat, risk: vRisk })[S.view]();
 }
 
 
@@ -4360,8 +4361,96 @@ function vDash() {
 }
 
 /* ---------- bài học ---------- */
+/* ---------- Nội dung học tập 4 khối 6–9: giáo viên thêm / sửa bài, thêm từ vựng ---------- */
+const GRADES = [['6', 'Lớp 6', 'Tiếng Anh 6 · Global Success 6'], ['7', 'Lớp 7', 'Tiếng Anh 7 · Global Success 7'], ['8', 'Lớp 8', 'Tiếng Anh 8 · Global Success 8'], ['9', 'Lớp 9', 'Tiếng Anh 9 · Global Success']];
+function gradeOfTopic(t) {
+  t = String(t || '').toLowerCase();
+  if (/global success\s*8|tiếng anh 8|tieng anh 8/.test(t)) return '8';
+  if (/global success\s*6|tiếng anh 6|tieng anh 6/.test(t)) return '6';
+  if (/unlock\s*7|tiếng anh 7|tieng anh 7|global success 7/.test(t)) return '7';
+  if (!/tiếng anh [678]|tieng anh [678]|global success\s*[678]|unlock\s*7/.test(t) && /global success|tiếng anh 9|tieng anh 9/.test(t)) return '9';
+  return '';
+}
+const CT = S.ct = { grade: '9', q: '', cat: null, err: '' };
+async function ctLoad() {
+  if (CT.cat || CT.loading) return; CT.loading = true;
+  try { const r = await fetch('docs/catalog.json?v=' + Date.now()); if (!r.ok) throw new Error('HTTP ' + r.status); CT.cat = (await r.json()).lessons || []; CT.err = ''; }
+  catch (e) { CT.cat = []; CT.err = 'Chưa tải được danh sách bài có sẵn (' + e.message + ').'; }
+  CT.loading = false; if (S.view === 'content') vContent();
+}
+const ctOv = id => S.lessons.find(l => l.overrideOf === id);
+function ctRows(g) {
+  const q = normN(CT.q), rows = [];
+  (CT.cat || []).filter(l => l.grade === g).forEach(b => { const o = ctOv(b.id); rows.push({ kind: 'base', b, o, id: b.id, order: b.order, title: (o && o.title) || b.title, topic: b.topic, words: ((o && o.words && o.words.length) ? o.words : b.words || []), hidden: !!(o && o.published === false), edited: !!o && o.published !== false }); });
+  S.lessons.filter(l => !l.overrideOf && gradeOfTopic(l.topic) === g).forEach(l => rows.push({ kind: 'custom', l, id: l.id, order: l.order ?? 9000, title: l.title, topic: l.topic, words: l.words || [], hidden: l.published === false, edited: false }));
+  return rows.filter(r => !q || normN(r.title + ' ' + r.topic).includes(q)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+function vContent() {
+  ctLoad(); const g = CT.grade, rows = CT.cat ? ctRows(g) : [], gi = GRADES.find(x => x[0] === g);
+  const tag = t => String(t || '').replace(/^Tiếng Anh \d\s*·\s*/, '').replace(/^Global Success \d?\s*·?\s*/, '') || 'Bài học';
+  $('#content').innerHTML = `<h2>Nội dung học tập</h2>
+    <div class="hint">Thầy cô có thể <b>sửa tên bài, thêm/sửa từ vựng, đính kèm tài liệu</b>, ẩn bài hoặc <b>thêm bài mới</b> cho cả 4 khối 6–9. Học sinh thấy thay đổi ngay. Bài có sẵn khi sửa sẽ được lưu thành bản chỉnh sửa, bấm "Khôi phục" để quay về bản gốc.</div>
+    <div class="row" style="align-items:center"><div class="seg" id="ct-g">${GRADES.map(x => `<button data-g="${x[0]}" class="${x[0] === g ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
+      <input type="search" id="ct-q" placeholder="Tìm bài..." value="${esc(CT.q)}" style="max-width:260px"><button class="btn" id="ct-add" style="margin-left:auto">＋ Thêm bài mới cho ${gi[1]}</button></div>
+    ${CT.err ? `<div class="hint" style="background:#FDECEE">${esc(CT.err)}</div>` : ''}
+    <div class="card tbl-wrap">${!CT.cat ? '<div class="empty">Đang tải…</div>' : rows.length ? `<table><thead><tr><th>Bài</th><th>Tên bài</th><th>Nhóm</th><th>Từ</th><th>Trạng thái</th><th></th></tr></thead><tbody>${rows.map(r => `<tr style="${r.hidden ? 'opacity:.55' : ''}"><td>${r.order ?? ''}</td><td><b>${esc(r.title)}</b></td><td><span class="tag">${esc(tag(r.topic))}</span></td><td>${r.words.length || '–'}</td>
+      <td>${r.hidden ? '<span class="tag">Đang ẩn</span>' : r.kind === 'custom' ? '<span class="tag ok">Thầy cô thêm</span>' : r.edited ? '<span class="tag ok">Đã chỉnh sửa</span>' : '<span style="color:var(--muted)">Có sẵn</span>'}</td>
+      <td><div class="acts"><button class="btn soft sm" data-e="${esc(r.id)}">Sửa</button><button class="btn soft sm" data-h="${esc(r.id)}">${r.hidden ? 'Hiện' : 'Ẩn'}</button>${r.kind === 'base' && r.o ? `<button class="btn soft sm" data-r="${esc(r.id)}">Khôi phục</button>` : ''}${r.kind === 'custom' ? `<button class="btn soft sm" data-d="${esc(r.id)}">Xoá</button>` : ''}</div></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Không có bài nào. Bấm "Thêm bài mới".</div>'}</div>`;
+  $('#ct-add').onclick = () => ctForm(null);
+  $('#ct-q').oninput = e => { CT.q = e.target.value; const p = e.target.selectionStart; vContent(); const i = $('#ct-q'); i.focus(); i.setSelectionRange(p, p); };
+  $('#content').onclick = async e => {
+    const gb = e.target.closest('[data-g]'); if (gb) { CT.grade = gb.dataset.g; return vContent(); }
+    const k = x => e.target.closest(`[data-${x}]`)?.dataset[x], row = id => ctRows(CT.grade).find(r => r.id === id);
+    try {
+      if (k('e')) ctForm(row(k('e')));
+      else if (k('h')) { const r = row(k('h')), now = !r.hidden;
+        if (r.kind === 'custom') await api.update('lessons', r.id, { published: !now ? true : false }); else await ctSaveOv(r.b, { published: !now ? true : false }); toast(now ? 'Đã ẩn bài.' : 'Đã hiện bài.'); audit(now ? 'Ẩn bài học' : 'Hiện bài học', r.title); }
+      else if (k('r')) { const r = row(k('r')); if (confirm(`Khôi phục "${r.b.title}" về bản gốc? Mọi chỉnh sửa của thầy cô cho bài này sẽ mất.`)) { await api.del('lessons', r.o.id); toast('Đã khôi phục bản gốc.'); audit('Khôi phục bài gốc', r.b.title); } }
+      else if (k('d')) { const r = row(k('d')); if (confirm(`Xoá bài "${r.title}"? Không thể hoàn tác.`)) { await api.del('lessons', r.id); toast('Đã xoá bài.'); audit('Xoá bài học', r.title); } }
+    } catch (er) { toast(ctErr(er), 'bad'); }
+  };
+  $('#content').onkeydown = null;
+}
+const ctErr = er => /permission|insufficient/i.test(er.message || '') ? 'Chưa có quyền ghi bài học. Admin cần cập nhật Firestore rules cho giáo viên (xem file docs/firestore-rules-lessons.txt).' : (er.message || String(er));
+async function ctSaveOv(b, patch) {
+  const id = 'ov_' + b.id, cur = ctOv(b.id) || {}, data = { ...patch, overrideOf: b.id, grade: b.grade, baseTitle: b.title, updatedAt: NOW(), updatedBy: myName() };
+  await (api.set ? api.set('lessons', id, data) : (cur.id ? api.update('lessons', cur.id, data) : api.add('lessons', data)));
+}
+function ctForm(r) {
+  const g = CT.grade, gi = GRADES.find(x => x[0] === g), edit = !!r, base = r && r.kind === 'base', custom = r && r.kind === 'custom';
+  const w0 = r ? r.words : [], line = w => [w.en, w.vi, w.ipa, w.ex].map(x => x || '').join(' | ').replace(/( \| )+$/, '');
+  const { ov, close } = modal(`<h3>${edit ? 'Sửa bài' : 'Thêm bài mới'} · ${gi[1]}</h3>
+    ${base ? `<p class="muted" style="margin:0 0 10px">Bài có sẵn: <b>${esc(r.b.title)}</b>. Phần thầy cô sửa sẽ thay thế bản gốc; từ vựng thầy cô lưu sẽ thay toàn bộ danh sách từ của bài.</p>` : ''}
+    <div class="g2"><label class="field"><span>Tên bài *</span><input id="c-title" value="${esc(edit ? r.title : '')}" placeholder="VD: Unit 13: Festivals"></label>
+      <label class="field"><span>Biểu tượng</span><input id="c-icon" maxlength="4" value="${esc(custom ? (r.l.icon || '') : base && r.o ? (r.o.icon || '') : '')}"></label></div>
+    <label class="field"><span>Mô tả ngắn</span><input id="c-desc" value="${esc(custom ? (r.l.description || '') : base ? ((r.o && r.o.description) || '') : '')}" placeholder="${base ? esc((r.b.description || '').slice(0, 80)) : 'VD: 12 từ về lễ hội'}"></label>
+    <label class="field"><span>Từ vựng (mỗi dòng 1 từ: tiếng Anh | nghĩa | phiên âm | câu ví dụ)</span><textarea id="c-words" rows="10" style="font-family:ui-monospace,Menlo,monospace;font-size:13px" placeholder="festival | lễ hội | /ˈfestɪvl/ | We go to the festival every year.">${esc(w0.map(line).join('\n'))}</textarea>
+      <small id="c-cnt">${w0.length} từ</small></label>
+    <div class="row" style="gap:8px;margin:0 0 10px"><input id="q-en" placeholder="Từ mới (EN)" style="flex:1;min-width:110px"><input id="q-vi" placeholder="Nghĩa" style="flex:1;min-width:110px"><input id="q-ipa" placeholder="Phiên âm" style="flex:1;min-width:110px"><button class="btn soft sm" id="q-add" type="button">＋ Thêm từ</button></div>
+    <label class="field"><span>Tài liệu Drive / link kèm theo (mỗi dòng: Tên | link)</span><textarea id="c-mats" rows="3" placeholder="Slide bài giảng | https://docs.google.com/presentation/d/…">${esc(((custom ? r.l.materials : base && r.o ? r.o.materials : []) || []).map(m => `${m.title} | ${m.url}`).join('\n'))}</textarea></label>
+    ${custom || !edit ? `<label class="field"><span>Số bài (thứ tự)</span><input id="c-order" type="number" min="1" value="${custom ? (r.l.order ?? 1) : ''}" placeholder="để trống = xếp cuối"></label>` : ''}
+    <div class="row" style="justify-content:flex-end;margin:6px 0 0"><button class="btn soft" id="c-cancel" type="button">Huỷ</button><button class="btn" id="c-save" type="button">${edit ? 'Lưu thay đổi' : 'Thêm bài'}</button></div>`);
+  const ta = $('#c-words', ov), cnt = () => { $('#c-cnt', ov).textContent = parseManual(ta.value).length + ' từ'; };
+  ta.oninput = cnt; $('#c-cancel', ov).onclick = close; $('#c-title', ov).focus();
+  $('#q-add', ov).onclick = () => { const en = $('#q-en', ov).value.trim(), vi = $('#q-vi', ov).value.trim(), ipa = $('#q-ipa', ov).value.trim(); if (!en || !vi) return toast('Nhập từ tiếng Anh và nghĩa nhé.', 'bad');
+    ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + [en, vi, ipa].filter((x, i) => i < 2 || x).join(' | '); ['q-en', 'q-vi', 'q-ipa'].forEach(i => $('#' + i, ov).value = ''); cnt(); ta.scrollTop = ta.scrollHeight; $('#q-en', ov).focus(); };
+  $('#c-save', ov).onclick = async () => {
+    const title = $('#c-title', ov).value.trim(); if (!title) return toast('Nhập tên bài trước nhé.', 'bad');
+    const btn = $('#c-save', ov); btn.disabled = true;
+    const imgOf = Object.fromEntries(((base ? r.b.words : custom ? r.l.words : []) || []).filter(w => w.img).map(w => [String(w.en).toLowerCase(), w.img]));
+    const words = parseManual(ta.value).map(w => imgOf[w.en.toLowerCase()] ? { ...w, img: imgOf[w.en.toLowerCase()] } : w), mats = parseMats($('#c-mats', ov).value), common = { title, icon: $('#c-icon', ov).value.trim(), description: $('#c-desc', ov).value.trim(), words, wordCount: words.length, materials: mats, updatedAt: NOW() };
+    try {
+      if (base) { await ctSaveOv(r.b, { ...common, published: true }); audit('Sửa bài có sẵn', r.b.title); }
+      else if (custom) { const o = Number($('#c-order', ov).value); await api.update('lessons', r.l.id, { ...common, ...(o ? { order: o } : {}) }); audit('Sửa bài thêm', title); }
+      else { const o = Number($('#c-order', ov).value), mx = Math.max(0, ...(CT.cat || []).filter(x => x.grade === g).map(x => x.order || 0), ...S.lessons.filter(l => gradeOfTopic(l.topic) === g).map(l => l.order || 0)); await api.add('lessons', { ...common, order: o || mx + 1, topic: gi[2] + ' · Giáo viên thêm', published: true, createdAt: NOW(), createdBy: myName() }); audit('Thêm bài học', title + ' (' + gi[1] + ')'); }
+      toast('Đã lưu. Học sinh thấy ngay.'); close(); vContent();
+    } catch (er) { toast(ctErr(er), 'bad'); btn.disabled = false; }
+  };
+}
+
+NAV.push(['content', IC('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'), 'Nội dung học tập']);
 function vLessons() {
-  const L = sortedLessons();
+  const L = sortedLessons().filter(l => !l.overrideOf);
   $('#content').innerHTML = `<h2>Bài học</h2>
     <div class="hint"><b>Thêm bài nhanh:</b> tạo Google Sheet (cột A: tiếng Anh, B: nghĩa, C: phiên âm, D: câu ví dụ) → Chia sẻ → "Bất kỳ ai có đường liên kết" → copy link → bấm "Thêm bài mới" và dán vào. Có câu ví dụ ở cột D thì bài "Điền vào câu" sẽ hay hơn nhiều. Sửa Sheet sau đó, web học sinh tự cập nhật.</div>
     <div class="row"><button class="btn" id="add">＋ Thêm bài mới</button><button class="btn soft" id="sync">↻ Đồng bộ lại từ Sheet</button></div>
@@ -5716,7 +5805,7 @@ function vRisk() {
 }
 
 /* ---------- khởi động ---------- */
-const refresh = () => { if (!$('#content') || document.querySelector('.ov')) return; if (['dash', 'lessons', 'assign', 'hw', 'risk', 'hub', 'report', 'cls', 'teachers', 'tcourses'].includes(S.view)) draw(); else if (S.view === 'students') drawStudents(); };
+const refresh = () => { if (!$('#content') || document.querySelector('.ov')) return; if (['dash', 'lessons', 'content', 'assign', 'hw', 'risk', 'hub', 'report', 'cls', 'teachers', 'tcourses'].includes(S.view)) draw(); else if (S.view === 'students') drawStudents(); };
 function startData() {
   stopData();
   unsubs = [

@@ -9921,7 +9921,15 @@ const RD_TOP = { gs9: 'Tiếng Anh 9 · Global Success · Đọc hiểu chuyên'
   RDX = out; if (S.allLessons) { recalcLessons(); if (S.view === 'home') { drawDash(); drawCourses(); } else if (S.view === 'course') viewCourse(); }
 } catch (e) { } })();
 function recalcLessons() {
-  S.allLessons = [...(S.rawLessons || []).filter(l => l.published !== false), ...GS9L, ...GS6L, ...GS6LIS, ...GS9PT, ...GS7U, ...GS8L, ...GS9P, ...UL7P, ...UL7L, ...UL7H, ...UL7W, ...G7LIS, ...G8TEST, ...G7KT, ...RDX].filter(courseOf).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  /* Bản chỉnh sửa của giáo viên cho bài có sẵn: doc Firestore có overrideOf = id bài gốc */
+  const OV = {}; (S.rawLessons || []).forEach(l => { if (l.overrideOf) OV[l.overrideOf] = l; });
+  const ovApply = l => { const o = OV[l.id]; if (!o) return l; if (o.published === false) return null;
+    const r = { ...l }; if (o.title) r.title = o.title; if (o.description != null && o.description !== '') r.description = o.description; if (o.icon) r.icon = o.icon;
+    if (Array.isArray(o.words) && o.words.length) { r.words = o.words; r.docsOnly = false; }
+    if (Array.isArray(o.materials) && o.materials.length) r.materials = [...(l.materials || []), ...o.materials];
+    return r; };
+  const BI = lst => lst.map(ovApply).filter(Boolean);
+  S.allLessons = [...(S.rawLessons || []).filter(l => l.published !== false && !l.overrideOf), ...BI(GS9L), ...BI(GS6L), ...BI(GS6LIS), ...BI(GS9PT), ...BI(GS7U), ...BI(GS8L), ...BI(GS9P), ...BI(UL7P), ...BI(UL7L), ...BI(UL7H), ...BI(UL7W), ...BI(G7LIS), ...BI(G8TEST), ...BI(G7KT), ...BI(RDX)].filter(courseOf).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   applyLessons();
 }
 function redrawCat() {

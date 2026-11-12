@@ -1695,7 +1695,32 @@ body.kids .fc-word{font-size:2.8rem;letter-spacing:.02em}
 @keyframes kgPop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1.7);opacity:0}}
 @keyframes kgNo{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 @keyframes kgCloud{from{transform:translateX(-200px)}to{transform:translateX(110vw)}}
-@media (prefers-reduced-motion:reduce){.kg-b,.kg-ov .cloud,.kid-hub .kh-b i{animation:none!important}}
+
+.kg-mem{position:relative;z-index:2;flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:4px 14px calc(14px + env(safe-area-inset-bottom,0px));align-content:center;max-width:min(520px,calc((100vh - 230px) * .62));width:100%;margin:0 auto}
+.kg-c{position:relative;aspect-ratio:4/5;border:0;padding:0;background:transparent;perspective:600px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.kg-c .in{position:absolute;top:0;left:0;right:0;bottom:0;transition:transform .45s cubic-bezier(.3,1.4,.4,1);transform-style:preserve-3d}
+.kg-c.up .in{transform:rotateY(180deg)}
+.kg-c .f,.kg-c .b{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid #fff;box-shadow:0 6px 0 rgba(0,0,0,.14)}
+.kg-c .b{background:linear-gradient(135deg,#7C83FD,#FF8FCB);color:#fff;font-size:2.4rem}
+.kg-c .f{background:#fff;transform:rotateY(180deg);font:800 1.25rem/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a1a5e;text-align:center;padding:4px}
+.kg-c .f i{font-style:normal;font-size:clamp(2.4rem,11vw,3.6rem);line-height:1}
+.kg-c.ok .f{background:#E7FFF1;border-color:#6BCB77}
+.kg-c.ok{animation:kgOk .5s ease}
+@keyframes kgOk{50%{transform:scale(1.12)}}
+.kg-sp{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:6px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.kg-pic{font-size:clamp(5rem,26vw,8rem);line-height:1;animation:kidBounce 1.8s ease-in-out infinite}
+.kg-slots,.kg-tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:440px}
+.kg-sl{width:clamp(40px,12vw,54px);height:clamp(50px,14vw,64px);border-radius:14px;border:3px dashed #7C83FD;background:rgba(255,255,255,.7);display:grid;place-items:center;font:800 clamp(1.5rem,6vw,2rem) system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a1a5e}
+.kg-sl.fill{border-style:solid;background:#fff;animation:wowPop .3s both}
+.kg-tl{width:clamp(48px,14vw,62px);height:clamp(54px,15vw,68px);border:0;border-radius:16px;background:linear-gradient(180deg,#FFB84D,#FF8A5C);color:#fff;font:800 clamp(1.5rem,6.4vw,2.1rem) system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;box-shadow:0 6px 0 rgba(0,0,0,.18);cursor:pointer;touch-action:manipulation;text-transform:lowercase}
+.kg-tl:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.kg-tl.used{visibility:hidden}
+.kg-tl.no{animation:kgNo .4s ease}
+.kid-hub .kh-3{background:linear-gradient(180deg,#7C83FD,#5B4FE0)}
+.kid-hub .kh-4{background:linear-gradient(180deg,#FFB84D,#F59E0B)}
+.kid-hub .kh-5{background:linear-gradient(180deg,#34D399,#0EA5A5)}
+.kid-hub .kh-g{margin-bottom:12px}
+@media (prefers-reduced-motion:reduce){.kg-b,.kg-ov .cloud,.kid-hub .kh-b i,.kg-pic{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.wow-ov .rays,.wow-spark{display:none}.wow-ov,.wow-ov *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 <script id="wow-js">
@@ -10107,7 +10132,7 @@ const kidAll = () => KIDL.flatMap(l => l.words.map(w => ({ ...w, _u: l.id, _t: l
 const kidKey = w => 'k_' + String(w.en).toLowerCase().replace(/[^a-z]/g, '_');
 const kidHave = () => (S.profile && S.profile.stickers) || {};
 const kidHub = () => { const n = kidAll().filter(w => kidHave()[kidKey(w)]).length, t = kidAll().length;
-  return `<section class="kid-hub"><div class="kh-t"><b>Góc vui của bé</b><span>Chơi game, nhặt sticker, sưu tầm đủ bộ nhé!</span></div><div class="kh-g"><button class="kh-b kh-1" type="button" id="kg-play"><i>🎈</i><b>Bắt bóng bay</b><small>Nghe và chạm đúng hình</small></button><button class="kh-b kh-2" type="button" id="kg-album"><i>📒</i><b>Album sticker</b><small>${n}/${t} sticker</small></button></div></section>`; };
+  return `<section class="kid-hub"><div class="kh-t"><b>Góc vui của bé</b><span>Chơi game, nhặt sticker, sưu tầm đủ bộ nhé!</span></div><div class="kh-g"><button class="kh-b kh-1" type="button" id="kg-play"><i>🎈</i><b>Bắt bóng bay</b><small>Nghe và chạm đúng hình</small></button><button class="kh-b kh-3" type="button" id="kg-mem"><i>🃏</i><b>Lật thẻ ghép đôi</b><small>Tìm hình và chữ giống nhau</small></button><button class="kh-b kh-4" type="button" id="kg-spell"><i>🔤</i><b>Xếp chữ cái</b><small>Ghép chữ thành từ</small></button><button class="kh-b kh-2" type="button" id="kg-album"><i>📒</i><b>Album sticker</b><small>${n}/${t} sticker</small></button></div></section>`; };
 function kidClose(ov) { try { ov.remove(); } catch (e) {} if (S.view === 'course' && S.course === 'kids') viewCourse(); }
 function kidSky(ov) { for (let i = 0; i < 4; i++) { const c = document.createElement('div'); c.className = 'cloud'; c.style.top = (8 + i * 18) + '%'; c.style.setProperty('--cd', (28 + i * 9) + 's'); c.style.animationDelay = (-i * 8) + 's'; c.style.opacity = '.7'; ov.appendChild(c); } }
 function kidPlay() {
@@ -10180,6 +10205,67 @@ function kidAlbum() {
   ov.querySelector('.kg-x').onclick = () => kidClose(ov);
   ov.addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) { try { speak(b.dataset.w); } catch (x) {} } });
 }
+
+/* Kết thúc chung cho các game của bé: lưu sticker, cộng XP (3 vòng đầu mỗi ngày), hiện kết quả */
+async function kidFinish(ov, list, stars, summary, again) {
+  const have = kidHave(), fresh = list.filter(w => !have[kidKey(w)]);
+  if (stars >= 2) { sfx.win(); confetti(); }
+  let xpMsg = '';
+  if (list.length) {
+    const day = dayKey(); let slot = 0; for (let n = 1; n <= 3; n++) if (!claimed('kidxp_' + day + '_' + n)) { slot = n; break; }
+    const upd = {}; list.forEach(w => { upd['stickers.' + kidKey(w)] = INC(1); });
+    try { await api.updateMe(upd); } catch (e) { console.warn('stickers', e); }
+    if (slot) { markClaim('kidxp_' + day + '_' + slot); const xp = Math.min(20, list.length * 2 + (stars === 3 ? 4 : 0)); xpMsg = '+' + xp + ' XP'; award(null, xp, {}, 'kidgame'); }
+    else xpMsg = 'Hôm nay bé nhận đủ XP rồi, vẫn được sticker nhé!';
+  }
+  const box = document.createElement('div'); box.className = 'kg-res';
+  box.innerHTML = '<div class="kg-stars">' + '⭐'.repeat(stars) + '☆'.repeat(3 - stars) + '</div><h2>' + (stars === 3 ? 'Giỏi quá!' : stars ? 'Làm tốt lắm!' : 'Cố lên nào!') + '</h2><div>' + summary + ' ' + esc(xpMsg) + '</div>'
+    + (fresh.length ? '<div><b>Sticker mới!</b></div><div class="kg-new">' + fresh.map((w, i) => '<span style="animation-delay:' + (i * .12) + 's"><i>' + w.emo + '</i>' + esc(w.en) + '</span>').join('') + '</div>' : '')
+    + '<div class="kg-row"><button class="kg-btn" type="button" data-a="again">Chơi tiếp</button><button class="kg-btn alt" type="button" data-a="album">Xem album</button><button class="kg-btn alt" type="button" data-a="close">Xong</button></div>';
+  box.onclick = e => { const a = e.target.closest('[data-a]'); if (!a) return; if (a.dataset.a === 'again') { ov.remove(); again(); } else if (a.dataset.a === 'album') { ov.remove(); kidAlbum(); } else kidClose(ov); };
+  ov.appendChild(box);
+}
+function kidShell(label, mid) {
+  const ov = document.createElement('div'); ov.className = 'kg-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', label); kidSky(ov);
+  ov.insertAdjacentHTML('beforeend', '<div class="kg-top"><button class="kg-x" type="button" aria-label="Đóng">✕</button><div style="font-weight:800;font-size:1.15rem">' + esc(label) + '</div><div class="kg-sc" id="kg-s">0</div></div>' + mid);
+  document.body.appendChild(ov); return ov;
+}
+function kidMemory() {
+  const pool = shuffle(kidAll().filter(w => w.emo)).slice(0, 6), cards = shuffle(pool.flatMap(w => [{ w, t: 'p' }, { w, t: 'w' }]));
+  const ov = kidShell('Lật thẻ ghép đôi', '<div class="kg-q"><div class="kg-m" id="kg-m">Lật hai thẻ: hình và chữ giống nhau!</div></div><div class="kg-mem" id="kg-g"></div>');
+  const g = ov.querySelector('#kg-g'), $s = ov.querySelector('#kg-s');
+  let open = [], moves = 0, done = 0, busy = false, ended = false; $s.textContent = '0 lượt';
+  cards.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'kg-c'; b.setAttribute('aria-label', 'Thẻ ' + (i + 1));
+    b.innerHTML = '<div class="in"><div class="b">❓</div><div class="f">' + (c.t === 'p' ? '<i>' + c.w.emo + '</i>' : esc(c.w.en)) + '</div></div>';
+    b.onclick = () => { if (busy || ended || b.classList.contains('up') || b.classList.contains('ok')) return;
+      b.classList.add('up'); open.push([b, c]); if (c.t === 'w') { try { speak(c.w.en); } catch (e) {} }
+      if (open.length === 2) { busy = true; moves++; $s.textContent = moves + ' lượt'; const [[b1, c1], [b2, c2]] = open;
+        if (c1.w.en === c2.w.en && c1.t !== c2.t) { setTimeout(() => { b1.classList.add('ok'); b2.classList.add('ok'); sfx.ok(); const r = b2.getBoundingClientRect(); if (window.fxBurst) window.fxBurst(r.left + r.width / 2, r.top + r.height / 2, 36); open = []; busy = false; done++; ov.querySelector('#kg-m').innerHTML = esc(c1.w.en) + '<small>' + esc(c1.w.vi) + '</small>'; if (done === pool.length) { ended = true; setTimeout(() => kidFinish(ov, pool, moves <= 9 ? 3 : moves <= 13 ? 2 : 1, 'Bé ghép xong sau <b>' + moves + '</b> lượt.', kidMemory), 900); } }, 500); }
+        else { setTimeout(() => { b1.classList.remove('up'); b2.classList.remove('up'); sfx.no(); open = []; busy = false; }, 900); } } };
+    g.appendChild(b); });
+  ov.querySelector('.kg-x').onclick = () => { ended = true; kidClose(ov); };
+}
+function kidSpell() {
+  const pool = shuffle(kidAll().filter(w => w.emo && /^[a-z]{3,7}$/i.test(w.en))).slice(0, 6);
+  const ov = kidShell('Xếp chữ cái', '<div class="kg-q"><div class="kg-m" id="kg-m">Nghe và xếp chữ cái thành từ nhé!</div></div><div class="kg-sp" id="kg-sp"></div>');
+  let i = 0, miss = 0, ended = false, ok = []; const $s = ov.querySelector('#kg-s'); $s.textContent = '1/' + pool.length;
+  ov.querySelector('.kg-x').onclick = () => { ended = true; kidClose(ov); };
+  function next() {
+    if (ended) return; if (i >= pool.length) { ended = true; return kidFinish(ov, ok, miss <= 1 ? 3 : miss <= 4 ? 2 : 1, 'Bé xếp đúng <b>' + ok.length + '/' + pool.length + '</b> từ.', kidSpell); }
+    const w = pool[i], L = w.en.toLowerCase().split(''), el = ov.querySelector('#kg-sp'); let pos = 0; $s.textContent = (i + 1) + '/' + pool.length;
+    el.innerHTML = '<div class="kg-pic">' + w.emo + '</div><button class="kg-say" type="button">🔊 Nghe từ</button><div class="kg-slots">' + L.map(() => '<div class="kg-sl"></div>').join('') + '</div><div class="kg-tiles"></div>';
+    const slots = el.querySelectorAll('.kg-sl'), tiles = el.querySelector('.kg-tiles'); el.querySelector('.kg-say').onclick = () => speak(w.en);
+    shuffle(L.map((ch, k) => [ch, k])).forEach(([ch]) => { const t = document.createElement('button'); t.type = 'button'; t.className = 'kg-tl'; t.textContent = ch;
+      t.onclick = () => { if (t.classList.contains('used') || ended) return;
+        if (ch === L[pos]) { t.classList.add('used'); slots[pos].textContent = ch; slots[pos].classList.add('fill'); pos++; sfx.ok();
+          if (pos === L.length) { ok.push(w); const r = slots[0].getBoundingClientRect(); if (window.fxBurst) window.fxBurst(innerWidth / 2, r.top, 40); ov.querySelector('#kg-m').innerHTML = esc(w.en) + '<small>' + esc(w.vi) + '</small>'; setTimeout(() => speak(w.en), 150); i++; setTimeout(next, 1500); } }
+        else { miss++; sfx.no(); t.classList.remove('no'); void t.offsetWidth; t.classList.add('no'); } };
+      tiles.appendChild(t); });
+    setTimeout(() => { if (!ended) speak(w.en); }, 400);
+  }
+  next();
+}
+document.addEventListener('click', e => { if (e.target.closest('#kg-mem')) kidMemory(); else if (e.target.closest('#kg-spell')) kidSpell(); });
 document.addEventListener('click', e => { if (e.target.closest('#kg-play')) kidPlay(); else if (e.target.closest('#kg-album')) kidAlbum(); });
 function redrawCat() {
   if (S.view === 'home') { drawDash(); drawCourses(); drawNewsStrip(); }

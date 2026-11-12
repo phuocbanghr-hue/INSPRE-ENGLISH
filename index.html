@@ -1636,6 +1636,66 @@ body.kids .fc-emo{font-size:7rem;line-height:1.05;animation:kidBounce 1.6s ease-
 body.kids .fc-word{font-size:2.8rem;letter-spacing:.02em}
 @keyframes kidBounce{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){body.kids .fc-emo{animation:none}}
+
+/* ===== English Kids: Góc vui của bé ===== */
+.kid-hub{margin:22px 0 6px;padding:18px;border-radius:30px;background:linear-gradient(135deg,#7CD4FF,#B9A7FF 55%,#FFB3D1);border:3px solid #fff;box-shadow:0 12px 0 -4px rgba(120,80,200,.25),0 22px 34px -20px rgba(60,40,140,.5);color:#2a1a5e}
+.kid-hub .kh-t{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.kid-hub .kh-t b{font:800 1.5rem/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.kid-hub .kh-t span{font:600 .95rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;opacity:.8}
+.kid-hub .kh-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kid-hub .kh-b{position:relative;border:0;border-radius:24px;padding:16px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:#fff;box-shadow:0 7px 0 rgba(0,0,0,.18);touch-action:manipulation;transition:transform .15s cubic-bezier(.2,1.6,.3,1)}
+.kid-hub .kh-b:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.kid-hub .kh-1{background:linear-gradient(180deg,#FF8A5C,#F0486B)}
+.kid-hub .kh-2{background:linear-gradient(180deg,#34D399,#0EA5A5)}
+.kid-hub .kh-b i{font-style:normal;font-size:3rem;line-height:1;animation:kidBounce 1.8s ease-in-out infinite}
+.kid-hub .kh-b b{font:800 1.1rem/1.15 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.kid-hub .kh-b small{font:600 .8rem/1.2 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;opacity:.92}
+.kg-ov{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9500;display:flex;flex-direction:column;background:linear-gradient(#6EC8FF 0,#BDEBFF 55%,#FFF6DC 100%);color:#2a1a5e;overflow:hidden;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
+.kg-ov .cloud{position:absolute;width:140px;height:46px;border-radius:50px;background:rgba(255,255,255,.85);filter:blur(1px);animation:kgCloud var(--cd) linear infinite;pointer-events:none}
+.kg-ov .cloud:before,.kg-ov .cloud:after{content:"";position:absolute;background:inherit;border-radius:50%}
+.kg-ov .cloud:before{width:60px;height:60px;left:22px;top:-26px}.kg-ov .cloud:after{width:48px;height:48px;left:70px;top:-18px}
+.kg-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:12px 14px}
+.kg-x{width:46px;height:46px;border-radius:50%;border:0;background:#fff;color:#2a1a5e;font-size:1.3rem;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.15);cursor:pointer;touch-action:manipulation}
+.kg-lv{font-size:1.6rem;letter-spacing:2px}
+.kg-sc{min-width:46px;padding:8px 14px;border-radius:99px;background:#fff;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+.kg-q{position:relative;z-index:2;text-align:center;padding:2px 16px 0}
+.kg-say{border:0;border-radius:99px;padding:14px 28px;min-height:56px;font:800 1.2rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff;background:linear-gradient(180deg,#FF8A5C,#F0486B);box-shadow:0 6px 0 rgba(0,0,0,.18);cursor:pointer;touch-action:manipulation}
+.kg-say:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.kg-m{margin-top:10px;min-height:2.6em;font:800 1.35rem/1.25 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;text-shadow:0 2px 0 rgba(255,255,255,.7)}
+.kg-m small{display:block;font-weight:600;font-size:.95rem;opacity:.8}
+.kg-sky{position:relative;flex:1;z-index:1}
+.kg-b{position:absolute;border:0;padding:0;width:clamp(78px,22vw,124px);height:clamp(98px,27vw,152px);border-radius:50% 50% 48% 48%/58% 58% 42% 42%;background:radial-gradient(circle at 30% 26%,rgba(255,255,255,.8) 0 11%,transparent 12%),var(--c);display:grid;place-items:center;font-size:clamp(2.3rem,9.5vw,3.8rem);box-shadow:inset -8px -10px 18px rgba(0,0,0,.16),0 12px 18px -10px rgba(0,0,0,.4);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;animation:kgRise .9s var(--dl) cubic-bezier(.2,.9,.3,1) both,kgBob var(--bd) .9s ease-in-out infinite}
+.kg-b:after{content:"";position:absolute;left:50%;top:100%;width:2px;height:46px;margin-left:-1px;background:rgba(60,40,100,.35)}
+.kg-b.pop{animation:kgPop .35s ease-out forwards;pointer-events:none}
+.kg-b.no{animation:kgNo .5s ease both;filter:grayscale(.85);pointer-events:none}
+.kg-b.hold{pointer-events:none}
+.kg-res{position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#FFF8E7;animation:wowIn .35s both;overflow-y:auto}
+.kg-res h2{margin:0;font:800 1.9rem/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a1a5e}
+.kg-stars{font-size:3rem;letter-spacing:6px}
+.kg-new{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:420px}
+.kg-new span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 12px;border-radius:18px;background:#fff;border:3px dashed #FFB84D;font:700 .85rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;animation:wowPop .7s both}
+.kg-new span i{font-style:normal;font-size:2.2rem}
+.kg-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.kg-btn{border:0;border-radius:99px;padding:14px 26px;min-height:52px;font:800 1.05rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff;background:linear-gradient(180deg,#34D399,#0EA5A5);box-shadow:0 6px 0 rgba(0,0,0,.18);cursor:pointer;touch-action:manipulation}
+.kg-btn.alt{background:linear-gradient(180deg,#FF8A5C,#F0486B)}
+.kg-btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.kg-alb{position:relative;z-index:2;flex:1;overflow-y:auto;padding:4px 14px calc(24px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+.kg-alb h3{margin:16px 2px 8px;font:800 1.1rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kg-alb h3 em{font-style:normal;font-size:.75rem;padding:3px 10px;border-radius:99px;background:#FFD54A;color:#5a3a00}
+.kg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kg-st{position:relative;aspect-ratio:1;border-radius:18px;border:3px solid #fff;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 .7rem/1.1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;box-shadow:0 4px 0 rgba(0,0,0,.1);cursor:pointer;touch-action:manipulation;padding:2px;text-align:center}
+.kg-st i{font-style:normal;font-size:2rem;line-height:1}
+.kg-st.lock{background:rgba(255,255,255,.55);color:#8a7fb0;cursor:default}
+.kg-st.lock i{filter:grayscale(1) brightness(1.7);opacity:.55}
+.kg-st b{position:absolute;top:-6px;right:-4px;min-width:20px;padding:1px 5px;border-radius:99px;background:#F0486B;color:#fff;font-size:.68rem}
+.kg-bar{position:relative;z-index:2;margin:0 14px 6px;height:14px;border-radius:99px;background:rgba(255,255,255,.7);overflow:hidden;border:2px solid #fff}
+.kg-bar i{display:block;height:100%;background:linear-gradient(90deg,#FFD54A,#FF8A5C);border-radius:99px}
+@keyframes kgRise{from{transform:translateY(110vh)}to{transform:translateY(0)}}
+@keyframes kgBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-16px) rotate(3deg)}}
+@keyframes kgPop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1.7);opacity:0}}
+@keyframes kgNo{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes kgCloud{from{transform:translateX(-200px)}to{transform:translateX(110vw)}}
+@media (prefers-reduced-motion:reduce){.kg-b,.kg-ov .cloud,.kid-hub .kh-b i{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.wow-ov .rays,.wow-spark{display:none}.wow-ov,.wow-ov *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 <script id="wow-js">
@@ -9068,7 +9128,7 @@ function viewCourse() {
         <div class="w-cta">${cont ? `<button class="btn w-main" id="cont">${st(cont) === 'new' ? 'Bắt đầu' : 'Tiếp tục'}: ${esc(cont.title)}</button>` : ''}<button class="btn w-sub" data-go="home">Về trang khoá học</button></div>
         <div class="chero-st"><div><b>${all.length}</b><span>Bài học</span></div><div><b>${done}</b><span>Hoàn thành</span></div><div><b>${doing}</b><span>Đang học</span></div><div><b>${words}</b><span>Từ vựng</span></div></div></div>
       <div class="chero-r"><div class="ring big"><svg viewBox="0 0 100 100" role="img" aria-label="Tiến độ ${pc}%"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="9"/><circle cx="50" cy="50" r="44" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * pc / 100} ${C}" transform="rotate(-90 50 50)"/></svg><b>${pc}%</b></div><small>Tiến độ khoá học</small></div></section>
-    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${bank}${docsCard}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
+    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${c.id === 'kids' ? kidHub() : ''}${bank}${docsCard}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
     <div class="flt" style="margin:0 0 18px"><input id="cq" type="search" placeholder="Tìm bài trong khoá ${esc(c.name)}…" value="${esc(S.cq || '')}" aria-label="Tìm bài"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${flt === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
     <div class="ugrid">${list.length ? list.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), p = Math.round(d / NA * 100), k = st(l);
       return `<button class="ucard ${k}" data-id="${l.id}"><span class="u-n">${pad(lessonNum(l) % 100)}</span><span class="u-b"><span class="tg ${TAG[k][1]}" style="display:inline-block">${TAG[k][0]}</span><b>${esc(l.title)}</b><small>${l.description ? esc(l.description) : n + ' từ vựng'}</small></span>
@@ -10042,6 +10102,85 @@ function recalcLessons() {
   S.allLessons = [...(S.rawLessons || []).filter(l => l.published !== false && !l.overrideOf), ...BI(GS9L), ...BI(GS6L), ...BI(GS6LIS), ...BI(GS9PT), ...BI(GS7U), ...BI(GS8L), ...BI(GS9P), ...BI(UL7P), ...BI(UL7L), ...BI(UL7H), ...BI(UL7W), ...BI(G7LIS), ...BI(G8TEST), ...BI(G7KT), ...BI(KIDL), ...BI(RDX)].filter(courseOf).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   applyLessons();
 }
+/* ============ English Kids: Góc vui của bé (bắt bóng bay + album sticker) ============ */
+const kidAll = () => KIDL.flatMap(l => l.words.map(w => ({ ...w, _u: l.id, _t: l.title })));
+const kidKey = w => 'k_' + String(w.en).toLowerCase().replace(/[^a-z]/g, '_');
+const kidHave = () => (S.profile && S.profile.stickers) || {};
+const kidHub = () => { const n = kidAll().filter(w => kidHave()[kidKey(w)]).length, t = kidAll().length;
+  return `<section class="kid-hub"><div class="kh-t"><b>Góc vui của bé</b><span>Chơi game, nhặt sticker, sưu tầm đủ bộ nhé!</span></div><div class="kh-g"><button class="kh-b kh-1" type="button" id="kg-play"><i>🎈</i><b>Bắt bóng bay</b><small>Nghe và chạm đúng hình</small></button><button class="kh-b kh-2" type="button" id="kg-album"><i>📒</i><b>Album sticker</b><small>${n}/${t} sticker</small></button></div></section>`; };
+function kidClose(ov) { try { ov.remove(); } catch (e) {} if (S.view === 'course' && S.course === 'kids') viewCourse(); }
+function kidSky(ov) { for (let i = 0; i < 4; i++) { const c = document.createElement('div'); c.className = 'cloud'; c.style.top = (8 + i * 18) + '%'; c.style.setProperty('--cd', (28 + i * 9) + 's'); c.style.animationDelay = (-i * 8) + 's'; c.style.opacity = '.7'; ov.appendChild(c); } }
+function kidPlay() {
+  const pool = kidAll(), TOTAL = 8, COL = ['#FF6B6B', '#FFB84D', '#4ECDC4', '#7C83FD', '#FF8FCB', '#6BCB77'];
+  const ov = document.createElement('div'); ov.className = 'kg-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Bắt bóng bay');
+  kidSky(ov);
+  ov.insertAdjacentHTML('beforeend', '<div class="kg-top"><button class="kg-x" type="button" aria-label="Đóng">✕</button><div class="kg-lv" id="kg-h"></div><div class="kg-sc" id="kg-s">0/' + TOTAL + '</div></div><div class="kg-q"><button class="kg-say" type="button" id="kg-say">🔊 Nghe lại</button><div class="kg-m" id="kg-m">Nghe và chạm vào quả bóng đúng nhé!</div></div><div class="kg-sky" id="kg-sky"></div>');
+  document.body.appendChild(ov);
+  const $o = q => ov.querySelector(q);
+  let round = 0, hearts = 3, right = 0, cur = null, lock = false, used = new Set(), got = new Map(), ended = false;
+  const hearts_ = () => { $o('#kg-h').textContent = '❤️'.repeat(hearts) + '🤍'.repeat(3 - hearts); };
+  $o('.kg-x').onclick = () => { ended = true; kidClose(ov); };
+  $o('#kg-say').onclick = () => { if (cur) speak(cur.en); };
+  function next() {
+    if (ended) return;
+    if (round >= TOTAL || hearts <= 0) return end();
+    lock = false; round++;
+    const fresh = pool.filter(w => !used.has(w.en)); cur = shuffle(fresh.length ? fresh : pool)[0]; used.add(cur.en);
+    const others = shuffle(pool.filter(w => w.en !== cur.en && w.emo !== cur.emo)).slice(0, 3), opts = shuffle([cur, ...others]);
+    $o('#kg-m').textContent = 'Bóng nào là gì nhỉ? Nghe nhé!'; $o('#kg-s').textContent = right + '/' + TOTAL; hearts_();
+    const sky = $o('#kg-sky'); sky.innerHTML = '';
+    const tops = shuffle([6, 22, 38, 12]);
+    opts.forEach((w, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'kg-b'; b.textContent = w.emo || '⭐'; b.setAttribute('aria-label', w.vi);
+      b.style.left = (3 + i * 24.5) + '%'; b.style.top = tops[i] + '%'; b.style.setProperty('--c', COL[(i + round) % COL.length]); b.style.setProperty('--dl', (i * .08) + 's'); b.style.setProperty('--bd', (2.2 + i * .35) + 's');
+      b.onclick = () => pick(b, w); sky.appendChild(b); });
+    setTimeout(() => { if (!ended && cur) speak(cur.en); }, 500);
+  }
+  function pick(b, w) {
+    if (lock || ended) return;
+    const r = b.getBoundingClientRect();
+    if (w.en === cur.en) {
+      lock = true; right++; b.classList.add('pop'); sfx.ok(); if (window.fxBurst) window.fxBurst(r.left + r.width / 2, r.top + r.height / 2, 46);
+      got.set(kidKey(cur), cur); $o('#kg-s').textContent = right + '/' + TOTAL;
+      $o('#kg-m').innerHTML = esc(cur.en) + '<small>' + esc(cur.vi) + '</small>'; setTimeout(() => speak(cur.en), 200);
+      setTimeout(next, 1400);
+    } else {
+      b.classList.add('no'); sfx.no(); hearts--; hearts_(); $o('#kg-m').textContent = 'Chưa đúng, thử bóng khác nhé!';
+      if (hearts <= 0) { lock = true; setTimeout(end, 900); }
+    }
+  }
+  async function end() {
+    if (ended) return; ended = true;
+    const list = [...got.values()], have = kidHave(), fresh = list.filter(w => !have[kidKey(w)]), stars = right >= 7 ? 3 : right >= 5 ? 2 : right >= 2 ? 1 : 0;
+    if (stars >= 2) { sfx.win(); confetti(); } 
+    let xpMsg = '';
+    if (list.length) {
+      const day = dayKey(); let slot = 0; for (let n = 1; n <= 3; n++) if (!claimed('kidxp_' + day + '_' + n)) { slot = n; break; }
+      const upd = {}; list.forEach(w => { upd['stickers.' + kidKey(w)] = INC(1); });
+      try { await api.updateMe(upd); } catch (e) { console.warn('stickers', e); }
+      if (slot) { markClaim('kidxp_' + day + '_' + slot); const xp = Math.min(20, right * 2 + (stars === 3 ? 4 : 0)); xpMsg = '+' + xp + ' XP'; award(null, xp, {}, 'kidgame'); }
+      else xpMsg = 'Hôm nay bé nhận đủ XP rồi, vẫn được sticker nhé!';
+    }
+    const box = document.createElement('div'); box.className = 'kg-res';
+    box.innerHTML = '<div class="kg-stars">' + '⭐'.repeat(stars) + '☆'.repeat(3 - stars) + '</div><h2>' + (stars === 3 ? 'Giỏi quá!' : stars ? 'Làm tốt lắm!' : 'Cố lên nào!') + '</h2><div>Bé bắt đúng <b>' + right + '/' + TOTAL + '</b> bóng. ' + esc(xpMsg) + '</div>'
+      + (fresh.length ? '<div><b>Sticker mới!</b></div><div class="kg-new">' + fresh.map((w, i) => '<span style="animation-delay:' + (i * .12) + 's"><i>' + w.emo + '</i>' + esc(w.en) + '</span>').join('') + '</div>' : '')
+      + '<div class="kg-row"><button class="kg-btn" type="button" data-a="again">Chơi tiếp</button><button class="kg-btn alt" type="button" data-a="album">Xem album</button><button class="kg-btn alt" type="button" data-a="close">Xong</button></div>';
+    box.onclick = e => { const a = e.target.closest('[data-a]'); if (!a) return; if (a.dataset.a === 'again') { ov.remove(); kidPlay(); } else if (a.dataset.a === 'album') { ov.remove(); kidAlbum(); } else kidClose(ov); };
+    ov.appendChild(box);
+  }
+  hearts_(); next();
+}
+function kidAlbum() {
+  const have = kidHave(), all = kidAll(), n = all.filter(w => have[kidKey(w)]).length;
+  const ov = document.createElement('div'); ov.className = 'kg-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Album sticker');
+  kidSky(ov);
+  const byU = KIDL.map(l => { const ws = l.words, c = ws.filter(w => have[kidKey(w)]).length;
+    return `<h3>${esc(l.title)} <em>${c}/${ws.length}${c === ws.length ? ' · Đủ bộ!' : ''}</em></h3><div class="kg-grid">${ws.map(w => { const k = have[kidKey(w)]; return k ? `<button type="button" class="kg-st" data-w="${esc(w.en)}"><i>${w.emo}</i>${esc(w.en)}${k > 1 ? '<b>x' + k + '</b>' : ''}</button>` : `<div class="kg-st lock"><i>${w.emo}</i>?</div>`; }).join('')}</div>`; }).join('');
+  ov.innerHTML = `<div class="kg-top" style="position:relative;z-index:2"><button class="kg-x" type="button" aria-label="Đóng">✕</button><div style="font-weight:800;font-size:1.2rem">Album sticker</div><div class="kg-sc">${n}/${all.length}</div></div><div class="kg-bar"><i style="width:${Math.round(n / all.length * 100)}%"></i></div><div class="kg-alb">${n ? '' : '<p style="text-align:center;font-weight:700">Chơi "Bắt bóng bay" để nhặt sticker đầu tiên nhé!</p>'}${byU}</div>`;
+  kidSky(ov); document.body.appendChild(ov);
+  ov.querySelector('.kg-x').onclick = () => kidClose(ov);
+  ov.addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) { try { speak(b.dataset.w); } catch (x) {} } });
+}
+document.addEventListener('click', e => { if (e.target.closest('#kg-play')) kidPlay(); else if (e.target.closest('#kg-album')) kidAlbum(); });
 function redrawCat() {
   if (S.view === 'home') { drawDash(); drawCourses(); drawNewsStrip(); }
   else if (S.view === 'course') { if (!COURSES.find(x => x.id === S.course) || !isEnrolled(S.course)) go('home'); else viewCourse(); }

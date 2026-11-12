@@ -3161,6 +3161,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .wapp .card>h3:first-child:not(.wh-dup):before,.wapp .card>.row:first-child>h3:first-child:before{content:"";display:block!important;width:5px;height:20px;border-radius:3px;background:#F26522;flex:none}
 @keyframes wfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .wapp .content>*{animation:wfade .28s ease both}
+.ov{position:fixed!important;inset:0!important;overflow-y:auto!important;background:rgba(40,12,20,.45)!important;backdrop-filter:blur(3px)}.ov:before{display:none!important}.ov .modal{position:relative;margin:auto 0}
+.ov .modal{border-radius:12px!important;border-top:4px solid #F26522!important}
+.ov .modal h3{color:#F26522!important;font-weight:700!important;position:relative;padding-left:15px}
+.ov .modal h3:before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:1.2em;background:#F26522;border-radius:2px}
+.ov .modal input:not([type=checkbox]):not([type=radio]),.ov .modal select,.ov .modal textarea{border:1px solid #CED4DA!important;border-radius:8px!important}
+.ov .modal input:focus,.ov .modal select:focus,.ov .modal textarea:focus{outline:0!important;border-color:#0B5CA8!important;box-shadow:0 0 0 3px rgba(11,92,168,.15)!important}
+.ov .modal label{display:block;margin-top:2px}
+.ov .modal>*{margin-left:0!important;margin-right:0!important}.ov .modal label{margin-top:8px}
+.ov .modal .btn{border-radius:8px!important;box-shadow:none!important}
+.ov .modal .btn:not(.soft):not(.ghost):not(.danger){background:#B10B32!important;color:#fff!important;border:1px solid #B10B32!important}
+.ov .modal .btn.soft,.ov .modal .btn.ghost{background:#fff!important;color:#0B5CA8!important;border:1px solid #0B5CA8!important}
 .wapp input[type=search]{border:1px solid #CED4DA!important;border-radius:8px!important;padding-left:36px!important;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236C757D' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l4 4'/%3E%3C/svg%3E") no-repeat 12px center!important}
 .wapp #content input:focus,.wapp #content select:focus,.wapp #content textarea:focus{outline:0!important;border-color:#0B5CA8!important;box-shadow:0 0 0 3px rgba(11,92,168,.15)!important}
 .wapp #content .btn:focus-visible{outline:2px solid #F26522!important;outline-offset:2px}

@@ -4382,7 +4382,7 @@ function draw() {
 
 
 /* ---------- phòng thi thử: kết quả + vi phạm ---------- */
-const RM_NAMES = { gs6: 'Tiếng Anh 6', unlock7: 'Tiếng Anh 7', gs8: 'Tiếng Anh 8', gs9: 'Tiếng Anh 9' };
+const RM_NAMES = { kids: 'English Kids', gs6: 'Tiếng Anh 6', unlock7: 'Tiếng Anh 7', gs8: 'Tiếng Anh 8', gs9: 'Tiếng Anh 9' };
 function vRoom() {
   const rows = S.users.flatMap(u => Object.entries(u.room || {}).filter(([, r]) => r && typeof r === 'object').map(([cid, r]) => ({ u, cid, r })));
   const cls = [...new Set(rows.map(x => x.u.className).filter(Boolean))].sort(), f = S.rmf || (S.rmf = { c: 'all', k: 'all', v: false });
@@ -5089,6 +5089,7 @@ const CAT_PROGS = ['Mầm non', 'Tiểu học', 'THCS', 'THPT', 'Cambridge', 'KE
 const CAT_GOALS = [['base', 'Làm quen và yêu thích tiếng Anh'], ['school', 'Học tốt trên lớp, tăng điểm số'], ['cam', 'Thi chứng chỉ Cambridge'], ['ielts', 'Luyện IELTS'], ['talk', 'Giao tiếp và phát âm']];
 const CAT_LVL = ['Mới bắt đầu', 'Cơ bản', 'Trung cấp', 'Nâng cao'];
 const BASE_C = [
+  { id: 'kids', name: 'ENGLISH KIDS', sub: 'Tiếng Anh cho trẻ', program: 'Tiểu học', goal: 'base', ageMin: 4, ageMax: 10, level: 'Mới bắt đầu', builtin: true, test: t => /english kids/.test(t) },
   { id: 'gs8', name: 'TIẾNG ANH 8', sub: 'Global Success 8', program: 'Học đường', goal: 'school', ageMin: 13, ageMax: 14, level: 'Cơ bản', builtin: true, test: t => /global success\s*8|tiếng anh 8|tieng anh 8/.test(t) },
   { id: 'gs6', name: 'TIẾNG ANH 6', sub: 'Global Success 6', program: 'Học đường', goal: 'school', ageMin: 11, ageMax: 12, level: 'Cơ bản', builtin: true, test: t => /global success\s*6|tiếng anh 6|tieng anh 6/.test(t) },
   { id: 'gs9', name: 'TIẾNG ANH 9', sub: 'Global Success', program: 'Học đường', goal: 'school', ageMin: 14, ageMax: 15, level: 'Cơ bản', builtin: true, test: t => /global success(?!\s*[678])|tiếng anh 9|tieng anh 9/.test(t) },

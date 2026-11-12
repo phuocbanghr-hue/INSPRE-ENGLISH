@@ -3153,6 +3153,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .wapp .hub-t span{font-size:.88rem;line-height:1.35}
 .wapp .content div:has(>.hub-t){grid-template-columns:repeat(4,1fr)!important}
 @media(max-width:900px){.wapp .content div:has(>.hub-t){grid-template-columns:repeat(2,1fr)!important}}
+.wpg{max-width:1180px!important}
+.wapp .content>select,.wapp .content>label>select{display:inline-block!important;width:auto!important;min-width:240px;max-width:100%;margin:0 10px 12px 0!important}
+.wapp .content>label{display:inline-flex;align-items:center;gap:8px;margin:0 14px 12px 0}
+.wapp .content>.btn{margin-left:0!important}
+.wapp .card>h3:first-child:not(.wh-dup),.wapp .card>.row:first-child>h3:first-child{display:flex;align-items:center;gap:10px}
+.wapp .card>h3:first-child:not(.wh-dup):before,.wapp .card>.row:first-child>h3:first-child:before{content:"";display:block!important;width:5px;height:20px;border-radius:3px;background:#F26522;flex:none}
+@keyframes wfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wapp .content>*{animation:wfade .28s ease both}
+.wnb:focus-visible,.wav:focus-visible,.wapp .btn:focus-visible{outline:2px solid #0B5CA8;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.wapp .content>*{animation:none}}
+.wapp #content .btn:not(.soft):not(.ghost):not(.danger):not(.mint):not(.on){background:#B10B32!important;border-color:#B10B32!important;color:#fff!important}
+.wapp #content .btn:not(.soft):not(.ghost):not(.danger):not(.mint):not(.on):hover{background:#8A0925!important}
+.wapp #content .row>select,.wapp #content>select{width:auto!important;flex:0 0 auto!important;min-width:220px;max-width:100%}
+.wfoot .wf-in{max-width:1180px}
 </style>
 <div id="ain" aria-hidden="true">
   <div class="hl"></div><div class="rays"></div>
@@ -4493,7 +4507,7 @@ function shell() {
   const t = S.site || {}, camp = String(t.campuses || 'CS1: 153 Diên Hồng, Hòa Xuân\nCS2: 164 Phan Triêm, Hòa Xuân\nCS3: 134 Cao Hồng Lãnh, Ngũ Hành Sơn').split('\n').filter(Boolean);
   root.innerHTML = `<div class="app wapp"><header class="wtop"><div class="wts"><div class="wts-in">${env}<div class="wuser"><button class="wav" id="wavb" aria-haspopup="true" aria-expanded="false" aria-label="Tài khoản">${esc(ini)}</button>
       <div class="wumenu" id="wum" hidden><div class="wu-i"><b>${esc((S.me && S.me.name) || 'Tài khoản')}</b><small>${esc(S.user.email || '')}</small></div><button data-pal="1">Tìm nhanh <em>Ctrl K</em></button><a href="index.html" target="_blank" rel="noopener">Xem web học sinh</a><button id="out">Đăng xuất</button></div></div></div></div>
-    <div class="wbar"><div class="wbrand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>${TEACHER() ? 'Cổng giáo viên' : 'Quản trị'}</small></span></div>
+    <div class="wbar"><div class="wbrand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>Do it with passion</small></span></div>
       <nav class="wnav" aria-label="Điều hướng">${mainT.map(x => tab(x)).join('')}${moreT.length ? `<div class="wmore"><button class="wnb" id="wmorb" aria-haspopup="true" aria-expanded="false">Khác</button><div class="wmenu" id="wmm" hidden>${moreT.map(x => tab(x, 'mi')).join('')}</div></div>` : ''}</nav></div></header>
     <div class="wpg"><nav class="wcr" id="wcr"></nav><main class="content" id="content"></main></div>
     <footer class="wfoot"><div class="wf-in"><div class="wf-c"><b>Inspire Connect</b><span>Cổng giáo viên: quản lý lớp, bài học, bài tập và học sinh.</span></div><div class="wf-c"><h5>Cơ sở</h5>${camp.map(x => `<span>${esc(x)}</span>`).join('')}</div><div class="wf-c"><h5>Liên hệ</h5>${t.phone ? `<span>Hotline: <b>${esc(t.phone)}</b></span>` : ''}<a href="index.html" target="_blank" rel="noopener">Xem web học sinh</a></div></div><div class="wf-b">© ${new Date().getFullYear()} Inspire Connect</div></footer></div>`;

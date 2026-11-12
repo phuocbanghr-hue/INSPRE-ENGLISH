@@ -3167,6 +3167,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .wapp #content .btn:not(.soft):not(.ghost):not(.danger):not(.mint):not(.on):hover{background:#8A0925!important}
 .wapp #content .row>select,.wapp #content>select{width:auto!important;flex:0 0 auto!important;min-width:220px;max-width:100%}
 .wfoot .wf-in{max-width:1180px}
+/* thanh trên: dải trắng cuộn đi, chỉ thanh logo + tab dính đầu trang */
+.wapp .wtop{top:-52px!important}
+.wapp thead th,.wapp .tbl-wrap thead th{position:static!important;text-transform:none!important;letter-spacing:0!important;font-size:.88rem!important}
+/* vạch cam đầu tiêu đề thẻ: không đè chữ */
+.wapp .card>h3:first-child:not(.wh-dup),.wapp .card>.row:first-child>h3:first-child{display:block!important;position:relative;padding-left:15px!important}
+.wapp .card>h3:first-child:not(.wh-dup):before,.wapp .card>.row:first-child>h3:first-child:before{position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:1.2em!important}
+/* thẻ công cụ: bỏ viền trái đỏ cũ */
+.wapp .card.tool{border:1px solid #DEE2E6!important;border-left:1px solid #DEE2E6!important;background-image:none!important}
+.wapp .card.tool:before,.wapp .card.tool:after{display:none!important}
+.wapp .card.tool:hover{box-shadow:0 6px 16px rgba(16,24,40,.1)!important}
+.wapp .tgrid{gap:16px}
+/* bỏ đường kẻ dọc ở cột đầu của bảng */
+.wapp .tbl-wrap td:first-child,.wapp .tbl-wrap th:first-child,.wapp td:first-child,.wapp th:first-child{border-right:0!important;box-shadow:none!important}
+.wapp .tbl-wrap td,.wapp td{border-left:0!important}
 </style>
 <div id="ain" aria-hidden="true">
   <div class="hl"></div><div class="rays"></div>

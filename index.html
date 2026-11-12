@@ -6332,7 +6332,20 @@ async function rollXp() {
 }
 const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); }; return f(w.start) + ' → ' + f(w.end); };
 /* ---------- ghi điểm & từ sai ---------- */
+/* Chống nhận điểm trùng khi mạng chậm: cùng một lần nhận điểm đang chờ lưu thì bỏ qua lần bấm thêm */
+const _awIn = new Map();
 async function award(lid, xp, extra = {}, src = '') {
+  let k; try { k = [lid || '', src || '', xp, JSON.stringify(extra || {})].join('|'); } catch { k = ''; }
+  const t = k && _awIn.get(k);
+  if (t && (t === 1 || Date.now() - t < 400)) return;
+  if (k) _awIn.set(k, 1);
+  try { return await _award(lid, xp, extra, src); } finally { if (k) _awIn.set(k, Date.now()); }
+}
+/* Đánh dấu "đã nhận" lưu cả trên tài khoản, xoá dữ liệu trình duyệt cũng không nhận lại được */
+const _clk = k => 'c_' + String(k).replace(/[^\w]/g, '_').slice(0, 60);
+const claimed = k => !!store.get(k) || !!((((S && S.profile) || {}).claims) || {})[_clk(k)];
+const markClaim = k => { store.set(k, '1'); try { api.updateMe({ ['claims.' + _clk(k)]: 1 }).catch(() => {}); } catch {} };
+async function _award(lid, xp, extra = {}, src = '') {
   await rollXp();
   // Hiệu ứng mỗi khi nhận XP: điểm bay lên và kim tuyến
   if (xp > 0 && window.fxXP) { try { window.fxXP(xp, innerWidth / 2, innerHeight * .35); } catch (e) {} }
@@ -8088,7 +8101,7 @@ function openCracker() {
     if (b.id === 'ck-x') { clearInterval(timer); return ov.remove(); }
     if (b.id === 'ck-go') return check();
     if (b.id === 'ck-again') { ov.remove(); return openCracker(); }
-    if (b.id === 'ck-claim') { const xp = ov._xp || 0; if (!xp) return; store.set('crack_xp_' + dayKey(), '1'); b.disabled = true; b.textContent = 'Đã nhận'; await award(null, xp, {}, 'game'); toast('Đã cộng ' + xp + ' XP.'); }
+    if (b.id === 'ck-claim') { const xp = ov._xp || 0; if (!xp) return; const _ck = 'crack_xp_' + dayKey(); if (claimed(_ck)) return toast('Em đã nhận phần thưởng này rồi.', 'warn'); markClaim(_ck); b.disabled = true; b.textContent = 'Đã nhận'; await award(null, xp, {}, 'game'); toast('Đã cộng ' + xp + ' XP.'); }
   });
   ov.querySelector('#ck-i').onkeydown = e => { if (e.key === 'Enter') check(); };
   next();
@@ -8163,7 +8176,7 @@ function viewGames() {
 </style>
     <h2 style="margin:26px 0 6px;font-size:2.2rem">Trò chơi luyện từ</h2><p class="muted">Chơi game do thầy cô chọn để nhớ từ nhanh hơn. Bấm Chơi ngay để chơi toàn màn hình ngay trên web, chơi xong bấm nhận XP (mỗi game nhận một lần mỗi ngày).</p>
     <div class="gm-g">${arenaGameCard()}${paintCard()}${wordRushCard()}${crackCard()}${list.length ? list.map(card).join('') : empty(((S.site && S.site.games) || []).length ? 'Có trò chơi nhưng chưa dành cho lớp của em. Em liên hệ thầy cô nhé.' : 'Thầy cô chưa gắn trò chơi nào. Em quay lại sau nhé!')}</div>`;
-  const claim = async (id, xp, btn) => { if (store.get(doneKey(id)) === dk) return; store.set(doneKey(id), dk); if (btn) { btn.disabled = true; btn.textContent = 'Đã nhận XP hôm nay'; } await award(null, xp, {}, 'daily'); toast('Đã cộng ' + xp + ' XP.'); };
+  const claim = async (id, xp, btn) => { const _ck = doneKey(id) + '_' + dk; if (store.get(doneKey(id)) === dk || claimed(_ck)) return; store.set(doneKey(id), dk); markClaim(_ck); if (btn) { btn.disabled = true; btn.textContent = 'Đã nhận XP hôm nay'; } await award(null, xp, {}, 'daily'); toast('Đã cộng ' + xp + ' XP.'); };
   main.querySelectorAll('[data-gd]').forEach(b => b.onclick = () => claim(b.dataset.gd, +b.dataset.xp, b));
   const wrBtn = main.querySelector('#wr-play'); if (wrBtn) wrBtn.onclick = openWordRush;
   const ptBtn = main.querySelector('#pt-play'); if (ptBtn) ptBtn.onclick = openPaint;
@@ -8543,7 +8556,7 @@ function openSoloArena(c) {
     const b = e.target.closest('button'); if (!b) return;
     if (b.id === 'so-x') return ov.remove();
     if (b.id === 'so-again') { ov.remove(); return openSoloArena(c); }
-    if (b.id === 'so-xp') { const xp = ov._xp || 0; if (!xp) return; store.set('ar_solo_' + day(), '1'); b.disabled = true; await award(null, xp, {}, 'arena_solo'); toast('Đã cộng ' + xp + ' XP.', 'ok'); return; }
+    if (b.id === 'so-xp') { const xp = ov._xp || 0; if (!xp) return; const _ck = 'ar_solo_' + day(); if (claimed(_ck)) return toast('Em đã nhận XP hôm nay rồi.', 'warn'); markClaim(_ck); b.disabled = true; await award(null, xp, {}, 'arena_solo'); toast('Đã cộng ' + xp + ' XP.', 'ok'); return; }
     if (!b.classList.contains('ar-rv-b') || busy || !cur || b.dataset.k === undefined) return;
     busy = true;
     const ok = +b.dataset.k === cur.a;
@@ -8655,8 +8668,8 @@ function renderArenaInner(st) {
     if (!st.endSnd && window.arSfx) { st.endSnd = 1; window.arSfx.end(); }
     main = `<div class="ar-big">Trận kết thúc</div>`;
     const key = 'arena_xp_' + room.createdAtMs;
-    if (!store.get(key)) { store.set(key, '1'); const xp = Math.min(100, Math.floor(my / 10)); if (xp > 0) award(null, xp, {}, 'arena'); }
-      if (boss && boss.hp <= 0 && st.answers.some(a => a.uid === me && a.ok)) { const bk = 'arena_boss_' + room.createdAtMs; if (!store.get(bk)) { store.set(bk, '1'); award(null, 20, {}, 'arena_boss'); toast('Cả lớp đã hạ VIRUS-404! +20 XP', 'ok'); } }
+    if (!claimed(key)) { markClaim(key); const xp = Math.min(100, Math.floor(my / 10)); if (xp > 0) award(null, xp, {}, 'arena'); }
+      if (boss && boss.hp <= 0 && st.answers.some(a => a.uid === me && a.ok)) { const bk = 'arena_boss_' + room.createdAtMs; if (!claimed(bk)) { markClaim(bk); award(null, 20, {}, 'arena_boss'); toast('Cả lớp đã hạ VIRUS-404! +20 XP', 'ok'); } }
   } else if (ph.k === 'q' || ph.k === 'reveal') {
     const q = room.qs[ph.qi];
     const done = st.answers.find(a => a.uid === me && a.qi === ph.qi);
@@ -8717,12 +8730,16 @@ function renderArenaInner(st) {
     const qi = +body.dataset.qi, ok = +b.dataset.k === +body.dataset.ans;
     st.sent = st.sent || {};
     if (st.sent[qi]) return;            // mỗi câu chỉ gửi đáp án một lần
+    // Kiểm tra lại thời gian ngay lúc bấm (màn hình có thể cũ khi mạng chậm)
+    const fp = arPhase(st.room, arNow());
+    if (fp.k !== 'q' || fp.qi !== qi || st.answers.some(z => z.uid === me && z.qi === qi)) { toast('Hết giờ câu này rồi.', 'warn'); renderArena(st); return; }
+    const secF = (fp.el || 0) / 1000;
     st.sent[qi] = true;
     body.querySelectorAll('.ar-b').forEach(x2 => { x2.disabled = true; });
     const prev = st.answers.filter(z => z.uid === me).sort((a, b2) => a.qi - b2.qi);
     let s = 0; for (const a of prev) { if (a.qi < qi && a.ok) s++; else if (a.qi < qi) s = 0; }
     const bonus = ok && s >= 2 ? 20 : 0;
-    const pts = ok ? (+body.dataset.sec < 5 ? 150 : +body.dataset.sec < 10 ? 100 : 70) : 0;
+    const pts = ok ? (secF < 5 ? 150 : secF < 10 ? 100 : 70) : 0;
     b.classList.add(ok ? 'ok' : 'bad');
     if (window.arSfx) window.arSfx[ok ? 'ok' : 'bad']();
     if (window.arFx) window.arFx(ok ? 'ok' : 'bad');

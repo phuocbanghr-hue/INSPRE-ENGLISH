@@ -1624,6 +1624,7 @@ raf=requestAnimationFrame(frame);})();
 @keyframes wowGlow{50%{box-shadow:0 0 0 6px rgba(255,255,255,.5),0 0 100px 22px rgba(255,200,110,.95)}}
 @keyframes wowUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 @keyframes wowSpark{0%{opacity:0;transform:translate(0,0) scale(.4)}20%{opacity:1}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(1.2)}}
+.wow-ov.streak{background:radial-gradient(ellipse at 50% 42%,rgba(234,88,12,.96) 0,rgba(154,52,18,.97) 50%,rgba(40,10,2,.98) 100%)}
 @media (prefers-reduced-motion:reduce){.wow-ov .rays,.wow-spark{display:none}.wow-ov,.wow-ov *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 <script id="wow-js">
@@ -1632,17 +1633,18 @@ raf=requestAnimationFrame(frame);})();
   var RM = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches;
   var ICON = {
     level: '<svg viewBox="0 0 24 24" fill="#b45309" stroke="#7a3b00" stroke-width="1" stroke-linejoin="round"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>',
+    streak: '<svg viewBox="0 0 24 24" fill="#ea580c" stroke="#7a2e00" stroke-width="1" stroke-linejoin="round"><path d="M12 2.5c.6 3.3-1.2 4.9-2.7 6.6C7.7 11 6.5 12.6 6.5 15a5.5 5.5 0 0 0 11 0c0-2.2-1-3.7-2.1-5-.3 1.1-.9 1.9-1.8 2.3.5-3.5-.2-7.3-1.6-9.8z"/><path d="M12 21a3 3 0 0 0 3-3c0-1.6-1.4-2.4-2.2-3.8-.4 1-1.6 1.6-2.2 2.6A3 3 0 0 0 12 21z" fill="#fde68a" stroke="none"/></svg>',
     goal: '<svg viewBox="0 0 24 24" fill="none" stroke="#7a3b00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="#fff6d6"/><circle cx="12" cy="12" r="5" fill="#ffd36b"/><circle cx="12" cy="12" r="1.5" fill="#b45309"/><path d="M12 12l7-7M17 3v4h4"/></svg>'
   };
   var open = null;
   window.fxCelebrate = function (kind, title, sub) {
     if (open) { try { open.remove(); } catch (e) {} open = null; }
-    var d = document.createElement('div'); d.className = 'wow-ov ' + (kind === 'goal' ? 'goal' : 'level'); d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'polite');
+    var d = document.createElement('div'); d.className = 'wow-ov ' + (kind === 'goal' ? 'goal' : kind === 'streak' ? 'streak' : 'level'); d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'polite');
     var rays = document.createElement('div'); rays.className = 'rays'; d.appendChild(rays);
     for (var i = 0; i < 14; i++) { var s = document.createElement('i'), a = Math.random() * 6.283, r = 90 + Math.random() * 190; s.className = 'wow-spark'; s.style.left = (30 + Math.random() * 40) + '%'; s.style.top = (30 + Math.random() * 30) + '%'; s.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); s.style.setProperty('--y', Math.round(Math.sin(a) * r - 40) + 'px'); s.style.setProperty('--d', (1.6 + Math.random() * 1.4) + 's'); s.style.setProperty('--l', (Math.random() * 1.6) + 's'); d.appendChild(s); }
     var box = document.createElement('div'); box.className = 'in';
     var bd = document.createElement('div'); bd.className = 'bd'; bd.innerHTML = ICON[kind] || ICON.level;
-    var kk = document.createElement('div'); kk.className = 'kk'; kk.textContent = kind === 'goal' ? 'Mục tiêu ngày' : 'Lên cấp';
+    var kk = document.createElement('div'); kk.className = 'kk'; kk.textContent = kind === 'goal' ? 'Mục tiêu ngày' : kind === 'streak' ? 'Chuỗi ngày học' : 'Lên cấp';
     var h = document.createElement('h2'); h.textContent = title || '';
     var p = document.createElement('p'); p.textContent = sub || '';
     var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Tiếp tục';
@@ -10705,7 +10707,7 @@ else {
       startContent();
       if (!S.streakChecked) {
         S.streakChecked = true; const t = todayStr();
-        if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); api.updateMe({ streak: p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1, lastDay: t, lastActive: NOW() }).catch(() => {}); }
+        if (p.lastDay !== t) { const y = new Date(); y.setDate(y.getDate() - 1); const ns = p.lastDay === todayStr(y) ? (p.streak || 0) + 1 : 1; api.updateMe({ streak: ns, lastDay: t, lastActive: NOW() }).catch(() => {}); if ([3, 7, 14, 30, 60, 100, 200, 365].includes(ns) && window.fxCelebrate) setTimeout(() => { try { window.fxCelebrate('streak', 'Chuỗi ' + ns + ' ngày!', 'Em đã học liên tiếp ' + ns + ' ngày. Đừng để ngọn lửa tắt nhé!'); } catch (e) {} }, 1200); }
       }
       checkBadges(); remindOnce();
       if (S.view === 'auth' || S.view === 'loading') { go('classes'); tryDeep(); return; }

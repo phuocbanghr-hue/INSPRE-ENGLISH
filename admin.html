@@ -3101,6 +3101,37 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .content>h2:first-child:before{display:none!important}
 .content>h2:first-child:after{width:44px!important;height:3px!important;background:#F26522!important}
 .content{padding:6px 0 20px!important;max-width:none!important}
+
+/* ===== làm đẹp đồng bộ với website học sinh ===== */
+.wapp .wh-t{display:block!important;color:#F26522!important;font-size:1.9rem!important;font-weight:700!important;line-height:1.25;text-transform:none!important;letter-spacing:0!important;margin:8px 0 6px!important;padding:0!important;background:none!important;font-family:'Be Vietnam Pro','Inter',sans-serif!important}
+.wapp .wh-t:before{display:none!important}
+.wapp .wh-t:after{content:""!important;display:block!important;width:44px!important;height:3px!important;border-radius:2px!important;background:#F26522!important;margin-top:8px!important}
+.wapp .btn{border-radius:6px!important;background:#B10B32!important;border:1px solid #B10B32!important;color:#fff!important;box-shadow:none!important;font-weight:600!important;padding:8px 18px!important;transform:none!important;letter-spacing:0!important;text-transform:none!important}
+.wapp .btn:hover{background:#8A0925!important;border-color:#8A0925!important}
+.wapp .btn.sm{padding:5px 12px!important;font-size:.88rem!important}
+.wapp .btn.soft,.wapp .btn.ghost{background:#fff!important;color:#0B5CA8!important;border:1px solid #B7CCE3!important}
+.wapp .btn.soft:hover,.wapp .btn.ghost:hover{background:#EAF2FB!important;border-color:#0B5CA8!important}
+.wapp .btn.mint{background:#E7F6EE!important;color:#14744A!important;border:1px solid #A8DCC2!important}
+.wapp .btn.danger{background:#fff!important;color:#D6293E!important;border:1px solid #F0B8BF!important}
+.wapp .btn.danger:hover{background:#FDECEE!important}
+.wapp .btn.on{background:#8A0925!important;color:#fff!important;border-color:#8A0925!important}
+.wapp .btn[disabled],.wapp .btn.disabled{opacity:.45!important}
+.wapp .empty,.wapp .card.empty{border:0!important;background:#F6F8FA!important;border-radius:8px!important;color:#6B7480!important}
+.wapp .card{border-radius:8px!important;box-shadow:0 1px 2px rgba(16,24,40,.05)!important}
+.wapp thead th{background:#F6F8FA!important;font-size:.88rem!important;font-weight:700!important;color:#0B5CA8!important;text-transform:none!important;letter-spacing:0!important}
+.wapp tbody tr:nth-child(even) td,.wapp tbody tr:nth-child(even){background:#fff!important}
+.wapp tbody tr:hover td{background:#F6FAFE!important}
+.wapp input,.wapp select,.wapp textarea{border-radius:4px!important;border-color:#CED4DA!important}
+.wapp input:focus,.wapp select:focus,.wapp textarea:focus{border-color:#0B5CA8!important;box-shadow:0 0 0 3px rgba(11,92,168,.15)!important;outline:0}
+.wapp .field>span,.wapp label.field>span{font-size:.88rem!important;font-weight:600!important;color:#374151!important;text-transform:none!important;letter-spacing:0!important}
+.wapp .muted{color:#6B7480}
+.wapp .btn,.wapp .content .btn{background-image:none!important;box-shadow:none!important}
+.wapp .btn.soft,.wapp .btn.ghost,.wapp .btn.danger,.wapp .btn.mint{background-image:none!important}
+.wapp .content .card[style*="max-width"]{max-width:none!important}
+.wapp .content>.muted,.wapp .content>p.muted{max-width:900px}
+.wapp .thero .btn,.wapp [class*=hero] .btn{background:#fff!important;color:#B10B32!important;border:1px solid #fff!important}
+.wapp .thero .btn.soft,.wapp [class*=hero] .btn.soft{background:transparent!important;color:#fff!important;border:1px solid rgba(255,255,255,.7)!important}
+.wapp .bulk{background:#F6F8FA!important;border:1px solid #DEE2E6!important;border-radius:8px!important;color:#0B5CA8!important}
 </style>
 <div id="ain" aria-hidden="true">
   <div class="hl"></div><div class="rays"></div>
@@ -4425,6 +4456,12 @@ function vTCourses() {
   };
 }
 
+function markTitle() {
+  const c = $('#content'); if (!c) return;
+  const h = [...c.querySelectorAll('h1,h2')].find(x => !x.closest('.card,.modal,.ov,table,.thero,[class*=hero]') && x.parentElement && (x.parentElement === c || x.parentElement.parentElement === c));
+  c.querySelectorAll('.wh-t').forEach(x => { if (x !== h) x.classList.remove('wh-t'); });
+  if (h && !h.classList.contains('wh-t')) h.classList.add('wh-t');
+}
 function shell() {
   const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
   const items = navList(), MAINK = TEACHER() ? items.map(n => n[0]) : ['hub', 'cls', 'students', 'lessons', 'courses', 'assign', 'report'];
@@ -4448,6 +4485,7 @@ function shell() {
     if (e.target.closest('[data-pal]')) um.hidden = true;
   };
   $('#out').onclick = () => api.signOut();
+  new MutationObserver(markTitle).observe($('#content'), { childList: true, subtree: true });
   draw();
 }
 function draw() {

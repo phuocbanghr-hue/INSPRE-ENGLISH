@@ -866,6 +866,66 @@ th[data-dir=asc]::after,th[data-dir=desc]::after{color:var(--brand)}
 .lg3-help{margin:22px 0 0;text-align:center;color:#6b7280;font-size:.86rem}
 @media(max-width:480px){.lg3-card{padding:30px 22px 24px}}
 tr.bad td{background:#FFF1F2}
+
+/* =====================================================================
+   GIAO DIỆN TRANG GIÁO VIÊN / QUẢN TRỊ: theo đúng giao diện website học sinh
+   (thanh đầu trắng + logo + tab gạch cam, tiêu đề cam, thẻ bo góc, chân trang gradient)
+   ===================================================================== */
+html,body{background:#fff!important}
+body{font-family:'Be Vietnam Pro','Inter',system-ui,sans-serif;font-size:15px;color:#0B5CA8}
+.wapp{min-height:100vh;display:flex;flex-direction:column;background:#fff}
+.wtop{position:sticky;top:0;z-index:40;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);border-bottom:1px solid #DEE2E6}
+.wts{background:#fff}
+.wts-in{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-height:52px;padding:0 24px}
+.wts .pill-demo,.wts .pill-ok,.wts .pill-role{border-radius:99px;padding:3px 12px;font-size:.78rem;font-weight:600}
+.wts .pill-role{background:#EAF2FB;color:#0B5CA8;border:1px solid #B7CCE3}
+.wuser{position:relative}
+.wav{width:38px;height:38px;border-radius:50%;border:0;background:#E9ECEF;color:#495057;font-weight:600;font-size:.86rem;display:grid;place-items:center;padding:0;cursor:pointer}
+.wav:hover{background:#DEE2E6}
+.wumenu{position:absolute;right:0;top:46px;min-width:230px;background:#fff;border:1px solid #CED4DA;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px 0;z-index:60}
+.wumenu[hidden],.wmenu[hidden]{display:none}
+.wu-i{padding:8px 16px 10px;border-bottom:1px solid #E9ECEF;margin-bottom:4px}
+.wu-i b{display:block;color:#1d2125}.wu-i small{color:#6B7280}
+.wumenu button,.wumenu a{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:9px 16px;color:#0B5CA8;text-decoration:none;font:inherit;font-weight:500;cursor:pointer;box-sizing:border-box}
+.wumenu button:hover,.wumenu a:hover{background:#EAF2FB}
+.wumenu em{font-style:normal;color:#6B7280;font-size:.8rem}
+.wbar{display:flex;align-items:center;gap:18px;padding:10px 40px;min-height:68px}
+.wbrand{display:flex;align-items:center;gap:12px;flex:none}
+.wbrand img{width:48px;height:48px;border-radius:50%}
+.wbrand b{display:block;font-size:20px;font-style:italic;font-weight:800;line-height:1.05;color:#C8102E}
+.wbrand small{display:block;color:#C8102E;font-style:italic;font-weight:500;font-size:12.5px}
+.wnav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.wnb{border:0;background:none;border-radius:0;padding:8px 12px;font:inherit;font-size:14.9px;font-weight:500;color:#0B5CA8;display:flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;text-transform:none!important;letter-spacing:0!important}
+.wnb:hover{background:#EAF2FB}
+.wnb.on{font-weight:700;box-shadow:inset 0 -3px 0 #F26522;background:none}
+.wnb .bdg{margin-left:4px;background:#C8102E;color:#fff}
+.wmore{position:relative}
+.wmenu{position:absolute;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid #CED4DA;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px 0;min-width:240px;max-height:70vh;overflow:auto;z-index:60;display:flex;flex-direction:column}
+.wmenu .wnb{width:100%;padding:9px 16px;box-shadow:none}
+.wmenu .wnb.on{background:#EAF2FB;box-shadow:none}
+.wpg{width:100%;max-width:1240px;margin:0 auto;padding:0 40px;flex:1}
+.wcr{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#6B7280;margin:6px 0 14px;padding-top:12px}
+.wcr a{color:#0B5CA8;text-decoration:none}.wcr a:hover{text-decoration:underline}.wcr b{font-weight:500;color:#374151}
+.content{padding:6px 0 20px!important;max-width:none!important;width:100%}
+.content>h1:first-child,.content>h2:first-child{font-size:1.9rem!important;font-weight:700;color:#F26522!important;text-transform:none!important;letter-spacing:0;margin:8px 0 4px!important}
+.content>h1:first-child:after,.content>h2:first-child:after{content:"";display:block;width:44px;height:3px;background:#F26522;border-radius:2px;margin-top:8px}
+.content>h2:first-child+p,.content>h2:first-child+.muted{margin-top:10px;color:#6B7280}
+.content h2,.content h3,.content .sec{text-transform:none!important;letter-spacing:0!important}
+.content h3,.card>h3,.card h3{color:#F26522;font-weight:700;font-size:1.1rem}
+.card{background:#fff;border:1px solid #DEE2E6;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.content thead th{text-transform:none!important;letter-spacing:0!important;font-size:.9rem!important;color:#0B5CA8!important;background:#F6F8FA!important}
+.content .field>span,.content .tag{text-transform:none!important}
+.btn{border-radius:6px}
+.wfoot{display:grid;gap:6px;background:linear-gradient(135deg,#8E0F22,#C8142D);color:rgba(255,255,255,.9);font-size:14.4px;padding:26px max(40px,calc((100vw - 1240px)/2 + 40px));margin-top:70px}
+.wfoot b{color:#fff;font-size:1.05rem}
+@media(max-width:1100px){
+  .wbar{flex-wrap:wrap;padding:10px 16px;gap:8px}
+  .wnav{width:100%;margin-left:0;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+  .wnav::-webkit-scrollbar{display:none}
+  .wmore{position:static}.wmenu{position:fixed;left:12px;right:12px;top:auto;min-width:0}
+  .wpg{padding:0 16px}.wts-in{padding:0 16px}
+  .wfoot{padding:22px 16px}
+}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3033,6 +3093,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 @keyframes ainTxt{from{opacity:0}to{opacity:1}}
 @keyframes ainPb{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){#ain{display:none}}
+
+/* chỉnh lại cho khớp website: bỏ vạch đỏ trước tiêu đề, giữ một gạch cam */
+.content .card>h3,.content .card h3,.card h3{padding-left:0!important;color:#F26522!important;font-weight:700!important}
+.content .card>h3:before,.content .card h3:before,.card h3:before{display:none!important}
+.content>h2:first-child{padding-left:0!important;margin:8px 0 4px!important;font-size:1.9rem!important;font-weight:700!important;color:#F26522!important}
+.content>h2:first-child:before{display:none!important}
+.content>h2:first-child:after{width:44px!important;height:3px!important;background:#F26522!important}
+.content{padding:6px 0 20px!important;max-width:none!important}
 </style>
 <div id="ain" aria-hidden="true">
   <div class="hl"></div><div class="rays"></div>
@@ -4359,23 +4427,34 @@ function vTCourses() {
 
 function shell() {
   const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
-  const item = ([k, i, n]) => `<button class="nb" data-v="${k}"><span class="nb-i">${i}</span><span class="nb-n">${n}</span>${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
-  const GROUPS = [['Tổng quan', ['hub', 'today', 'dash']], ['Lớp học', ['cls', 'teachers', 'students', 'chat']], ['Nội dung', ['content', 'lessons', 'courses', 'banks', 'games', 'news', 'exam', 'notice']], ['Theo dõi', ['assign', 'hw', 'report', 'risk', 'msg', 'calendar', 'art']], ['Hệ thống', ['site', 'tools', 'admins']]];
-  const items = navList(), used = new Set();
-  const grp = (g, ks) => { const L = ks.map(k => items.find(n => n[0] === k)).filter(Boolean); L.forEach(n => used.add(n[0])); return L.length ? `<div class="grp"><div class="grp-t">${g}</div>${L.map(item).join('')}</div>` : ''; };
-  const navHTML = TEACHER() ? grp('Lớp của tôi', ['cls']) + grp('Khoá học', ['tcourses']) + (can('lessons') ? grp('Nội dung', ['content']) : '') : GROUPS.map(([g, ks]) => grp(g, ks)).join('') + grp('Khác', items.map(n => n[0]).filter(k => !used.has(k)));
+  const items = navList(), MAINK = TEACHER() ? items.map(n => n[0]) : ['hub', 'cls', 'students', 'lessons', 'courses', 'assign', 'report'];
+  const tab = ([k, i, n], c = '') => `<button class="wnb ${c}" data-v="${k}">${n}${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
+  const mainT = MAINK.map(k => items.find(n => n[0] === k)).filter(Boolean), moreT = items.filter(n => !MAINK.includes(n[0]));
   const ini = String((S.me && S.me.name) || S.user.email || '?').trim().charAt(0).toUpperCase();
-  root.innerHTML = `<div class="app"><header class="atop"><div class="brand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>${TEACHER() ? 'Cổng giáo viên' : 'Quản trị'}</small></span></div>
-    <div class="atop-r">${env}<span class="me-chip"><span class="av">${esc(ini)}</span><span class="em">${esc(S.user.email)}</span></span><button class="btn soft sm" id="out">Đăng xuất</button></div></header>
-    <div class="shell"><aside class="side">${navHTML}<div class="side-f"><button class="kbd" data-pal="1"><span>Tìm nhanh</span><b>Ctrl K</b></button><a class="nb" href="index.html" target="_blank" rel="noopener"><span class="nb-i">↗</span><span class="nb-n">Xem web học sinh</span></a></div></aside><main class="content" id="content"></main></div></div>`;
-  root.querySelector('.side').onclick = e => { const b = e.target.closest('.nb[data-v]'); if (b) { S.view = b.dataset.v; draw(); } };
+  const t = S.site || {}, camp = String(t.campuses || 'CS1: 153 Diên Hồng, Hòa Xuân\nCS2: 164 Phan Triêm, Hòa Xuân\nCS3: 134 Cao Hồng Lãnh, Ngũ Hành Sơn').split('\n').filter(Boolean);
+  root.innerHTML = `<div class="app wapp"><header class="wtop"><div class="wts"><div class="wts-in">${env}<div class="wuser"><button class="wav" id="wavb" aria-haspopup="true" aria-expanded="false" aria-label="Tài khoản">${esc(ini)}</button>
+      <div class="wumenu" id="wum" hidden><div class="wu-i"><b>${esc((S.me && S.me.name) || 'Tài khoản')}</b><small>${esc(S.user.email || '')}</small></div><button data-pal="1">Tìm nhanh <em>Ctrl K</em></button><a href="index.html" target="_blank" rel="noopener">Xem web học sinh</a><button id="out">Đăng xuất</button></div></div></div></div>
+    <div class="wbar"><div class="wbrand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>${TEACHER() ? 'Cổng giáo viên' : 'Quản trị'}</small></span></div>
+      <nav class="wnav" aria-label="Điều hướng">${mainT.map(x => tab(x)).join('')}${moreT.length ? `<div class="wmore"><button class="wnb" id="wmorb" aria-haspopup="true" aria-expanded="false">Khác</button><div class="wmenu" id="wmm" hidden>${moreT.map(x => tab(x, 'mi')).join('')}</div></div>` : ''}</nav></div></header>
+    <div class="wpg"><nav class="wcr" id="wcr"></nav><main class="content" id="content"></main></div>
+    <footer class="wfoot"><b>Inspire Connect</b>${camp.map(x => `<span>${esc(x)}</span>`).join('')}${t.phone ? `<span>Hotline: <b>${esc(t.phone)}</b></span>` : ''}</footer></div>`;
+  root.querySelector('.wapp').onclick = e => {
+    const hm = e.target.closest('[data-v-home]'); if (hm) { e.preventDefault(); S.view = navList()[0][0]; draw(); scrollTo(0, 0); return; }
+    const b = e.target.closest('.wnb[data-v]'); if (b) { S.view = b.dataset.v; const m = $('#wmm'); if (m) m.hidden = true; draw(); scrollTo(0, 0); return; }
+    const ub = e.target.closest('#wavb'), um = $('#wum'), mb = e.target.closest('#wmorb'), mm = $('#wmm');
+    if (ub) { um.hidden = !um.hidden; ub.setAttribute('aria-expanded', String(!um.hidden)); if (mm) mm.hidden = true; return; }
+    if (mb) { mm.hidden = !mm.hidden; mb.setAttribute('aria-expanded', String(!mm.hidden)); um.hidden = true; return; }
+    if (!e.target.closest('#wum')) um.hidden = true; if (mm && !e.target.closest('#wmm')) mm.hidden = true;
+    if (e.target.closest('[data-pal]')) um.hidden = true;
+  };
   $('#out').onclick = () => api.signOut();
   draw();
 }
 function draw() {
   if (!$('#content')) return;
   if (S.view !== 'chat') stopThread();
-  root.querySelectorAll('.nb[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
+  root.querySelectorAll('.wnb[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
+  { const it = navList().find(n => n[0] === S.view), mo = $('#wmorb'); if (mo) mo.classList.toggle('on', !!root.querySelector('.wmenu .wnb.on')); const cr = $('#wcr'); if (cr) cr.innerHTML = `<a href="#" data-v-home="1">Trang chủ</a><span>›</span><b>${it ? it[2] : ''}</b>`; }
   $('#content').onclick = null; $('#content').onchange = null;
   ({ hub: vHub, today: vToday, calendar: vCalendar, art: vArt, cls: vClasses, teachers: vTeachers, tcourses: vTCourses, report: vReport, room: vRoom, dash: () => { vDash(); dashExtra(); }, site: () => { vSite(); siteExtra(); }, games: () => { vSite(); const c = $('#content'); c.querySelector('.card').remove(); c.querySelector('h2').textContent = 'Trò chơi luyện từ'; }, tools: vTools, admins: vAdmins, hw: vHW, lessons: vLessons, content: vContent, courses: vCourses, news: vNews, banks: vBanks, assign: vAssign, students: vStudents, notice: vNotice, exam: vExam, msg: vMsg, chat: vChat, risk: vRisk })[S.view]();
 }

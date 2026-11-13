@@ -3184,6 +3184,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .ov .modal input:focus,.ov .modal select:focus,.ov .modal textarea:focus{outline:0!important;border-color:#0B5CA8!important;box-shadow:0 0 0 3px rgba(11,92,168,.15)!important}
 .ov .modal label{display:block;margin-top:2px}
 .ov .modal>*{margin-left:0!important;margin-right:0!important}
+.wapp #content .cxtabs{background:none!important;border:0!important;border-bottom:1px solid #DEE2E6!important;border-radius:0!important;box-shadow:none!important;padding:0!important;gap:0 4px!important;margin-bottom:16px}
+.wapp #content .cxtabs button{background:none!important;color:#0B5CA8!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:11px 14px!important;font-weight:500;margin-bottom:-1px;border-bottom:3px solid transparent!important}
+.wapp #content .cxtabs button:hover{background:#EAF2FB!important}
+.wapp #content .cxtabs button.on{font-weight:700;border-bottom-color:#F26522!important;background:none!important;color:#0B5CA8!important}
+.wapp #content .cxhead{border:1px solid #DEE2E6!important;border-left:5px solid #F26522!important;border-radius:12px!important}
+.wapp #content .cxhead h2,.wapp #content .cxhead h1{color:#F26522!important}
+.wapp #content .cxs-h h3{position:relative;padding-left:14px;color:#212529}
+.wapp #content .cxcard{border:1px solid #DEE2E6!important;border-left:5px solid #0B5CA8!important;border-radius:12px!important;padding:18px 20px!important;background:linear-gradient(135deg,#fff 60%,#EEF5FC)!important;transition:transform .2s,box-shadow .2s}
+.wapp #content .cxcard:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(16,24,40,.1)!important}
+.wapp #content .cxcard>b{font-size:1.1rem;color:#0B5CA8}
+.wapp #content .cxs-h h3:before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:1.15em;background:#F26522;border-radius:2px}
 .wapp #content .seg{display:flex!important;flex-wrap:wrap;gap:8px;border:0!important;border-radius:0!important;overflow:visible!important;background:none!important;margin:0 0 6px!important;padding:0}
 .wapp #content .seg button{border:1px solid #CED4DA!important;background:#fff!important;color:#0B5CA8!important;border-radius:999px!important;padding:8px 20px!important;font-weight:600;transition:all .15s}
 .wapp #content .seg button:hover{border-color:#0B5CA8!important;background:#EAF2FB!important}
@@ -3385,7 +3396,7 @@ if (MODE === 'firebase' && FB) {
       { id: 'demo2', order: 2, icon: '', topic: 'Unlock 7', title: 'Animals – Động vật', description: 'Các con vật quen thuộc', published: true, sheetUrl: '', materials: [], words: [W('dog', 'con chó', ''), W('cat', 'con mèo', ''), W('rabbit', 'con thỏ', ''), W('elephant', 'con voi', ''), W('monkey', 'con khỉ', '')] },
       { id: 'demo3', order: 3, icon: '', topic: 'Unlock 7', title: 'School – Trường học', description: 'Đồ dùng học tập', published: false, sheetUrl: '', materials: [], words: [W('teacher', 'giáo viên', ''), W('student', 'học sinh', ''), W('pencil', 'bút chì', ''), W('ruler', 'thước kẻ', '')] }
     ].map(l => ({ ...l, wordCount: l.words.length })),
-    users: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], classAtt: [], classSubs: [], classjoin: [], artworks: [], questions: [], arenaSets: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
+    users: [], classes: [], chuyende: [], enrolments: [], coursekeys: [], banks: [], classAtt: [], classSubs: [], classjoin: [], artworks: [], questions: [], arenaSets: [], courses: (() => { try { return JSON.parse(localStorage.getItem('inspire_courses') || '[]'); } catch { return []; } })(), posts: (() => { try { return JSON.parse(localStorage.getItem('inspire_posts') || '[]'); } catch { return []; } })(), assignments: [], hwchecks: [], ann: { text: 'Tuần này ôn bài 1–2, thứ Sáu kiểm tra nhé!', active: true }
   };
   const names = Object.entries(ROSTER).flatMap(([c, l]) => l.map(n => [n, c]));
   const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

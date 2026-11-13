@@ -1754,6 +1754,46 @@ body.kids .fc-word{font-size:2.8rem;letter-spacing:.02em}
 .kg-tp small{font:700 .7rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;opacity:.7}
 .kg-tp.all{background:linear-gradient(180deg,#FFD54A,#FF8A5C);color:#4a2400;grid-column:1/-1;flex-direction:row;gap:12px;min-height:72px}
 .kg-tp.all i{font-size:2.2rem}
+
+/* ===== Mục lục khoá học dạng hành trình (đường uốn lượn) ===== */
+.cvbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+.cvbar .seg{display:inline-flex;padding:4px;border-radius:999px;background:#EAF2FB;border:1px solid #CBDAEC;gap:2px}
+.cvbar .seg button{border:0;border-radius:999px;padding:9px 16px;min-height:40px;font:700 .82rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0B5CA8;background:transparent;cursor:pointer;touch-action:manipulation}
+.cvbar .seg button.on{background:linear-gradient(180deg,#1A82DB,#0B5CA8);color:#fff;box-shadow:0 6px 12px -6px rgba(11,92,168,.7)}
+.cvbar .go{border:1px solid #F26522;background:#fff;color:#C2490F;border-radius:999px;padding:9px 16px;min-height:40px;font:700 .82rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;cursor:pointer;touch-action:manipulation}
+.rd{position:relative;margin:0 0 30px;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#DDF0FF 0,#F3FAFF 22%,#FFF8EC 100%);border:2px solid #CBE3F7}
+.rd-top{position:relative;z-index:3;text-align:center;padding:22px 70px 6px 16px}
+.rd-top h3{margin:0 auto;max-width:15em;font:800 clamp(1.15rem,4.6vw,1.7rem)/1.2 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0B5CA8;text-transform:uppercase;letter-spacing:.03em}
+.rd-top small{display:block;margin-top:6px;font:600 .85rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#5B7391}
+.rd-plane{position:absolute;right:14px;top:10px;font-size:2.4rem;animation:rdFly 5s ease-in-out infinite;z-index:3}
+.rd-cl{position:absolute;width:120px;height:38px;border-radius:40px;background:rgba(255,255,255,.9);pointer-events:none;z-index:1}
+.rd-cl:before,.rd-cl:after{content:"";position:absolute;background:inherit;border-radius:50%}
+.rd-cl:before{width:50px;height:50px;left:18px;top:-22px}.rd-cl:after{width:40px;height:40px;left:58px;top:-14px}
+.rd-map{position:relative;z-index:2}
+.rd-map svg{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.rd-n{position:absolute;z-index:3;width:60px;height:60px;margin:-30px 0 0 -30px;border:4px solid #fff;border-radius:50%;display:grid;place-items:center;font:800 1.15rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff;background:#7FA9D8;box-shadow:0 8px 16px -6px rgba(11,40,80,.55);cursor:pointer;touch-action:manipulation;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .15s cubic-bezier(.2,1.6,.3,1)}
+.rd-n:active{transform:scale(.92)}
+.rd-n.doing{background:linear-gradient(180deg,#FF8A4C,#F26522)}
+.rd-n.done{background:linear-gradient(180deg,#3FD083,#1FA85F)}
+.rd-n.cur{animation:rdPulse 1.8s ease-in-out infinite}
+.rd-here{position:absolute;z-index:4;transform:translate(-50%,-62px);padding:4px 10px;border-radius:99px;background:#0B5CA8;color:#fff;font:800 .7rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;white-space:nowrap;animation:rdBob 1.4s ease-in-out infinite;pointer-events:none}
+.rd-here:after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-top-color:#0B5CA8;border-bottom:0}
+.rd-l{position:absolute;z-index:3;transform:translateY(-50%);padding:10px 12px;border-radius:16px;background:#fff;border:2px solid #CBE3F7;box-shadow:0 8px 18px -12px rgba(11,40,80,.45);text-align:left;cursor:pointer;touch-action:manipulation;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1F2A37;-webkit-tap-highlight-color:transparent}
+.rd-l b{display:block;font-size:.86rem;line-height:1.25;color:#0B5CA8;overflow-wrap:anywhere}
+.rd-l small{display:block;margin-top:2px;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#F26522;text-transform:uppercase}
+.rd-l em{display:block;margin-top:3px;font-style:normal;font-size:.7rem;color:#6B7A90}
+.rd-l i{display:block;margin-top:5px;height:5px;border-radius:9px;background:#E3ECF6;overflow:hidden}
+.rd-l i u{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#FFB84D,#F26522)}
+.rd-l.done{border-color:#9ADDB9}.rd-l.done i u{background:linear-gradient(90deg,#3FD083,#1FA85F)}
+.rd-l:active{transform:translateY(-50%) scale(.98)}
+.rd-end{position:absolute;z-index:3;left:50%;transform:translate(-50%,-50%);text-align:center}
+.rd-end span{display:grid;place-items:center;width:92px;height:92px;margin:0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF6D6,#FFD36B 45%,#F0A020);font-size:3rem;box-shadow:0 0 0 5px #fff,0 14px 24px -10px rgba(160,90,0,.6)}
+.rd-end.win span{animation:rdPulse 1.6s ease-in-out infinite}
+.rd-end b{display:block;margin-top:8px;font:800 .85rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#8A5A00;letter-spacing:.06em;text-transform:uppercase}
+@keyframes rdFly{0%,100%{transform:translate(0,0) rotate(-6deg)}50%{transform:translate(-14px,6px) rotate(2deg)}}
+@keyframes rdPulse{0%,100%{box-shadow:0 8px 16px -6px rgba(11,40,80,.55),0 0 0 0 rgba(242,101,34,.5)}50%{box-shadow:0 8px 16px -6px rgba(11,40,80,.55),0 0 0 14px rgba(242,101,34,0)}}
+@keyframes rdBob{0%,100%{transform:translate(-50%,-62px)}50%{transform:translate(-50%,-68px)}}
+@media (prefers-reduced-motion:reduce){.rd-plane,.rd-n.cur,.rd-here,.rd-end.win span{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.kg-b,.kg-ov .cloud,.kid-hub .kh-b i,.kg-pic,.kg-gift,.kg-big,.kg-note{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.wow-ov .rays,.wow-spark{display:none}.wow-ov,.wow-ov *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
@@ -9164,6 +9204,28 @@ function runBank(el, b) {
   intro();
 }
 /* ---------- trang khoá học (sau khi ghi danh) ---------- */
+/* Mục lục khoá học dạng hành trình: con đường uốn lượn, bài nằm so le hai bên */
+function rdHTML(c, all, st, cont, NA) {
+  const N = all.length; if (!N) return '<div class="empty">Khoá này chưa có bài học. Thầy cô sẽ sớm thêm bài mới!</div>';
+  const ROW = 132, TOP = 96, H = TOP + N * ROW + 150, X = i => (i % 2 ? 72 : 28), Y = i => TOP + i * ROW;
+  const pts = all.map((l, i) => [X(i), Y(i)]);
+  let d = 'M 50 18 C 50 ' + (TOP - 40) + ' ' + pts[0][0] + ' ' + (TOP - 50) + ' ' + pts[0][0] + ' ' + pts[0][1];
+  for (let i = 1; i < N; i++) { const a = pts[i - 1], b = pts[i], m = ROW * .55; d += ' C ' + a[0] + ' ' + (a[1] + m) + ' ' + b[0] + ' ' + (b[1] - m) + ' ' + b[0] + ' ' + b[1]; }
+  const la = pts[N - 1], ye = Y(N - 1) + 105; d += ' C ' + la[0] + ' ' + (la[1] + 60) + ' 50 ' + (ye - 60) + ' 50 ' + ye;
+  let reach = -1; all.forEach((l, i) => { if (st(l) !== 'new') reach = i; });
+  const frac = reach < 0 ? 0 : Math.min(1, (reach + 1.05) / (N + 1.5)), allDone = all.every(l => st(l) === 'done');
+  const curI = cont ? all.indexOf(cont) : -1;
+  const nodes = all.map((l, i) => {
+    const k = st(l), dn = doneCount(l.id), pc = Math.round(dn / NA * 100), n = l.wordCount ?? (l.words || []).length, left = !(i % 2), x = X(i), y = Y(i);
+    const m = String(l.title || '').match(/^\s*(unit\s*\d+|bài\s*\d+)\s*[:.\-–]?\s*(.*)$/i), kick = m ? m[1].toUpperCase() : 'BÀI ' + (i + 1), name = m && m[2] ? m[2] : l.title;
+    const lab = `<div class="rd-l ${k}" data-rid="${esc(l.id)}" style="top:${y}px;${left ? 'left:calc(' + x + '% + 42px);right:12px' : 'right:calc(' + (100 - x) + '% + 42px);left:12px'}"><small>${esc(kick)}</small><b>${esc(name)}</b><em>${n} từ · ${pc}%</em><i><u style="width:${pc}%"></u></i></div>`;
+    return `<button type="button" class="rd-n ${k}${i === curI ? ' cur' : ''}" data-rid="${esc(l.id)}" style="left:${x}%;top:${y}px" aria-label="${esc(l.title)}">${k === 'done' ? '✓' : i + 1}</button>${i === curI ? `<span class="rd-here" id="rdcur" style="left:${x}%;top:${y}px">${k === 'new' ? 'Bắt đầu ở đây' : 'Em ở đây'}</span>` : ''}${lab}`;
+  }).join('');
+  return `<div class="rd"><span class="rd-plane" aria-hidden="true">✈️</span><span class="rd-cl" style="left:6%;top:70px"></span><span class="rd-cl" style="left:62%;top:140px;opacity:.8"></span>
+    <div class="rd-top"><h3>Hành trình ${esc(c.name)}: có gì nhỉ?</h3><small>${N} bài · chạm vào bài để vào học</small></div>
+    <div class="rd-map" style="height:${H}px"><svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="#1B5AA3" stroke-width="46" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="${d}" fill="none" stroke="#2F86E0" stroke-width="38" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${frac > 0 ? `<path d="${d}" pathLength="100" fill="none" stroke="#FFB84D" stroke-width="38" stroke-linecap="round" stroke-dasharray="${(frac * 100).toFixed(2)} 100" vector-effect="non-scaling-stroke" opacity=".95"/>` : ''}<path d="${d}" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="10 12" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity=".85"/></svg>${nodes}
+      <div class="rd-end${allDone ? ' win' : ''}" style="top:${ye - 4}px"><span>🏆</span><b>${allDone ? 'Về đích rồi!' : 'Đích đến'}</b></div></div></div>`;
+}
 function viewCourse() {
   const c = COURSES.find(x => x.id === S.course);
   if (!c || !isEnrolled(c.id)) { go('home'); return; }
@@ -9178,6 +9240,8 @@ function viewCourse() {
   const flt = S.cflt || 'all', q = (S.cq || '').trim().toLowerCase();
   const list = all.filter(l => (flt === 'all' || st(l) === flt) && (!q || (l.title + ' ' + (l.description || '')).toLowerCase().includes(q)));
   const TAG = { new: ['MỚI', 'tn'], doing: ['ĐANG HỌC', 'td'], done: ['HOÀN THÀNH', 'tk'] };
+  const pathMode = (S.cview || 'path') === 'path' && flt === 'all' && !q;
+  const cvBar = `<div class="cvbar"><div class="seg" role="group" aria-label="Kiểu hiển thị mục lục"><button type="button" data-cv="path" class="${pathMode ? 'on' : ''}">Hành trình</button><button type="button" data-cv="grid" class="${pathMode ? '' : 'on'}">Danh sách</button></div>${pathMode && cont ? '<button type="button" class="go" id="rdgo">Tới bài đang học</button>' : ''}</div>`;
   const bks = (S.banks || []).filter(b => b.course === c.id && forMyClass(b)), best = S.profile?.bankbest || {};
   const gMap = { gs6: '6', unlock7: '7', gs8: '8', gs9: '9' }, dg = gMap[c.id];
   const docsCard = dg ? `<h2 class="sec" style="margin-top:22px">Tài liệu &amp; đề thi lớp ${dg}</h2><div class="dl-cc"><p class="muted" style="margin:0">Sách, bài tập, giáo án và toàn bộ đề kiểm tra, đề cương, đề HSG của lớp ${dg}. GV in được, HS tham khảo.</p><div class="row"><button class="btn" data-dlg="${dg}" data-dlm="doc">Kho tài liệu lớp ${dg}</button><button class="btn soft" data-dlg="${dg}" data-dlm="exam">Ngân hàng đề thi lớp ${dg}</button></div></div>` : '';
@@ -9188,11 +9252,10 @@ function viewCourse() {
         <div class="w-cta">${cont ? `<button class="btn w-main" id="cont">${st(cont) === 'new' ? 'Bắt đầu' : 'Tiếp tục'}: ${esc(cont.title)}</button>` : ''}<button class="btn w-sub" data-go="home">Về trang khoá học</button></div>
         <div class="chero-st"><div><b>${all.length}</b><span>Bài học</span></div><div><b>${done}</b><span>Hoàn thành</span></div><div><b>${doing}</b><span>Đang học</span></div><div><b>${words}</b><span>Từ vựng</span></div></div></div>
       <div class="chero-r"><div class="ring big"><svg viewBox="0 0 100 100" role="img" aria-label="Tiến độ ${pc}%"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="9"/><circle cx="50" cy="50" r="44" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C * pc / 100} ${C}" transform="rotate(-90 50 50)"/></svg><b>${pc}%</b></div><small>Tiến độ khoá học</small></div></section>
-    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${c.id === 'kids' ? kidHub() : ''}${bank}${docsCard}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>
-    <div class="flt" style="margin:0 0 18px"><input id="cq" type="search" placeholder="Tìm bài trong khoá ${esc(c.name)}…" value="${esc(S.cq || '')}" aria-label="Tìm bài"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${flt === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
+    ${courseTabs(c)}${tab !== 'lessons' ? (tab === 'intro' ? courseIntro(c) : tab === 'res' ? courseRes(c) : '<div id="cpost"></div>') + '<div style="height:50px"></div>' : `${c.id === 'kids' ? kidHub() : ''}${bank}${docsCard}<h2 class="sec" style="margin-top:22px">Bài học trong khoá</h2>${cvBar}${pathMode ? rdHTML(c, all, st, cont, NA) : `<div class="flt" style="margin:0 0 18px"><input id="cq" type="search" placeholder="Tìm bài trong khoá ${esc(c.name)}…" value="${esc(S.cq || '')}" aria-label="Tìm bài"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${flt === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
     <div class="ugrid">${list.length ? list.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), p = Math.round(d / NA * 100), k = st(l);
       return `<button class="ucard ${k}" data-id="${l.id}"><span class="u-n">${pad(lessonNum(l) % 100)}</span><span class="u-b"><span class="tg ${TAG[k][1]}" style="display:inline-block">${TAG[k][0]}</span><b>${esc(l.title)}</b><small>${l.description ? esc(l.description) : n + ' từ vựng'}</small></span>
-        <span class="u-f"><span class="u-p"><i style="width:${p}%"></i></span><em>${n} từ · ${d}/${NA} dạng · ${p}%</em></span></button>`; }).join('') : empty(all.length ? 'Không có bài nào khớp. Thử từ khoá hoặc bộ lọc khác nhé.' : 'Khoá này chưa có bài học. Thầy cô sẽ sớm thêm bài mới!')}</div><div style="height:50px"></div>`}`;
+        <span class="u-f"><span class="u-p"><i style="width:${p}%"></i></span><em>${n} từ · ${d}/${NA} dạng · ${p}%</em></span></button>`; }).join('') : empty(all.length ? 'Không có bài nào khớp. Thử từ khoá hoặc bộ lọc khác nhé.' : 'Khoá này chưa có bài học. Thầy cô sẽ sớm thêm bài mới!')}</div>`}<div style="height:50px"></div>`}`;
   main.onclick = async e => {
     if (await postClick(e)) return;
     const ct = e.target.closest('[data-ct]'); if (ct) { S.ctab = ct.dataset.ct; closeThread(); viewCourse(); return; }
@@ -9200,6 +9263,9 @@ function viewCourse() {
     const rv = e.target.closest('[data-rv]'); if (rv) { const b = rv.closest('.rs-i').querySelector('.rs-f'); if (b.dataset.on) { b.innerHTML = ''; delete b.dataset.on; rv.textContent = 'Xem ngay'; } else { b.dataset.on = 1; b.innerHTML = `<div class="vframe tall"><iframe src="${esc(embedUrl(rv.dataset.rv))}" loading="lazy" allowfullscreen allow="fullscreen" referrerpolicy="no-referrer" title="Tài liệu"></iframe></div>`; rv.textContent = 'Đóng'; } return; }
     const bb = e.target.closest('.bcard'); if (bb) { S.bank = bb.dataset.b; go('bank'); return; }
     if (e.target.closest('#cont') && cont) { openLesson(cont.id); return; }
+    const cv = e.target.closest('[data-cv]'); if (cv) { S.cview = cv.dataset.cv; if (S.cview === 'path') { S.cflt = 'all'; S.cq = ''; } viewCourse(); return; }
+    if (e.target.closest('#rdgo')) { const t = $('#rdcur'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    const rn = e.target.closest('[data-rid]'); if (rn) { openLesson(rn.dataset.rid); return; }
     const u = e.target.closest('.ucard'); if (u) { openLesson(u.dataset.id); return; }
     const f = e.target.closest('[data-f]'); if (f) { S.cflt = f.dataset.f; viewCourse(); }
   };

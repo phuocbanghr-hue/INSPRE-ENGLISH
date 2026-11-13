@@ -9290,7 +9290,12 @@ function viewCourse() {
     const f = e.target.closest('[data-f]'); if (f) { S.cflt = f.dataset.f; viewCourse(); }
   };
   if (tab === 'announce' || tab === 'forum') { markSeen(c.id, tab); drawCourseTab(c); }
-  if (pathMode && tab === 'lessons') { try { rdFx(); } catch (e) {} }
+  if (pathMode && tab === 'lessons') {
+    try { rdFx(); } catch (e) {}
+    try { /* về đích: pháo giấy một lần cho mỗi khoá */
+      if (document.querySelector('.rd-end.win')) { const k = 'rdwin_' + c.id; if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); setTimeout(() => { confetti(); toast('🏆 Em đã về đích khoá ' + c.name + '!', 'ok'); }, 700); } }
+    } catch (e) {}
+  }
   const qi = $('#cq'); if (qi) qi.oninput = e => { S.cq = e.target.value; const pos = e.target.selectionStart; viewCourse(); const n = $('#cq'); n.focus(); n.setSelectionRange(pos, pos); };
 }
 /* ---------- xếp hạng ---------- */

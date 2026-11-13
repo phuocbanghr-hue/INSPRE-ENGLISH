@@ -8376,7 +8376,7 @@ function renderTop() {
   const contact = `<div class="ts-c"><span>${IC_P}Điện thoại : ${esc(t.phone || '')}</span>${t.email ? `<span>${IC_M}E-mail : ${esc(t.email)}</span>` : ''}${fb}</div>`;
   if (!S.user) { topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}</div></div><div class="wrap bar">${brandHTML(false)}</div>`; return; }
   const p = S.profile || {}, v = S.view;
-    const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['docs', 'Tài liệu &amp; đề thi', v === 'docs'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['games', 'Trò chơi', v === 'games'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['room', 'Phòng thi', v === 'room'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['review', 'Ôn tập', v === 'review']];
+    const N = [['classes', 'Lớp học' + (dmUnread() ? ' <span class="bdg-n">' + dmUnread() + '</span>' : ''), v === 'classes' || v === 'class'], ['home', 'Học tập', v === 'home' || v === 'lesson' || v === 'course' || v === 'bank'], ['exam', 'Ôn thi', v === 'exam' || v === 'cd' || v === 'mock'], ['docs', 'Tài liệu<span class="nx"> &amp; đề thi</span>', v === 'docs'], ['picex', 'Bài tập hình ảnh', v === 'picex'], ['games', 'Trò chơi', v === 'games'], ['dict', 'Từ điển', false], ['news', 'Bảng tin' + (newIn('feed', '') ? ' <span class="bdg-n">' + newIn('feed', '') + '</span>' : ''), v === 'news'], ['room', 'Phòng thi', v === 'room'], ['daily', 'Thử thách', v === 'daily'], ['pron', 'Phát âm', v === 'pron'], ['journey', 'Hành trình', v === 'journey'], ['plan', 'Kế hoạch', v === 'plan'], ['rank', 'Xếp hạng', v === 'rank'], ['group', 'Nhóm', v === 'group'], ['review', 'Ôn tập', v === 'review']];
   const NM = isMob() ? 4 : 6, MAIN = N.slice(0, NM), MORE = N.slice(NM), mon = MORE.some(x => x[2]);
   const nb = ([g, n, on], c = '') => `<button class="navb ${c} ${on ? 'on' : ''}" data-go="${g}">${n}</button>`;
   topEl.innerHTML = `<div class="ts"><div class="wrap ts-in">${contact}
@@ -13317,6 +13317,18 @@ document.addEventListener('click', e => {
   .bar .menu .mi:first-child::after{content:'';position:absolute;left:-7px;top:10px;bottom:10px;width:1px;background:#D8E3F0}
 }
 
+
+/* ===== v23: căn đều thanh điều hướng ===== */
+@media(min-width:701px){
+  .bar .nav{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px!important;justify-items:stretch}
+  .bar .nav .navb,.bar .nav .navb[data-go],.bar .menu .mi{min-width:0!important;width:100%;white-space:normal!important;text-align:center;line-height:1.15}
+  .bar .menu .mi:first-child{margin-left:0!important}.bar .menu .mi:first-child::after{display:none}
+}
+@media(min-width:701px) and (max-width:1000px){.bar .nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:700px){
+  .bar .nav .nx{display:none}.bar .nav #more::before{order:-1}
+  .bar .nav .navb,.bar .nav #more,.bnav button,.tabbar button{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;font-size:.62rem!important;letter-spacing:0!important}
+}
 
 .lh2-solo{grid-template-columns:1fr!important}
 .lis-box{background:#F3F8FE;border:1px solid #D3E3F5;border-radius:16px;padding:14px 16px;margin-bottom:14px}

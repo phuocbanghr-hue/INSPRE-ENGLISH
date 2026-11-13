@@ -4505,18 +4505,22 @@ function audBlock(c) {
 function vTCourses() {
   if (!TEACHER()) { S.view = 'courses'; return draw(); }
   const mine = (S.courses || []).filter(c => (c.teacherUids || []).includes(myUid()));
-  const TYPE = { video: 'Video', doc: 'Tài liệu', link: 'Liên kết' };
-  $('#content').innerHTML = `<h2>Khoá học của tôi</h2><p class="muted" style="max-width:760px;margin:6px 0 16px">Bạn đăng link, video, tài liệu và mô tả cho các khoá được admin gán. Học sinh thấy ngay ở trang khoá học.</p>
-    ${mine.length ? mine.map(c => `<section class="card" style="margin-bottom:16px"><div class="row" style="margin-bottom:10px"><h3 style="margin:0">${esc(c.name)}</h3><span class="grow"></span><span class="tag">${(c.resources || []).length} tài liệu</span></div>
+  const TYPE = { video: 'Video', doc: 'Tài liệu', audio: 'Bài nghe', link: 'Liên kết' };
+  $('#content').innerHTML = `<h2>Khoá học của tôi</h2><p class="muted" style="max-width:760px;margin:6px 0 16px">Bạn tự tạo khoá học (ví dụ khoá luyện nghe), đăng bài nghe, video, tài liệu và mô tả; cũng quản lý các khoá được admin gán. Học sinh thấy ngay ở trang khoá học.</p>
+    <div class="row" style="margin-bottom:14px"><button class="btn" data-tcnew="1">＋ Tạo khoá học</button></div>
+    ${mine.length ? mine.map(c => `<section class="card" style="margin-bottom:16px"><div class="row" style="margin-bottom:10px"><h3 style="margin:0">${esc(c.name)}</h3><span class="grow"></span><span class="tag">${(c.resources || []).length} tài liệu</span>${c.owner === myUid() ? `<button class="btn soft sm" data-tcedit="${esc(c.id)}">Sửa thông tin</button><button class="btn danger sm" data-tcdel="${esc(c.id)}">Xoá khoá</button>` : ''}</div>
       <label class="field"><span>Mô tả khoá (học sinh thấy)</span><textarea id="tc-d-${esc(c.id)}" rows="2" maxlength="600">${esc(c.desc || '')}</textarea></label>
       <div class="row"><button class="btn soft sm" data-tcsave="${esc(c.id)}">Lưu mô tả</button></div>
       <div class="hint" style="margin:8px 0 12px">Dán link bắt đầu bằng https://. Link Drive phải để “Bất kỳ ai có đường liên kết”.</div>
-      <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:140px;margin:0"><span>Loại</span><select id="tr-t-${esc(c.id)}"><option value="doc">Tài liệu</option><option value="video">Video</option></select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Tiêu đề</span><input id="tr-n-${esc(c.id)}" maxlength="120"></label><label class="field" style="flex:3;min-width:240px;margin:0"><span>Link</span><input id="tr-u-${esc(c.id)}" placeholder="https://"></label><button class="btn" data-tradd="${esc(c.id)}">Đăng</button></div>
+      <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:140px;margin:0"><span>Loại</span><select id="tr-t-${esc(c.id)}"><option value="audio">Bài nghe (audio)</option><option value="doc">Tài liệu</option><option value="video">Video</option></select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Tiêu đề</span><input id="tr-n-${esc(c.id)}" maxlength="120"></label><label class="field" style="flex:3;min-width:240px;margin:0"><span>Link</span><input id="tr-u-${esc(c.id)}" placeholder="https://"></label><button class="btn" data-tradd="${esc(c.id)}">Đăng</button></div>
       <div style="margin-top:12px">${(c.resources || []).map((r, i) => `<div class="row" style="padding:9px 0;border-top:1px solid #eee;margin:0"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${TYPE[r.type] || 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a></span><button class="btn danger sm" data-trdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('') || '<p class="muted">Chưa có tài liệu.</p>'}</div>${audBlock(c)}</section>`).join('')
-      : '<div class="card empty">Admin chưa gán khoá học nào cho bạn. Nhờ admin vào “Khoá học & mật khẩu”, bấm “Giáo viên” ở khoá cần phụ trách.</div>'}`;
+      : '<div class="card empty">Bạn chưa có khoá học nào. Bấm “Tạo khoá học” để tạo khoá đầu tiên (ví dụ khoá luyện nghe), hoặc nhờ admin gán khoá.</div>'}`;
   $('#content').onclick = async e => {
     const sv = e.target.closest('[data-tcsave]'), ad = e.target.closest('[data-tradd]'), dl = e.target.closest('[data-trdel]'), as = e.target.closest('[data-ausave]'), ax = e.target.closest('[data-audel]');
     try {
+      if (e.target.closest('[data-tcnew]')) { if (!can('content')) return toast('Bạn chưa được admin cấp quyền sửa nội dung.', 'warn'); return courseForm(null, true); }
+      const te = e.target.closest('[data-tcedit]'); if (te) return courseForm(mine.find(x => x.id === te.dataset.tcedit), true);
+      const td = e.target.closest('[data-tcdel]'); if (td) { const c = mine.find(x => x.id === td.dataset.tcdel); if (c && c.owner === myUid() && confirm('Xoá khoá “' + c.name + '”? Học sinh sẽ không còn thấy khoá và tài liệu của khoá.')) { await api.del('courses', c.id); audit('Xoá khoá học', c.name); toast('Đã xoá khoá.'); } return; }
       if (as) {
         const id = as.dataset.ausave, lid = $('#au-l-' + id).value, url = $('#au-u-' + id).value.trim();
         if (!/^https:\/\/(drive|docs)\.google\.com\//.test(url)) return toast('Dán link Google Drive (bắt đầu bằng https://drive.google.com/…).', 'bad');
@@ -5321,17 +5325,17 @@ const allCourses = () => {
   (S.courses || []).filter(d => !BASE_C.some(b => b.id === d.id)).forEach(d => { const k = String(d.key || '').toLowerCase().trim(); out.push({ ...d, test: k ? (t => new RegExp('(^|[^a-z0-9])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z0-9]|$)').test(t)) : (() => false) }); });
   return out.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
 };
-function courseForm(c) {
+function courseForm(c, tmode) {
   const n = !c, d = c || { published: true, program: 'THCS', goal: 'school', level: 'Cơ bản', ageMin: 6, ageMax: 12, order: 50 };
   const opt = (arr, v) => arr.map(x => Array.isArray(x) ? `<option value="${x[0]}" ${x[0] === v ? 'selected' : ''}>${esc(x[1])}</option>` : `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
-  const { ov, close } = modal(`<h3>${n ? 'Thêm chương trình mới' : 'Sửa: ' + esc(d.name)}</h3>
+  const { ov, close } = modal(`<h3>${n ? (tmode ? 'Tạo khoá học mới' : 'Thêm chương trình mới') : 'Sửa: ' + esc(d.name)}</h3>
     <label class="field"><span>Tên chương trình</span><input id="c-name" maxlength="80" value="${esc(d.name || '')}" placeholder="VD: CAMBRIDGE PET (B1 PRELIMINARY)"></label>
     <div class="row"><label class="field grow"><span>Nhãn phụ</span><input id="c-sub" maxlength="40" value="${esc(d.sub || '')}" placeholder="VD: PET"></label>
     <label class="field grow"><span>Nhóm chương trình</span><select id="c-prog">${opt(CAT_PROGS, d.program)}</select></label></div>
     <div class="row"><label class="field grow"><span>Mục tiêu chính (để gợi ý Enroll me)</span><select id="c-goal">${opt(CAT_GOALS, d.goal)}</select></label>
     <label class="field grow"><span>Trình độ</span><select id="c-lvl">${opt(CAT_LVL, d.level)}</select></label></div>
     <div class="row"><label class="field grow"><span>Tuổi từ</span><input id="c-a0" type="number" min="3" max="17" value="${d.ageMin ?? 6}"></label><label class="field grow"><span>đến</span><input id="c-a1" type="number" min="3" max="17" value="${d.ageMax ?? 12}"></label><label class="field grow"><span>Thứ tự hiển thị</span><input id="c-ord" type="number" value="${d.order ?? 50}"></label></div>
-    ${d.builtin ? '<p class="muted" style="margin-bottom:10px">Khoá có sẵn: bài học tự gắn theo chủ đề cũ, không cần từ khoá.</p>' : `<label class="field"><span>Từ khoá chủ đề bài học</span><input id="c-key" maxlength="40" value="${esc(d.key || '')}" placeholder="VD: pet"><small class="muted">Bài học nào có ô "Chủ đề" chứa từ khoá này sẽ thuộc chương trình. Nên dùng từ khoá riêng, không trùng khoá khác.</small></label>`}
+    ${d.builtin ? '<p class="muted" style="margin-bottom:10px">Khoá có sẵn: bài học tự gắn theo chủ đề cũ, không cần từ khoá.</p>' : tmode ? '' : `<label class="field"><span>Từ khoá chủ đề bài học</span><input id="c-key" maxlength="40" value="${esc(d.key || '')}" placeholder="VD: pet"><small class="muted">Bài học nào có ô "Chủ đề" chứa từ khoá này sẽ thuộc chương trình. Nên dùng từ khoá riêng, không trùng khoá khác.</small></label>`}
     <label class="field"><span>Mô tả ngắn</span><textarea id="c-desc" data-rich="on" rows="2" maxlength="300">${esc(d.desc || '')}</textarea></label>
     <label class="field"><span>Em sẽ đạt được gì (mỗi dòng một ý)</span><textarea id="c-goals" data-rich="on" rows="3">${esc(d.goals || '')}</textarea></label>
     <label class="field"><span>Lộ trình học (mỗi dòng một chặng hoặc một tuần)</span><textarea id="c-out" data-rich="on" rows="3" placeholder="Tuần 1-4: ...">${esc(d.outline || '')}</textarea></label>
@@ -5341,11 +5345,12 @@ function courseForm(c) {
   ov.querySelector('#c-x').onclick = close;
   ov.querySelector('#c-save').onclick = async () => {
     const g = id => ov.querySelector('#' + id), name = g('c-name').value.trim(); if (!name) return toast('Nhập tên chương trình nhé.', 'bad');
-    const key = d.builtin ? '' : g('c-key').value.trim().toLowerCase(); if (!d.builtin && !key) return toast('Nhập từ khoá chủ đề để gắn bài học nhé.', 'bad');
+    const id0 = d.id || ('c' + Date.now().toString(36)); const key = d.builtin ? '' : tmode ? (d.key || ('tc' + id0)).toLowerCase() : g('c-key').value.trim().toLowerCase(); if (!d.builtin && !key) return toast('Nhập từ khoá chủ đề để gắn bài học nhé.', 'bad');
     const a0 = +g('c-a0').value || 3, a1 = +g('c-a1').value || 17;
     const data = { name, sub: g('c-sub').value.trim(), program: g('c-prog').value, goal: g('c-goal').value, level: g('c-lvl').value, ageMin: Math.min(a0, a1), ageMax: Math.max(a0, a1), order: +g('c-ord').value || 50, desc: g('c-desc').value.trim(), goals: g('c-goals').value.trim(), outline: g('c-out').value.trim(), teacher: g('c-tch').value.trim(), schedule: g('c-sch').value.trim(), img: g('c-img').value.trim(), published: g('c-pub').checked, updatedAt: NOW() };
     if (!d.builtin) data.key = key;
-    try { const id = d.id || ('c' + Date.now().toString(36)); await api.set('courses', id, data); toast('Đã lưu chương trình.'); close(); vCourses(); } catch (er) { toast(er.message, 'bad'); }
+    if (tmode && n) Object.assign(data, { owner: myUid(), ownerName: myName(), createdAt: NOW(), ...teacherPatch([myUid()]) });
+    try { const id = id0; await api.set('courses', id, data); if (tmode) audit(n ? 'Tạo khoá học' : 'Sửa khoá học', name); toast(n ? 'Đã tạo khoá. Thêm bài nghe, video, tài liệu bên dưới.' : 'Đã lưu khoá học.'); close(); tmode ? vTCourses() : vCourses(); } catch (er) { toast(er.message, 'bad'); }
   };
 }
 function classPanel(CL, en) {
@@ -5398,7 +5403,7 @@ function vCourses() {
         <div class="row" style="margin:12px 0;align-items:flex-end"><label class="field" style="flex:1;margin:0"><span>Mật khẩu ghi danh</span><input id="ck-${esc(c.id)}" maxlength="40" value="${esc(k[c.id] || '')}" placeholder="Ví dụ: inspire9 (phân biệt hoa thường)" autocomplete="off"></label><button class="btn" data-ck="${esc(c.id)}">Lưu mật khẩu</button></div>
         <p style="font-weight:700;margin:12px 0 6px">Video và tài liệu của khoá (${(c.resources || []).length})</p>
         ${(c.resources || []).map((r, i) => `<div class="row" style="padding:6px 0;border-top:1px solid #eee;margin:0;align-items:center"><span class="tag ${r.type === 'video' ? 'ok' : ''}">${r.type === 'video' ? 'Video' : 'Tài liệu'}</span><span class="grow"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a> ${classTags(r.classes)}</span><button class="btn soft sm" data-rup="${esc(c.id)}|${i}" title="Lên">↑</button><button class="btn soft sm" data-rdel="${esc(c.id)}|${i}">Xoá</button></div>`).join('')}
-        <div class="row" style="margin:8px 0 14px;align-items:flex-end"><label class="field" style="width:120px;margin:0"><span>Loại</span><select id="rt-${esc(c.id)}"><option value="video">Video</option><option value="doc">Tài liệu</option></select></label><label class="field" style="flex:1;min-width:140px;margin:0"><span>Tiêu đề</span><input id="rn-${esc(c.id)}" maxlength="100" placeholder="VD: Bài giảng thì hiện tại hoàn thành"></label><label class="field" style="width:150px;margin:0"><span>Dành cho lớp</span><select id="rc-${esc(c.id)}"><option value="">Mọi lớp</option>${classList().map(x => `<option>${esc(x)}</option>`).join('')}</select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Link Google Drive (hoặc YouTube)</span><input id="ru-${esc(c.id)}" placeholder="https://drive.google.com/file/d/..."></label><button class="btn" data-radd="${esc(c.id)}">Đăng</button><button class="btn soft" data-rbulk="${esc(c.id)}">Dán nhiều link</button></div>
+        <div class="row" style="margin:8px 0 14px;align-items:flex-end"><label class="field" style="width:120px;margin:0"><span>Loại</span><select id="rt-${esc(c.id)}"><option value="audio">Bài nghe (audio)</option><option value="video">Video</option><option value="doc">Tài liệu</option></select></label><label class="field" style="flex:1;min-width:140px;margin:0"><span>Tiêu đề</span><input id="rn-${esc(c.id)}" maxlength="100" placeholder="VD: Bài giảng thì hiện tại hoàn thành"></label><label class="field" style="width:150px;margin:0"><span>Dành cho lớp</span><select id="rc-${esc(c.id)}"><option value="">Mọi lớp</option>${classList().map(x => `<option>${esc(x)}</option>`).join('')}</select></label><label class="field" style="flex:2;min-width:200px;margin:0"><span>Link Google Drive (hoặc YouTube)</span><input id="ru-${esc(c.id)}" placeholder="https://drive.google.com/file/d/..."></label><button class="btn" data-radd="${esc(c.id)}">Đăng</button><button class="btn soft" data-rbulk="${esc(c.id)}">Dán nhiều link</button></div>
         <p class="muted" style="margin:-8px 0 12px;font-size:.82rem">Trên Drive, nhớ chia sẻ file là "Bất kỳ ai có đường liên kết" thì học sinh mới xem được.</p>
         ${audBlock(c)}
         <p style="font-weight:700;margin:6px 0">Đã ghi danh: ${L.length} học sinh</p>

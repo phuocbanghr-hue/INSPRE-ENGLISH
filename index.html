@@ -10578,8 +10578,10 @@ function courseIntro(c) {
 function courseRes(c) {
   const R = (c.resources || []).filter(r => r && /^https?:\/\//.test(r.url || '') && forMyClass(r));
   if (!R.length) return empty('Thầy cô chưa đăng video hay tài liệu cho khoá này.');
-  const vids = R.filter(r => r.type === 'video'), docs = R.filter(r => r.type !== 'video');
+  const vids = R.filter(r => r.type === 'video'), auds = R.filter(r => r.type === 'audio'), docs = R.filter(r => r.type !== 'video' && r.type !== 'audio');
+  const rcard = (r, lab, dflt) => `<div class="rs-i card" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:10px"><span class="vic dr">${lab}</span><b class="grow">${esc(r.title || dflt)}</b><button class="btn soft sm" data-rv="${esc(r.url)}">${lab === 'Nghe' ? 'Nghe ngay' : 'Xem ngay'}</button><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Mở link gốc</a></div><div class="rs-f" style="margin-top:10px"></div></div>`;
   return `<div class="rs">${vids.length ? `<h2 class="sec" style="margin-top:22px">Video bài giảng</h2>${vids.map(r => `<div class="vid"><div class="vtool"><span class="vic vd">Video</span><h4>${esc(r.title || 'Video')}</h4><span class="vbtn"><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Mở link gốc</a></span></div><div class="vframe"><iframe src="${esc(vidEmbed(r.url))}" loading="lazy" allowfullscreen allow="encrypted-media;picture-in-picture;fullscreen" referrerpolicy="strict-origin-when-cross-origin" title="${esc(r.title || 'Video')}"></iframe></div></div>`).join('')}` : ''}
+    ${auds.length ? `<h2 class="sec" style="margin-top:22px">Bài nghe</h2>${auds.map(r => rcard(r, 'Nghe', 'Bài nghe')).join('')}` : ''}
     ${docs.length ? `<h2 class="sec" style="margin-top:22px">Tài liệu</h2>${docs.map(r => `<div class="rs-i card" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:10px"><span class="vic dr">Drive</span><b class="grow">${esc(r.title || 'Tài liệu')}</b><button class="btn soft sm" data-rv="${esc(r.url)}">Xem ngay</button><a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Mở link gốc</a></div><div class="rs-f" style="margin-top:10px"></div></div>`).join('')}` : ''}</div>`;
 }
 function courseTabs(c) {

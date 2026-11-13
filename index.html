@@ -13323,6 +13323,12 @@ document.addEventListener('click', e => {
 }
 
 
+/* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
+@media(max-width:700px){
+  .tl-go{font-size:0!important;width:46px;height:46px;padding:0!important;border-radius:50%!important;display:grid!important;place-items:center;left:10px!important;bottom:calc(80px + env(safe-area-inset-bottom,0px))!important}
+  .tl-go::before{content:'🧰';font-size:1.35rem;line-height:1}
+}
+
 /* ===== v23: căn đều thanh điều hướng ===== */
 @media(min-width:701px){
   .bar .nav{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px!important;justify-items:stretch}

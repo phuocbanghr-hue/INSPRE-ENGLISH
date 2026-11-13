@@ -1755,45 +1755,48 @@ body.kids .fc-word{font-size:2.8rem;letter-spacing:.02em}
 .kg-tp.all{background:linear-gradient(180deg,#FFD54A,#FF8A5C);color:#4a2400;grid-column:1/-1;flex-direction:row;gap:12px;min-height:72px}
 .kg-tp.all i{font-size:2.2rem}
 
-/* ===== Mục lục khoá học dạng hành trình (đường uốn lượn) ===== */
+/* ===== Mục lục khoá học dạng hành trình: nền trời, đường trắng uốn khúc, cờ đỏ ===== */
 .cvbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px}
 .cvbar .seg{display:inline-flex;padding:4px;border-radius:999px;background:#EAF2FB;border:1px solid #CBDAEC;gap:2px}
 .cvbar .seg button{border:0;border-radius:999px;padding:9px 16px;min-height:40px;font:700 .82rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0B5CA8;background:transparent;cursor:pointer;touch-action:manipulation}
 .cvbar .seg button.on{background:linear-gradient(180deg,#1A82DB,#0B5CA8);color:#fff;box-shadow:0 6px 12px -6px rgba(11,92,168,.7)}
 .cvbar .go{border:1px solid #F26522;background:#fff;color:#C2490F;border-radius:999px;padding:9px 16px;min-height:40px;font:700 .82rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;cursor:pointer;touch-action:manipulation}
-.rd{position:relative;margin:0 0 30px;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#DDF0FF 0,#F3FAFF 22%,#FFF8EC 100%);border:2px solid #CBE3F7}
-.rd-top{position:relative;z-index:3;text-align:center;padding:22px 70px 6px 16px}
-.rd-top h3{margin:0 auto;max-width:15em;font:800 clamp(1.15rem,4.6vw,1.7rem)/1.2 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0B5CA8;text-transform:uppercase;letter-spacing:.03em}
-.rd-top small{display:block;margin-top:6px;font:600 .85rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#5B7391}
-.rd-plane{position:absolute;right:14px;top:10px;font-size:2.4rem;animation:rdFly 5s ease-in-out infinite;z-index:3}
-.rd-cl{position:absolute;width:120px;height:38px;border-radius:40px;background:rgba(255,255,255,.9);pointer-events:none;z-index:1}
+.rd{position:relative;margin:0 0 30px;border-radius:28px;overflow:hidden;background:radial-gradient(ellipse at 50% 0,#C9F0FF 0,#8DD6F7 38%,#62B9EE 100%);border:2px solid #A9DBF5}
+.rd-top{position:relative;z-index:3;text-align:center;padding:20px 78px 0 78px;min-height:128px}
+.rd-top h3{margin:0 auto;max-width:12em;font:900 clamp(1.25rem,5.6vw,2rem)/1.15 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.02em;-webkit-text-stroke:7px #12A777;paint-order:stroke fill;text-shadow:0 4px 0 rgba(8,110,80,.35)}
+.rd-top small{display:inline-block;margin-top:10px;padding:4px 14px;border-radius:99px;background:rgba(255,255,255,.85);font:700 .8rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#14509E}
+.rd-kid{position:absolute;left:10px;top:12px;z-index:3;font-size:3rem;line-height:1;filter:drop-shadow(0 4px 4px rgba(0,60,120,.25))}
+.rd-kid i{position:absolute;left:26px;top:20px;font-style:normal;font-size:2.2rem;transform:rotate(-8deg)}
+.rd-plane{position:absolute;right:8px;top:10px;font-size:3.1rem;line-height:1;animation:rdFly 5s ease-in-out infinite;z-index:3;filter:drop-shadow(0 6px 5px rgba(0,60,120,.25))}
+.rd-cl{position:absolute;width:130px;height:40px;border-radius:40px;background:#fff;pointer-events:none;z-index:1;opacity:.95}
 .rd-cl:before,.rd-cl:after{content:"";position:absolute;background:inherit;border-radius:50%}
-.rd-cl:before{width:50px;height:50px;left:18px;top:-22px}.rd-cl:after{width:40px;height:40px;left:58px;top:-14px}
-.rd-map{position:relative;z-index:2}
+.rd-cl:before{width:54px;height:54px;left:20px;top:-24px}.rd-cl:after{width:44px;height:44px;left:66px;top:-16px}
+.rd-map{position:relative;z-index:2;max-width:560px;margin:0 auto}
 .rd-map svg{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
-.rd-n{position:absolute;z-index:3;width:60px;height:60px;margin:-30px 0 0 -30px;border:4px solid #fff;border-radius:50%;display:grid;place-items:center;font:800 1.15rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#fff;background:#7FA9D8;box-shadow:0 8px 16px -6px rgba(11,40,80,.55);cursor:pointer;touch-action:manipulation;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .15s cubic-bezier(.2,1.6,.3,1)}
-.rd-n:active{transform:scale(.92)}
-.rd-n.doing{background:linear-gradient(180deg,#FF8A4C,#F26522)}
-.rd-n.done{background:linear-gradient(180deg,#3FD083,#1FA85F)}
-.rd-n.cur{animation:rdPulse 1.8s ease-in-out infinite}
-.rd-here{position:absolute;z-index:4;transform:translate(-50%,-62px);padding:4px 10px;border-radius:99px;background:#0B5CA8;color:#fff;font:800 .7rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;white-space:nowrap;animation:rdBob 1.4s ease-in-out infinite;pointer-events:none}
-.rd-here:after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-top-color:#0B5CA8;border-bottom:0}
-.rd-l{position:absolute;z-index:3;transform:translateY(-50%);padding:10px 12px;border-radius:16px;background:#fff;border:2px solid #CBE3F7;box-shadow:0 8px 18px -12px rgba(11,40,80,.45);text-align:left;cursor:pointer;touch-action:manipulation;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1F2A37;-webkit-tap-highlight-color:transparent}
-.rd-l b{display:block;font-size:.86rem;line-height:1.25;color:#0B5CA8;overflow-wrap:anywhere}
-.rd-l small{display:block;margin-top:2px;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#F26522;text-transform:uppercase}
-.rd-l em{display:block;margin-top:3px;font-style:normal;font-size:.7rem;color:#6B7A90}
-.rd-l i{display:block;margin-top:5px;height:5px;border-radius:9px;background:#E3ECF6;overflow:hidden}
-.rd-l i u{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#FFB84D,#F26522)}
-.rd-l.done{border-color:#9ADDB9}.rd-l.done i u{background:linear-gradient(90deg,#3FD083,#1FA85F)}
-.rd-l:active{transform:translateY(-50%) scale(.98)}
-.rd-end{position:absolute;z-index:3;left:50%;transform:translate(-50%,-50%);text-align:center}
-.rd-end span{display:grid;place-items:center;width:92px;height:92px;margin:0 auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF6D6,#FFD36B 45%,#F0A020);font-size:3rem;box-shadow:0 0 0 5px #fff,0 14px 24px -10px rgba(160,90,0,.6)}
-.rd-end.win span{animation:rdPulse 1.6s ease-in-out infinite}
-.rd-end b{display:block;margin-top:8px;font:800 .85rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#8A5A00;letter-spacing:.06em;text-transform:uppercase}
-@keyframes rdFly{0%,100%{transform:translate(0,0) rotate(-6deg)}50%{transform:translate(-14px,6px) rotate(2deg)}}
-@keyframes rdPulse{0%,100%{box-shadow:0 8px 16px -6px rgba(11,40,80,.55),0 0 0 0 rgba(242,101,34,.5)}50%{box-shadow:0 8px 16px -6px rgba(11,40,80,.55),0 0 0 14px rgba(242,101,34,0)}}
-@keyframes rdBob{0%,100%{transform:translate(-50%,-62px)}50%{transform:translate(-50%,-68px)}}
-@media (prefers-reduced-motion:reduce){.rd-plane,.rd-n.cur,.rd-here,.rd-end.win span{animation:none!important}}
+.rd-f{position:absolute;z-index:4;width:34px;height:40px;transform:translate(-3px,-100%);border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.rd-f:before{content:"";position:absolute;left:0;bottom:0;width:3px;height:100%;border-radius:2px;background:#5A6B85}
+.rd-f:after{content:"";position:absolute;left:-12px;right:-12px;top:-10px;bottom:-10px}
+.rd-f .fl{position:absolute;left:3px;top:0;min-width:30px;height:20px;padding:0 5px 0 4px;display:flex;align-items:center;justify-content:center;background:#E52B34;color:#fff;font:800 .72rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;clip-path:polygon(0 0,100% 0,88% 50%,100% 100%,0 100%);box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.rd-f.doing .fl{background:#F59E0B}
+.rd-f.done .fl{background:#16A864}
+.rd-f.cur{animation:rdWave 1.6s ease-in-out infinite;transform-origin:bottom left}
+.rd-f:active{transform:translate(-3px,-100%) scale(.94)}
+.rd-here{position:absolute;z-index:5;transform:translate(-50%,-100%);padding:4px 10px;border-radius:99px;background:#fff;color:#C2490F;border:2px solid #F26522;font:800 .7rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;white-space:nowrap;animation:rdBob 1.4s ease-in-out infinite;pointer-events:none}
+.rd-l{position:absolute;z-index:3;transform:translate(-50%,-100%);text-align:center;cursor:pointer;touch-action:manipulation;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.2;color:#12437F;text-shadow:0 1px 0 rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.5);-webkit-tap-highlight-color:transparent}
+.rd-l small{display:block;font-size:.98rem;font-weight:900;letter-spacing:.01em;color:#0C3F86}
+.rd-l b{display:block;font-size:.82rem;font-weight:700;overflow-wrap:anywhere}
+.rd-l span{display:block;font-size:.76rem;font-weight:500;color:#2D5C99;overflow-wrap:anywhere}
+.rd-l em{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:99px;background:#fff;color:#16A864;font-style:normal;font-size:.68rem;font-weight:800;text-shadow:none}
+.rd-l.doing em{color:#D97706}
+.rd-end{position:absolute;z-index:4;transform:translate(-50%,-50%);text-align:center}
+.rd-end span{display:grid;place-items:center;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF6D6,#FFD36B 45%,#F0A020);font-size:2.3rem;box-shadow:0 0 0 4px #fff,0 12px 20px -8px rgba(0,60,120,.5)}
+.rd-end.win span{animation:rdGlow 1.6s ease-in-out infinite}
+.rd-end b{display:block;margin-top:6px;padding:2px 10px;border-radius:99px;background:#fff;font:800 .7rem system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#8A5A00;letter-spacing:.05em;text-transform:uppercase}
+@keyframes rdFly{0%,100%{transform:translate(0,0) rotate(-4deg)}50%{transform:translate(-12px,6px) rotate(2deg)}}
+@keyframes rdGlow{0%,100%{box-shadow:0 0 0 4px #fff,0 12px 20px -8px rgba(0,60,120,.5),0 0 0 4px rgba(255,200,80,.0)}50%{box-shadow:0 0 0 4px #fff,0 12px 20px -8px rgba(0,60,120,.5),0 0 0 16px rgba(255,200,80,.35)}}
+@keyframes rdWave{0%,100%{transform:translate(-3px,-100%) rotate(0)}50%{transform:translate(-3px,-100%) rotate(-4deg)}}
+@keyframes rdBob{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,calc(-100% - 5px))}}
+@media (prefers-reduced-motion:reduce){.rd-plane,.rd-f.cur,.rd-here,.rd-end.win span{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.kg-b,.kg-ov .cloud,.kid-hub .kh-b i,.kg-pic,.kg-gift,.kg-big,.kg-note{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.wow-ov .rays,.wow-spark{display:none}.wow-ov,.wow-ov *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
@@ -9206,27 +9209,42 @@ function runBank(el, b) {
   intro();
 }
 /* ---------- trang khoá học (sau khi ghi danh) ---------- */
-/* Mục lục khoá học dạng hành trình: con đường uốn lượn, bài nằm so le hai bên */
+/* Mục lục khoá học dạng hành trình: đường trắng uốn khúc trên nền trời, cờ đỏ đánh số, tên bài viết thẳng lên nền */
 function rdHTML(c, all, st, cont, NA) {
   const N = all.length; if (!N) return '<div class="empty">Khoá này chưa có bài học. Thầy cô sẽ sớm thêm bài mới!</div>';
-  const ROW = 132, TOP = 96, H = TOP + N * ROW + 150, X = i => (i % 2 ? 72 : 28), Y = i => TOP + i * ROW;
-  const pts = all.map((l, i) => [X(i), Y(i)]);
-  let d = 'M 50 18 C 50 ' + (TOP - 40) + ' ' + pts[0][0] + ' ' + (TOP - 50) + ' ' + pts[0][0] + ' ' + pts[0][1];
-  for (let i = 1; i < N; i++) { const a = pts[i - 1], b = pts[i], m = ROW * .55; d += ' C ' + a[0] + ' ' + (a[1] + m) + ' ' + b[0] + ' ' + (b[1] - m) + ' ' + b[0] + ' ' + b[1]; }
-  const la = pts[N - 1], ye = Y(N - 1) + 105; d += ' C ' + la[0] + ' ' + (la[1] + 60) + ' 50 ' + (ye - 60) + ' 50 ' + ye;
+  const per = N > 12 ? 2 : 1, runs = Math.ceil(N / per), ROW = per === 2 ? 114 : 120, R = ROW / 2, XL = 84, XR = 276, LEN = XR - XL, TOP = per === 2 ? 108 : 104, W = 360;
+  const H = TOP + (runs - 1) * ROW + 110, Y = k => TOP + k * ROW, f1 = v => Math.round(v * 10) / 10;
+  let d = 'M ' + XL + ' ' + Y(0);
+  for (let k = 0; k < runs; k++) {
+    const right = k % 2 === 0; d += ' L ' + (right ? XR : XL) + ' ' + Y(k);
+    if (k < runs - 1) d += ' A ' + R + ' ' + R + ' 0 0 ' + (right ? 1 : 0) + ' ' + (right ? XR : XL) + ' ' + Y(k + 1);
+  }
   let reach = -1; all.forEach((l, i) => { if (st(l) !== 'new') reach = i; });
-  const frac = reach < 0 ? 0 : Math.min(1, (reach + 1.05) / (N + 1.5)), allDone = all.every(l => st(l) === 'done');
-  const curI = cont ? all.indexOf(cont) : -1;
-  const nodes = all.map((l, i) => {
-    const k = st(l), dn = doneCount(l.id), pc = Math.round(dn / NA * 100), n = l.wordCount ?? (l.words || []).length, left = !(i % 2), x = X(i), y = Y(i);
-    const m = String(l.title || '').match(/^\s*(unit\s*\d+|bài\s*\d+)\s*[:.\-–]?\s*(.*)$/i), kick = m ? m[1].toUpperCase() : 'BÀI ' + (i + 1), name = m && m[2] ? m[2] : l.title;
-    const lab = `<div class="rd-l ${k}" data-rid="${esc(l.id)}" style="top:${y}px;${left ? 'left:calc(' + x + '% + 42px);right:12px' : 'right:calc(' + (100 - x) + '% + 42px);left:12px'}"><small>${esc(kick)}</small><b>${esc(name)}</b><em>${n} từ · ${pc}%</em><i><u style="width:${pc}%"></u></i></div>`;
-    return `<button type="button" class="rd-n ${k}${i === curI ? ' cur' : ''}" data-rid="${esc(l.id)}" style="left:${x}%;top:${y}px" aria-label="${esc(l.title)}">${k === 'done' ? '✓' : i + 1}</button>${i === curI ? `<span class="rd-here" id="rdcur" style="left:${x}%;top:${y}px">${k === 'new' ? 'Bắt đầu ở đây' : 'Em ở đây'}</span>` : ''}${lab}`;
+  const frac = reach < 0 ? 0 : Math.min(1, (reach + .6) / (N + .4)), allDone = all.every(l => st(l) === 'done'), curI = cont ? all.indexOf(cont) : -1;
+  const body = all.map((l, i) => {
+    const k = Math.floor(i / per), j = i % per, right = k % 2 === 0, fr = per === 1 ? .5 : (j === 0 ? .2 : .8), x = right ? XL + LEN * fr : XR - LEN * fr, y = Y(k);
+    const sk = st(l), dn = doneCount(l.id), pc = Math.round(dn / NA * 100);
+    const m = String(l.title || '').match(/^\s*(unit\s*\d+|bài\s*\d+)\s*[:.\-–]?\s*(.*)$/i), kick = m ? m[1].replace(/^unit/i, 'Unit') : 'Bài ' + (i + 1), rest = m && m[2] ? m[2] : l.title, parts = String(rest).split(' · '), nm = parts[0], vi = parts.slice(1).join(' · ');
+    const lw = per === 2 ? 100 : 230, lx = x / W * 100, ly = (y - 46) / H * 100;
+    const lab = `<div class="rd-l ${sk}" data-rid="${esc(l.id)}" style="left:${f1(lx)}%;top:${f1(ly)}%;width:${f1(lw / W * 100)}%"><small>${esc(kick)}</small><b>${esc(nm)}</b>${vi ? `<span>(${esc(vi)})</span>` : ''}${sk === 'done' ? '<em>✓ Xong</em>' : sk === 'doing' && pc ? '<em>' + pc + '%</em>' : ''}</div>`;
+    const flag = `<button type="button" class="rd-f ${sk}${i === curI ? ' cur' : ''}" data-rid="${esc(l.id)}" style="left:${f1(lx)}%;top:${f1(y / H * 100)}%" aria-label="${esc(l.title)}"><span class="fl">${sk === 'done' ? '✓' : i + 1}</span></button>`;
+    const here = i === curI ? `<span class="rd-here" id="rdcur" style="left:${f1(lx)}%;top:${f1((y - 96) / H * 100)}%">${sk === 'new' ? 'Bắt đầu ở đây' : 'Em ở đây'}</span>` : '';
+    return lab + flag + here;
   }).join('');
-  return `<div class="rd"><span class="rd-plane" aria-hidden="true">✈️</span><span class="rd-cl" style="left:6%;top:70px"></span><span class="rd-cl" style="left:62%;top:140px;opacity:.8"></span>
-    <div class="rd-top"><h3>Hành trình ${esc(c.name)}: có gì nhỉ?</h3><small>${N} bài · chạm vào bài để vào học</small></div>
-    <div class="rd-map" style="height:${H}px"><svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="#1B5AA3" stroke-width="46" stroke-linecap="round" vector-effect="non-scaling-stroke"/><path d="${d}" fill="none" stroke="#2F86E0" stroke-width="38" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${frac > 0 ? `<path d="${d}" pathLength="100" fill="none" stroke="#FFB84D" stroke-width="38" stroke-linecap="round" stroke-dasharray="${(frac * 100).toFixed(2)} 100" vector-effect="non-scaling-stroke" opacity=".95"/>` : ''}<path d="${d}" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="10 12" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity=".85"/></svg>${nodes}
-      <div class="rd-end${allDone ? ' win' : ''}" style="top:${ye - 4}px"><span>🏆</span><b>${allDone ? 'Về đích rồi!' : 'Đích đến'}</b></div></div></div>`;
+  const lastRight = (runs - 1) % 2 === 0, ex = lastRight ? 330 : 30, ey = Y(runs - 1);
+  const clouds = Array.from({ length: Math.max(3, Math.round(H / 420)) }, (_, i) => `<span class="rd-cl" style="left:${i % 2 ? 66 : 4}%;top:${Math.round(150 + i * 400 + (i % 3) * 50)}px;opacity:${i % 2 ? .8 : .95};transform:scale(${i % 2 ? 1.2 : .9})"></span>`).join('');
+  return `<div class="rd"><span class="rd-kid" aria-hidden="true">🧒<i>🔍</i></span><span class="rd-plane" aria-hidden="true">✈️</span>${clouds}
+    <div class="rd-top"><h3>Hành trình của chúng ta có gì nhỉ?</h3><small>${esc(c.name)} · ${N} bài · chạm vào cờ để vào học</small></div>
+    <div class="rd-map" style="aspect-ratio:${W}/${H}"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMin meet" aria-hidden="true"><path d="${d}" fill="none" stroke="rgba(10,70,130,.22)" stroke-width="50" stroke-linecap="round" transform="translate(0 4)"/><path d="${d}" fill="none" stroke="#fff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>${frac > 0 ? `<path d="${d}" pathLength="100" fill="none" stroke="#C9F2DA" stroke-width="36" stroke-linecap="round" stroke-dasharray="${(frac * 100).toFixed(2)} 100"/>` : ''}<path d="${d}" fill="none" stroke="#2B6CB0" stroke-width="2.6" stroke-dasharray="9 7" stroke-linecap="butt"/></svg>${body}
+      <div class="rd-end${allDone ? ' win' : ''}" style="left:${f1(ex / W * 100)}%;top:${f1(ey / H * 100)}%"><span>🏆</span><b>${allDone ? 'Về đích!' : 'Đích đến'}</b></div></div></div>`;
+}
+/* Các bài bật ra khi cuộn tới */
+function rdFx() {
+  if (!('IntersectionObserver' in window) || (window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches)) return;
+  const els = document.querySelectorAll('.rd-f, .rd-l'); if (!els.length || !els[0].animate) return;
+  const io = new IntersectionObserver(es => es.forEach(en => { if (!en.isIntersecting) return; io.unobserve(en.target); const el = en.target, lab = el.classList.contains('rd-l');
+    el.animate(lab ? [{ opacity: 0, transform: 'translate(-50%,-100%) translateY(10px)' }, { opacity: 1, transform: 'translate(-50%,-100%)' }] : [{ opacity: 0, transform: 'translate(-3px,-100%) scale(.3)' }, { opacity: 1, transform: 'translate(-3px,-100%) scale(1)' }], { duration: 450, easing: 'cubic-bezier(.2,1.4,.3,1)', fill: 'backwards' }); }), { threshold: .2 });
+  els.forEach(el => io.observe(el));
 }
 function viewCourse() {
   const c = COURSES.find(x => x.id === S.course);
@@ -9272,6 +9290,7 @@ function viewCourse() {
     const f = e.target.closest('[data-f]'); if (f) { S.cflt = f.dataset.f; viewCourse(); }
   };
   if (tab === 'announce' || tab === 'forum') { markSeen(c.id, tab); drawCourseTab(c); }
+  if (pathMode && tab === 'lessons') { try { rdFx(); } catch (e) {} }
   const qi = $('#cq'); if (qi) qi.oninput = e => { S.cq = e.target.value; const pos = e.target.selectionStart; viewCourse(); const n = $('#cq'); n.focus(); n.setSelectionRange(pos, pos); };
 }
 /* ---------- xếp hạng ---------- */

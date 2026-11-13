@@ -9068,7 +9068,7 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}</section><div id="rmd"></div>`);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b" id="spin-open" style="margin-left:8px">🎡 Quay may mắn</button>'}</section><div id="rmd"></div>`);
     drawReminders();
     const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
@@ -10414,6 +10414,29 @@ function kidRankHtml(n, t) {
   const r = RK[i], nx = RK[i + 1], pct = nx ? Math.round((n - r[0]) / (nx[0] - r[0]) * 100) : 100;
   return `<div class="kh-rank"><em>${r[1]}</em><div><b>${esc(r[2])}</b>${nx ? 'Còn ' + (nx[0] - n) + ' sticker nữa lên ' + esc(nx[2]) : 'Bé đã sưu tầm đủ bộ!'}<i><u style="width:${pct}%"></u></i></div></div>`;
 }
+/* Vòng quay may mắn: mỗi ngày một lượt, lưu cả trên tài khoản nên không quay lại được */
+const SPIN = [[5, '#3B82F6'], [20, '#F59E0B'], [10, '#16A864'], [50, '#E52B34'], [5, '#8B5CF6'], [15, '#06B6D4'], [10, '#F26522'], [30, '#EC4899']];
+function spinOpen() {
+  const key = 'spin_' + dayKey(); if (claimed(key)) { toast('Hôm nay em đã quay rồi, mai quay tiếp nhé!'); return; }
+  const o = document.createElement('div'); o.className = 'sp-ov'; const n = SPIN.length, seg = 360 / n;
+  o.innerHTML = `<div class="sp-box"><h3>🎡 Vòng quay may mắn</h3><p>Mỗi ngày một lượt, quay trúng 5 đến 50 XP.</p><div class="sp-w"><i class="sp-pin"></i><div class="sp-d" style="background:conic-gradient(${SPIN.map((x, i) => `${x[1]} ${i * seg}deg ${(i + 1) * seg}deg`).join(',')})">${SPIN.map((x, i) => `<span style="transform:rotate(${i * seg + seg / 2}deg)"><b>${x[0]}</b></span>`).join('')}</div><div class="sp-hub">⭐</div></div><button class="sp-btn" id="sp-go">QUAY!</button><button class="sp-x" id="sp-x">Để sau</button></div>`;
+  document.body.appendChild(o);
+  const close = () => o.remove(); o.querySelector('#sp-x').onclick = close;
+  o.querySelector('#sp-go').onclick = async e => {
+    const b = e.currentTarget; if (b.disabled) return; if (claimed(key)) { close(); return; } b.disabled = true; o.querySelector('#sp-x').style.display = 'none';
+    markClaim(key);
+    const r = Math.floor(Math.random() * n), xp = SPIN[r][0], d = o.querySelector('.sp-d'), jitter = (Math.random() - .5) * seg * .7;
+    d.style.transform = `rotate(${360 * 5 - (r * seg + seg / 2) + jitter}deg)`;
+    try { tone && tone(520, .08); } catch (er) {}
+    setTimeout(async () => {
+      try { confetti(); } catch (er) {}
+      b.textContent = '🎉 +' + xp + ' XP!'; await award(null, xp, {}, 'spin');
+      const so = document.getElementById('spin-open'); if (so) so.remove();
+      setTimeout(close, 1600);
+    }, 4400);
+  };
+}
+document.addEventListener('click', e => { if (e.target.closest('#spin-open')) spinOpen(); });
 function kidGift() {
   const day = dayKey(), key = 'kidgift_' + day;
   if (claimed(key)) { toast('Hôm nay bé mở hộp quà rồi. Mai quay lại nhé!', 'warn'); return; }
@@ -13323,6 +13346,18 @@ document.addEventListener('click', e => {
 }
 
 
+/* ===== Vòng quay may mắn mỗi ngày ===== */
+.sp-ov{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(10,30,70,.72);backdrop-filter:blur(4px);padding:16px}
+.sp-box{width:min(380px,100%);background:#fff;border-radius:26px;padding:22px 18px 20px;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+.sp-box h3{margin:0 0 4px;color:#0B5CA8;font-size:1.3rem}.sp-box p{margin:0 0 14px;color:#64748B;font-size:.9rem}
+.sp-w{position:relative;width:min(280px,76vw);aspect-ratio:1;margin:8px auto 18px}
+.sp-d{position:absolute;inset:0;border-radius:50%;border:6px solid #fff;box-shadow:0 0 0 4px #F26522,0 14px 26px -10px rgba(0,0,0,.45);transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}
+.sp-d span{position:absolute;left:50%;top:50%;width:0;height:0;font:800 .95rem system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.sp-d span b{position:absolute;left:-1.2em;top:-6.1em;width:2.4em;text-align:center}
+.sp-pin{position:absolute;left:50%;top:-12px;transform:translateX(-50%);z-index:2;width:0;height:0;border:13px solid transparent;border-top:24px solid #B10B32;filter:drop-shadow(0 3px 2px rgba(0,0,0,.3))}
+.sp-hub{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #F26522;z-index:1;display:grid;place-items:center;font-size:1.3rem}
+.sp-btn{border:0;border-radius:999px;padding:13px 30px;font:800 1rem system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#F26B1D,#B10B32);cursor:pointer;min-height:48px}
+.sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){
   .tl-go{font-size:0!important;width:46px;height:46px;padding:0!important;border-radius:50%!important;display:grid!important;place-items:center;left:10px!important;bottom:calc(80px + env(safe-area-inset-bottom,0px))!important}
@@ -13336,6 +13371,13 @@ document.addEventListener('click', e => {
   .bar .menu .mi:first-child{margin-left:0!important}.bar .menu .mi:first-child::after{display:none}
 }
 @media(min-width:701px) and (max-width:1000px){.bar .nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(min-width:701px){
+  .bar .nav{gap:2px!important;padding:4px 6px!important;border-radius:16px!important}
+  .bar .nav .navb,.bar .nav .navb[data-go],.bar .menu .mi{padding:5px 3px 4px!important;gap:1px!important;font-size:.62rem!important;border-radius:11px!important;line-height:1.1;min-height:0!important}
+  .bar .nav .navb::before,.bar .menu .mi::before{width:20px!important;height:20px!important}
+  .bar .nav .navb img,.bar .menu .mi img{width:20px!important;height:20px!important}
+  .bar .nav .navb.on,.bar .nav .navb.on[data-go],.bar .menu .mi.on{box-shadow:0 4px 8px -4px rgba(177,11,50,.5)!important}
+}
 @media(max-width:700px){
   .bar .nav .nx{display:none}.bar .nav #more::before{order:-1}
   .bar .nav .navb,.bar .nav #more,.bnav button,.tabbar button{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;font-size:.62rem!important;letter-spacing:0!important}

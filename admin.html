@@ -3638,11 +3638,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['kids', 'Bé học (Kids)'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div><button class="btn soft sm" data-a="share-class">Chia sẻ lớp</button></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, kids: cxKids, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -4388,6 +4388,22 @@ function clsRiskRows(c) {
     return { u, days, avg, tried, reasons };
   }).sort((a, b) => b.reasons.length - a.reasons.length || (a.avg ?? 101) - (b.avg ?? 101));
 }
+/* Bảng theo dõi các bé: sticker đã sưu tầm, cấp bậc, lần cuối vào học */
+function cxKids(c, el) {
+  const RK = [[0, '🌱', 'Bé Mầm'], [15, '🐣', 'Bé Chăm'], [40, '🦊', 'Bé Thông Minh'], [80, '🦁', 'Siêu Nhí'], [150, '🚀', 'Thần Đồng'], [999, '👑', 'Vua Tiếng Anh']], now = Date.now();
+  const rows = (c.members || []).map(id => stuOf(c, id)).map(u => {
+    const st = u.stickers || {}, kinds = Object.keys(st).filter(k => +st[k] > 0).length, total = Object.keys(st).reduce((a, k) => a + (+st[k] || 0), 0);
+    const rk = RK.filter(r => kinds >= r[0]).pop() || RK[0], last = tsMs(u.lastActive), days = last ? Math.floor((now - last) / 864e5) : null;
+    return { u, kinds, total, rk, days, xp: +u.xp || 0 };
+  }).sort((a, b) => b.kinds - a.kinds || b.xp - a.xp);
+  const sum = rows.reduce((a, r) => a + r.kinds, 0), act = rows.filter(r => r.days !== null && r.days < 7).length;
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+    <div class="card"><small class="muted">Các bé học trong 7 ngày</small><h2 style="margin:4px 0 0">${act}/${rows.length}</h2></div>
+    <div class="card"><small class="muted">Tổng sticker khác nhau</small><h2 style="margin:4px 0 0">${sum}</h2></div>
+    <div class="card"><small class="muted">Bé dẫn đầu</small><h2 style="margin:4px 0 0">${rows[0] && rows[0].kinds ? esc(rows[0].u.name || 'Bé') : '–'}</h2></div></div>
+    <div class="card tbl-wrap">${rows.length ? `<table><thead><tr><th>Bé</th><th>Cấp bậc</th><th>Sticker (loại / lượt)</th><th>Lần cuối vào học</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${avH(r.u, 26)}<b>${esc(r.u.name || 'Bé')}</b></td><td>${r.rk[1]} ${r.rk[2]}</td><td>${r.kinds} / ${r.total}</td><td>${r.days === null ? '<span class="muted">Chưa có</span>' : r.days === 0 ? 'Hôm nay' : r.days + ' ngày trước'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>`;
+}
 function cxRisk(c, el) {
   const B = cBanks(c), rows = clsRiskRows(c);
   const risky = rows.filter(r => r.reasons.length), active7 = rows.filter(r => r.days !== null && r.days < 7).length;
@@ -4416,7 +4432,7 @@ const PERMS = [
   ['lessons', 'Nội dung học tập 6–9', 'Thêm, sửa bài học và từ vựng của 4 khối']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; if (k === 'lessons') return !(S.me && S.me.perms) || S.me.perms.lessons !== false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;

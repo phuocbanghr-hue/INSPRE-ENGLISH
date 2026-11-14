@@ -13376,6 +13376,10 @@ document.addEventListener('click', e => {
   .bar .menu .mi:first-child{margin-left:0!important}.bar .menu .mi:first-child::after{display:none}
 }
 @media(min-width:701px) and (max-width:1000px){.bar .nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(min-width:1001px){
+  .bar .nav{grid-template-columns:repeat(8,minmax(0,92px))!important;width:max-content!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important;justify-content:center}
+}
+@media(min-width:1500px){.bar .nav{grid-template-columns:repeat(16,minmax(0,84px))!important}}
 @media(min-width:701px){
   .bar .nav{gap:2px!important;padding:4px 6px!important;border-radius:16px!important}
   .bar .nav .navb,.bar .nav .navb[data-go],.bar .menu .mi{padding:5px 3px 4px!important;gap:1px!important;font-size:.62rem!important;border-radius:11px!important;line-height:1.1;min-height:0!important}

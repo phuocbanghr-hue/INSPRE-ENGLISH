@@ -3255,6 +3255,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--ia-brand)!important;b
 .wapp #content .dayb button.on{background:linear-gradient(135deg,#B10B32,#D61F36)!important;border-color:#B10B32!important}
 .wapp #content .dayb button.on small,.wapp #content .dayb button.on b{color:#fff!important}
 .wapp .wpg{min-height:62vh}
+/* ===== Menu Khac: luoi 2 cot co bieu tuong, de tim ===== */
+.wapp .wmenu{display:grid!important;grid-template-columns:1fr 1fr;gap:4px!important;width:min(560px,92vw);padding:12px!important;max-height:78vh}
+.wapp .wmenu[hidden]{display:none!important}
+.wapp .wmenu .wnb{display:flex;align-items:center;gap:10px;text-transform:none!important;letter-spacing:0!important;font-size:.98rem!important;font-weight:600;padding:11px 14px!important;border-radius:12px!important;color:#0B4C8C!important;white-space:normal;text-align:left}
+.wapp .wmenu .wnb svg{width:20px;height:20px;flex:none;stroke:#F26522;color:#F26522}
+.wapp .wmenu .wnb:hover{background:#FFF1E8!important}
+.wapp .wmenu .wnb.on{background:#FDE4D6!important}
+.wapp .wmenu .wnb .bdg{margin-left:auto}
+@media(max-width:600px){.wapp .wmenu{grid-template-columns:1fr}}
+.wapp :focus-visible{outline:3px solid #F26522;outline-offset:2px}
 .wapp #content .cxcard{border:1px solid #DEE2E6!important;border-left:5px solid #0B5CA8!important;border-radius:12px!important;padding:18px 20px!important;background:linear-gradient(135deg,#fff 60%,#EEF5FC)!important;transition:transform .2s,box-shadow .2s}
 .wapp #content .cxcard:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(16,24,40,.1)!important}
 .wapp #content .cxcard>b{font-size:1.1rem;color:#0B5CA8}
@@ -4664,7 +4674,7 @@ function markTitle() {
 function shell() {
   const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
   const items = navList(), MAINK = TEACHER() ? items.map(n => n[0]) : ['hub', 'cls', 'students', 'lessons', 'courses', 'assign', 'report'];
-  const tab = ([k, i, n], c = '') => `<button class="wnb ${c}" data-v="${k}">${n}${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
+  const tab = ([k, i, n], c = '') => `<button class="wnb ${c}" data-v="${k}">${c === 'mi' ? i : ''}${n}${k === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`;
   const mainT = MAINK.map(k => items.find(n => n[0] === k)).filter(Boolean), moreT = items.filter(n => !MAINK.includes(n[0]));
   const ini = String((S.me && S.me.name) || S.user.email || '?').trim().charAt(0).toUpperCase();
   const t = S.site || {}, camp = String(t.campuses || 'CS1: 153 Diên Hồng, Hòa Xuân\nCS2: 164 Phan Triêm, Hòa Xuân\nCS3: 134 Cao Hồng Lãnh, Ngũ Hành Sơn').split('\n').filter(Boolean);

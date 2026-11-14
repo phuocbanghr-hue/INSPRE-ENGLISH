@@ -9318,10 +9318,17 @@ async function maybeArchiveBoba(all) {
     S.site = { ...S.site, boba };
   } catch (e) { console.warn('boba', e); _bobaTried = ''; }
 }
+/* Đua lớp: cộng XP các bạn trong Top 300, xếp theo tổng XP (hiện kèm số bạn và XP trung bình) */
+function classRaceHTML(all) {
+  const m = {}; (all || []).forEach(u => { const c = String(u.className || '').trim(); if (!c || !(+u.xp > 0)) return; const o = (m[c] ||= { c, n: 0, xp: 0 }); o.n++; o.xp += +u.xp || 0; });
+  const rows = Object.values(m).sort((a, b) => b.xp - a.xp).slice(0, 6); if (rows.length < 2) return '';
+  const mx = rows[0].xp || 1, me = String((S.profile && S.profile.className) || '').trim();
+  return `<div class="card cr-box" style="padding:12px 14px;margin-bottom:12px"><b style="font-size:1.05rem">🏁 Đua lớp</b><div class="muted" style="font-size:.82rem;margin:2px 0 8px">Tổng XP của các bạn trong Top 300. Lớp nào cũng có cơ hội, cố lên nhé!</div>${rows.map((r, i) => `<div class="cr-r${r.c === me ? ' me' : ''}"><span class="cr-i">${['🥇', '🥈', '🥉'][i] || i + 1}</span><div class="cr-m"><div class="cr-t"><b>${esc(r.c)}</b><small>${r.n} bạn · TB ${Math.round(r.xp / r.n)} XP</small></div><div class="cr-b"><i style="width:${Math.max(6, Math.round(r.xp / mx * 100))}%"></i></div></div><em>${r.xp}</em></div>`).join('')}</div>`;
+}
 function viewRank() {
   main.innerHTML = `<h2 style="margin:26px 0 12px;font-size:2.2rem">Bảng xếp hạng</h2>
     <div class="rank-tabs"><button class="btn sm ${S.rankFilter === 'all' ? '' : 'soft'}" data-f="all">Toàn trường</button><button class="btn sm ${S.rankFilter === 'class' ? '' : 'soft'}" data-f="class">Lớp của em</button></div>
-    <div class="card boba-board" id="bb-board" style="padding:12px 14px;margin-bottom:12px"><div class="loading">Đang tải…</div></div><p class="boba-note">🧋 = Top 1 XP tuần này của lớp. Cuối tuần bạn nào giữ 🧋 sẽ được tặng trà sữa!</p><div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
+    <div id="cr-slot"></div><div class="card boba-board" id="bb-board" style="padding:12px 14px;margin-bottom:12px"><div class="loading">Đang tải…</div></div><p class="boba-note">🧋 = Top 1 XP tuần này của lớp. Cuối tuần bạn nào giữ 🧋 sẽ được tặng trà sữa!</p><div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
   main.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { S.rankFilter = b.dataset.f; viewRank(); });
   const unBoard = api.watchTop(300, all => {
     const el = $('#bb-board'); if (!el) return;
@@ -9334,6 +9341,7 @@ function viewRank() {
     const tally = {}; Object.values(hist).forEach(h => (h.winners || []).forEach(w => { const k = w.uid; (tally[k] ||= { n: w.name, c: w.className, k: 0 }).k++; }));
     const medal = Object.values(tally).sort((a, b) => b.k - a.k).slice(0, 5);
     const wr = w => `<div class="bb-r ${w.uid === S.user.uid ? 'me' : ''}"><span class="rank-av">${avHTML({ avatar: w.avatar, name: w.name })}</span><span class="bb-n"><b>${esc(w.name)}</b><small>${esc(w.className)}</small></span><em>${w.xp} XP</em>${BOBA}</div>`;
+    const crEl = $('#cr-slot'); if (crEl) crEl.innerHTML = classRaceHTML(all);
     el.innerHTML = `<b style="font-size:1.05rem">🧋 Top 1 tuần này của từng lớp</b><div class="bb-cd">⏳ Chốt tuần lúc 17:00 thứ Hai (còn ${dd} ngày ${hh} giờ). Sau đó XP tuần về 0 và người dẫn đầu được ghi vào bảng nhận trà sữa.</div>`
       + (rows.length ? rows.map(wr).join('') : '<div class="muted" style="margin:6px 0">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>')
       + `<details class="bb-h" open><summary>🧋 Bảng tổng hợp bạn được tặng trà sữa</summary>`
@@ -13365,6 +13373,11 @@ document.addEventListener('click', e => {
 .hero-m .hero-b.sp-open.btn,.btn.sp-open{background:#fff!important;color:#C2490F!important;border:0!important;font-weight:800;box-shadow:0 8px 18px -8px rgba(0,0,0,.4);animation:spPulse 2.4s ease-in-out infinite}
 @keyframes spPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @media (prefers-reduced-motion:reduce){.btn.sp-open{animation:none}}
+.cr-r{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:12px}.cr-r.me{background:#FFF1E8}
+.cr-i{width:28px;text-align:center;font-size:1.25rem;font-weight:800;color:#64748B}.cr-m{flex:1;min-width:0}
+.cr-t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.cr-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cr-t small{color:#64748B;white-space:nowrap}
+.cr-b{height:9px;border-radius:99px;background:#E8EEF7;margin-top:4px;overflow:hidden}.cr-b i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F26B1D,#B10B32);transition:width .8s}
+.cr-r em{font-style:normal;font-weight:800;color:#B10B32;min-width:46px;text-align:right}
 .sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){

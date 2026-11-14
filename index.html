@@ -1877,7 +1877,10 @@ if (!NOT_CONFIGURED) {
     const [a, b, c] = await Promise.all([import(V + "firebase-app.js"), import(V + "firebase-auth.js"), import(V + "firebase-firestore.js")]);
     FB = { ...a, ...b, ...c };
     try { FB = { ...FB, ...(await import(V + "firebase-storage.js")) }; } catch (e) { console.warn("storage", e); }
-    const app = FB.initializeApp(firebaseConfig); auth = FB.getAuth(app); db = FB.getFirestore(app);
+    const app = FB.initializeApp(firebaseConfig); auth = FB.getAuth(app);
+    /* Lưu đệm trên máy: điểm ghi lúc mất mạng không mất khi tải lại trang hoặc đóng tab, tự đồng bộ khi có mạng */
+    try { db = FB.initializeFirestore(app, { localCache: FB.persistentLocalCache({ tabManager: FB.persistentMultipleTabManager() }) }); }
+    catch (e) { console.warn('firestore cache', e); db = FB.getFirestore(app); }
     for (const p of [FB.indexedDBLocalPersistence, FB.browserLocalPersistence, FB.browserSessionPersistence]) {
       if (!p) continue; try { await FB.setPersistence(auth, p); break; } catch (e) { console.warn('persistence', e); }
     }
@@ -6520,10 +6523,12 @@ const weekLabel = w => { const f = ts => { const d = new Date(ts + 7 * 3600e3); 
 const _awIn = new Map();
 async function award(lid, xp, extra = {}, src = '') {
   let k; try { k = [lid || '', src || '', xp, JSON.stringify(extra || {})].join('|'); } catch { k = ''; }
-  const t = k && _awIn.get(k);
-  if (t && (t === 1 || Date.now() - t < 400)) return;
-  if (k) _awIn.set(k, 1);
-  try { return await _award(lid, xp, extra, src); } finally { if (k) _awIn.set(k, Date.now()); }
+  const t = k && _awIn.get(k), now = Date.now();
+  /* đang chờ lưu (tối đa 20 giây) hoặc vừa nhận xong thì bỏ qua lần bấm thêm */
+  if (t && now < t) return;
+  if (k) _awIn.set(k, now + 20000);
+  let r; try { r = await _award(lid, xp, extra, src); } finally { if (k) _awIn.set(k, Date.now() + (r === 'pending' ? 20000 : 3000)); }
+  return r;
 }
 /* Đánh dấu "đã nhận" lưu cả trên tài khoản, xoá dữ liệu trình duyệt cũng không nhận lại được */
 const _clk = k => 'c_' + String(k).replace(/[^\w]/g, '_').slice(0, 60);
@@ -6539,7 +6544,12 @@ async function _award(lid, xp, extra = {}, src = '') {
   if (lid) for (const [k, v] of Object.entries(extra)) { u[`progress.${lid}.${k}`] = v; u[`progress.${lid}.${k}At`] = now; }
   const oldXp = (S.profile && S.profile.xp) || 0;
   const oldDay = ((S.profile && S.profile.daily) || {})[dayKey()] || 0, dayGoal = (S.profile && S.profile.goal) || 50;
-  try { await api.updateMe(u); } catch (e) { toast('Không lưu được điểm: ' + e.message, 'bad'); }
+  let pending = false;
+  try {
+    const w = api.updateMe(u); w.catch(() => {});
+    const r = await Promise.race([w.then(() => 'ok'), new Promise(res => setTimeout(() => res('slow'), 5000))]);
+    if (r === 'slow') { pending = true; toast('Mạng đang yếu. Điểm đã ghi trên máy và sẽ tự lưu khi có mạng lại, em cứ học tiếp nhé!', 'warn'); }
+  } catch (e) { toast('Không lưu được điểm: ' + e.message, 'bad'); }
   if (xp > 0 && oldDay < dayGoal && oldDay + xp >= dayGoal && window.fxCelebrate) { try { window.fxCelebrate('goal', 'Đạt mục tiêu hôm nay!', dayGoal + ' XP trong ngày. Em giỏi lắm, giữ nhịp này nhé!'); } catch (e) {} }
   const LV = [[0, 'Tân binh'], [100, 'Chăm chỉ'], [300, 'Siêu sao'], [600, 'Huyền thoại'], [1000, 'Bậc thầy']];
   const lvOf = v => LV.reduce((a, t, i) => (v >= t[0] ? i : a), 0);
@@ -6551,7 +6561,12 @@ async function _award(lid, xp, extra = {}, src = '') {
     if (window.arSfx) { try { window.arSfx.end(); } catch (e) {} }
     if (window.fxBurst) { window.fxBurst(innerWidth / 2, innerHeight * .3, 90); setTimeout(() => window.fxBurst(innerWidth / 2, innerHeight * .3, 60), 350); }
   }
+  return pending ? 'pending' : 'ok';
 }
+/* Báo khi mất/có mạng lại */
+let _offT = 0;
+window.addEventListener('offline', () => { _offT = Date.now(); toast('Mất mạng rồi. Em vẫn học được, điểm sẽ tự lưu khi có mạng lại.', 'warn'); });
+window.addEventListener('online', () => { if (_offT) { _offT = 0; toast('Đã có mạng lại, đang lưu điểm của em…', 'ok'); } });
 async function saveMistakes(wrongs, rights, lid) {
   const add = {}, rm = {};
   wrongs.forEach(w => { const l = w._lid || lid; if (l) (add[l] ||= new Set()).add(norm(w.en)); });
@@ -9550,6 +9565,14 @@ function tfQ(w, pool) {
 }
 const typeQ = w => ({ kind: 'type', w });
 
+/* Lời động viên thân thiện, gọi tên em và đổi theo điểm */
+function cheer(pct) {
+  const nm = String((S.profile && S.profile.name) || '').trim().split(/\s+/).pop() || 'em', pick = a => a[Math.floor(Math.random() * a.length)];
+  if (pct >= 100) return pick([`Tuyệt đối luôn ${nm} ơi! Cô thầy tự hào về em lắm.`, `Không sai câu nào, ${nm} giỏi quá trời!`, `Hoàn hảo! ${nm} đúng là siêu sao hôm nay.`]);
+  if (pct >= 80) return pick([`Giỏi lắm ${nm}! Chỉ thiếu chút xíu nữa là tròn điểm thôi.`, `${nm} làm tốt lắm! Cứ đà này sẽ thành cao thủ.`, `Quá đỉnh! ${nm} nhớ bài rất tốt.`]);
+  if (pct >= 50) return pick([`Khá ổn rồi ${nm}! Xem lại mấy từ bên dưới, lần sau sẽ cao hơn.`, `${nm} đang tiến bộ đó! Thử thêm một lượt nữa nhé.`, `Được rồi ${nm}! Sai là để nhớ lâu, mình luyện thêm nha.`]);
+  return pick([`Không sao đâu ${nm}, ai cũng bắt đầu từ chỗ này. Mình cùng làm lại nhé!`, `Đừng nản nha ${nm}! Xem lại các từ bên dưới rồi thử lần nữa.`, `Bài này hơi khó thôi, ${nm} cố lên, lần sau chắc chắn khá hơn!`]);
+}
 function runQuiz(el, o) {
   const lid = o.lesson?.id || null; let Q, i, score, combo, xp, wrongs, rights, timer;
   function start() {
@@ -9644,7 +9667,7 @@ function runQuiz(el, o) {
     if (pct >= 80) { sfx.win(); confetti(); }
     const uniq = [...new Map(wrongs.map(w => [w.en, w])).values()];
     const grade = pct >= 90 ? 'Xuất sắc!' : pct >= 70 ? 'Làm tốt lắm!' : pct >= 50 ? 'Khá ổn, cố thêm chút nữa!' : 'Chưa sao, ôn lại rồi thử lại nhé!';
-    el.innerHTML = `<div class="result"><div class="stars">${''.repeat(stars)}${''.repeat(3 - stars)}</div><h3>${grade}</h3><p>Đúng ${score}/${N} câu (${pct}%) · +${xp} XP</p>${o.note ? o.note(pct, uniq) : ''}
+    el.innerHTML = `<div class="result"><div class="stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div><h3>${grade}</h3><p>Đúng ${score}/${N} câu (${pct}%) · +${xp} XP</p><p class="cheer">${esc(cheer(pct))}</p>${o.note ? o.note(pct, uniq) : ''}
       ${uniq.length ? `<div class="wronglist"><b>Các từ cần nhớ thêm:</b>${uniq.map((w, k) => `<div><b>${esc(w.en)}</b><span>${esc(w.vi)}</span><button class="spk" data-i="${k}" aria-label="Nghe"></button></div>`).join('')}</div>` : ''}
       <div class="row"><button class="btn soft" id="again">Chơi lại</button>${o.next ? `<button class="btn" id="nx">${o.next.label} →</button>` : ''}${o.grid ? '<button class="btn soft" id="gr">Các bài tập</button>' : ''}</div></div>`;
     $('#again', el).onclick = start; o.next && ($('#nx', el).onclick = o.next.go); o.grid && ($('#gr', el).onclick = o.grid);
@@ -10101,7 +10124,7 @@ function mountHang(el, { lesson, words, next, grid }) {
   function draw() {
     const shown = ans.split('').map(ch => /[a-z]/.test(ch) ? (guessed.has(ch) || lives <= 0 ? ch : '') : ch);
     $('#slots', el).innerHTML = shown.map((ch, n) => ch === ' ' ? '<span style="width:16px"></span>' : `<span class="slot ${ch ? 'f' : ''} ${lives <= 0 && !guessed.has(ans[n]) && /[a-z]/.test(ans[n]) ? 'badd' : ''}">${esc(ch)}</span>`).join('');
-    $('#hr', el).textContent = '❤'.repeat(lives) + ''.repeat(6 - lives);
+    $('#hr', el).textContent = '❤️'.repeat(lives) + '🤍'.repeat(6 - lives);
     const complete = ans.split('').every(ch => !/[a-z]/.test(ch) || guessed.has(ch));
     if (complete) { won++; xp += 10 + lives * 2; speak(w.en); lock(); $('#fb', el).textContent = 'Chính xác!'; setTimeout(() => { if (el.isConnected) { i++; show(); } }, 1000); }
     else if (lives <= 0) { lock(); $('#fb', el).innerHTML = `Đáp án: <b>${esc(w.en)}</b>`; saveMistakes([w], [], lesson.id); setTimeout(() => { if (el.isConnected) { i++; show(); } }, 1800); }
@@ -13403,6 +13426,9 @@ document.addEventListener('click', e => {
 .wod-sp{border:0;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 4px 10px -4px rgba(177,11,50,.4);font-size:1.2rem;cursor:pointer}
 .wod-w{font-size:1.9rem;font-weight:900;color:#B10B32;line-height:1.1;margin-top:2px}.wod-i{color:#64748B;margin-top:2px}.wod-v{font-weight:700;margin-top:4px;font-size:1.05rem}
 .wod-e{margin-top:6px;color:#475569;font-style:italic}.wod-f{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}.wod-f .muted{font-size:.8rem}
+.result .stars:empty::before{content:'⭐⭐⭐';animation:starPop .6s cubic-bezier(.2,1.5,.3,1) both}
+@keyframes starPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.result .cheer{font-weight:700;color:#C2490F;margin:6px auto 10px;max-width:32em;line-height:1.4}
 .sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){

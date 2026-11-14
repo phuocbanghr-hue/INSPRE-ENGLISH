@@ -9088,7 +9088,7 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b sp-open" id="spin-open">🎡 Quay may mắn</button>'}</section>${wodHTML()}<div id="rmd"></div>`);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b sp-open" id="spin-open">🎡 Quay may mắn</button>'}</section>${wodHTML()}${instHTML()}<div id="rmd"></div>`);
     drawReminders();
     const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
@@ -9333,6 +9333,24 @@ async function maybeArchiveBoba(all) {
     S.site = { ...S.site, boba };
   } catch (e) { console.warn('boba', e); _bobaTried = ''; }
 }
+/* Gợi ý cài ứng dụng lên màn hình chính (Android/Chrome: một chạm; iPhone: hướng dẫn) */
+let _instEv = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _instEv = e; const c = document.getElementById('inst'); if (!c && S && S.view === 'home') { try { go('home'); } catch (er) {} } });
+window.addEventListener('appinstalled', () => { _instEv = null; try { store.set('inst_done', '1'); } catch (e) {} const c = document.getElementById('inst'); if (c) c.remove(); toast('Đã cài Inspire lên máy. Chúc em học vui!', 'ok'); });
+function instHTML() {
+  try {
+    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    if (standalone || store.get('inst_done') === '1') return '';
+    const until = +store.get('inst_hide') || 0; if (Date.now() < until) return '';
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (!_instEv && !ios) return '';
+    return `<section class="card inst" id="inst"><div class="inst-t"><b>Cài Inspire lên điện thoại</b><span>${_instEv ? 'Mở nhanh như một ứng dụng, học mỗi ngày dễ hơn.' : 'Bấm nút Chia sẻ của Safari, chọn "Thêm vào Màn hình chính" là xong.'}</span></div>${_instEv ? '<button type="button" class="btn sm" id="inst-go">Cài ngay</button>' : ''}<button type="button" class="inst-x" id="inst-x" aria-label="Để sau">✕</button></section>`;
+  } catch (e) { return ''; }
+}
+document.addEventListener('click', async e => {
+  if (e.target.closest('#inst-x')) { try { store.set('inst_hide', String(Date.now() + 7 * 864e5)); } catch (er) {} const c = document.getElementById('inst'); if (c) c.remove(); return; }
+  if (e.target.closest('#inst-go') && _instEv) { const ev = _instEv; _instEv = null; try { ev.prompt(); await ev.userChoice; } catch (er) {} const c = document.getElementById('inst'); if (c) c.remove(); }
+});
 /* Từ của ngày: chọn theo ngày từ các bài em đã ghi danh, nghe + lưu để ôn */
 function wodPick() {
   const L = (S.lessons || []).filter(l => { const c = courseOf(l); return c && isEnrolled(c.id) && c.id !== 'kids'; }), pool = [];
@@ -13429,6 +13447,10 @@ document.addEventListener('click', e => {
 .result .stars:empty::before{content:'⭐⭐⭐';animation:starPop .6s cubic-bezier(.2,1.5,.3,1) both}
 @keyframes starPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
 .result .cheer{font-weight:700;color:#C2490F;margin:6px auto 10px;max-width:32em;line-height:1.4}
+.inst{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 14px;background:linear-gradient(135deg,#EEF6FF,#E4F0FF);border:1px solid #BBD6F5;position:relative}
+.inst-t{flex:1;min-width:0}.inst-t b{display:block;color:#0B5CA8}.inst-t span{display:block;color:#475569;font-size:.86rem;margin-top:2px}
+.inst-x{position:absolute;top:2px;right:4px;border:0;background:none;color:#64748B;font-size:1rem;width:36px;height:36px;cursor:pointer}
+.inst .btn{margin-right:26px}
 .sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){

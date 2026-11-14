@@ -9073,7 +9073,7 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b sp-open" id="spin-open">🎡 Quay may mắn</button>'}</section><div id="rmd"></div>`);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b sp-open" id="spin-open">🎡 Quay may mắn</button>'}</section>${wodHTML()}<div id="rmd"></div>`);
     drawReminders();
     const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
@@ -9318,6 +9318,26 @@ async function maybeArchiveBoba(all) {
     S.site = { ...S.site, boba };
   } catch (e) { console.warn('boba', e); _bobaTried = ''; }
 }
+/* Từ của ngày: chọn theo ngày từ các bài em đã ghi danh, nghe + lưu để ôn */
+function wodPick() {
+  const L = (S.lessons || []).filter(l => { const c = courseOf(l); return c && isEnrolled(c.id) && c.id !== 'kids'; }), pool = [];
+  L.forEach(l => (l.words || []).forEach(w => { if (w && w.en && w.vi && w.en.length > 2) pool.push({ w, lid: l.id, lt: l.title }); }));
+  if (!pool.length) return null;
+  let h = 7; const k = dayKey() + '|' + ((S.user && S.user.uid) || ''); for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
+  return pool[h % pool.length];
+}
+function wodHTML() {
+  const x = wodPick(); if (!x) return '';
+  const w = x.w, saved = mist(x.lid).includes(norm(w.en));
+  return `<section class="card wod" id="wod"><div class="wod-h"><small>🌤️ Từ của ngày</small><button type="button" class="wod-sp" id="wod-sp" aria-label="Nghe phát âm">🔊</button></div><div class="wod-w">${esc(w.en)}</div>${w.ipa ? `<div class="wod-i">${esc(w.ipa)}</div>` : ''}<div class="wod-v">${esc(w.vi)}</div>${w.ex ? `<div class="wod-e">“${esc(w.ex)}”</div>` : ''}<div class="wod-f"><span class="muted">Từ bài: ${esc(x.lt)}</span><button type="button" class="btn soft sm" id="wod-sv" ${saved ? 'disabled' : ''}>${saved ? '✓ Đã lưu để ôn' : '＋ Lưu để ôn lại'}</button></div></section>`;
+}
+document.addEventListener('click', e => {
+  const sp = e.target.closest('#wod-sp'), sv = e.target.closest('#wod-sv'); if (!sp && !sv) return;
+  const x = wodPick(); if (!x) return;
+  if (sp) { try { speak(x.w.en); } catch (er) {} return; }
+  if (sv.disabled) return; sv.disabled = true; sv.textContent = '✓ Đã lưu để ôn';
+  saveMistakes([{ ...x.w, _lid: x.lid }], [], x.lid); toast('Đã lưu từ "' + x.w.en + '" vào danh sách ôn.', 'ok');
+});
 /* Đua lớp: cộng XP các bạn trong Top 300, xếp theo tổng XP (hiện kèm số bạn và XP trung bình) */
 function classRaceHTML(all) {
   const m = {}; (all || []).forEach(u => { const c = String(u.className || '').trim(); if (!c || !(+u.xp > 0)) return; const o = (m[c] ||= { c, n: 0, xp: 0 }); o.n++; o.xp += +u.xp || 0; });
@@ -13378,6 +13398,11 @@ document.addEventListener('click', e => {
 .cr-t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.cr-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cr-t small{color:#64748B;white-space:nowrap}
 .cr-b{height:9px;border-radius:99px;background:#E8EEF7;margin-top:4px;overflow:hidden}.cr-b i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F26B1D,#B10B32);transition:width .8s}
 .cr-r em{font-style:normal;font-weight:800;color:#B10B32;min-width:46px;text-align:right}
+.wod{margin:12px 0;padding:14px 16px;background:linear-gradient(135deg,#FFFBEA,#FFF1E8);border:1px solid #F7D9B5}
+.wod-h{display:flex;justify-content:space-between;align-items:center}.wod-h small{font-weight:800;color:#C2490F}
+.wod-sp{border:0;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 4px 10px -4px rgba(177,11,50,.4);font-size:1.2rem;cursor:pointer}
+.wod-w{font-size:1.9rem;font-weight:900;color:#B10B32;line-height:1.1;margin-top:2px}.wod-i{color:#64748B;margin-top:2px}.wod-v{font-weight:700;margin-top:4px;font-size:1.05rem}
+.wod-e{margin-top:6px;color:#475569;font-style:italic}.wod-f{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}.wod-f .muted{font-size:.8rem}
 .sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){

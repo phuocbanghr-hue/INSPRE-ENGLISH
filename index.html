@@ -1810,14 +1810,14 @@ body.kids .fc-word{font-size:2.8rem;letter-spacing:.02em}
     goal: '<svg viewBox="0 0 24 24" fill="none" stroke="#7a3b00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="#fff6d6"/><circle cx="12" cy="12" r="5" fill="#ffd36b"/><circle cx="12" cy="12" r="1.5" fill="#b45309"/><path d="M12 12l7-7M17 3v4h4"/></svg>'
   };
   var open = null;
-  window.fxCelebrate = function (kind, title, sub) {
+  window.fxCelebrate = function (kind, title, sub, kick) {
     if (open) { try { open.remove(); } catch (e) {} open = null; }
     var d = document.createElement('div'); d.className = 'wow-ov ' + (kind === 'goal' ? 'goal' : kind === 'streak' ? 'streak' : 'level'); d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'polite');
     var rays = document.createElement('div'); rays.className = 'rays'; d.appendChild(rays);
     for (var i = 0; i < 14; i++) { var s = document.createElement('i'), a = Math.random() * 6.283, r = 90 + Math.random() * 190; s.className = 'wow-spark'; s.style.left = (30 + Math.random() * 40) + '%'; s.style.top = (30 + Math.random() * 30) + '%'; s.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); s.style.setProperty('--y', Math.round(Math.sin(a) * r - 40) + 'px'); s.style.setProperty('--d', (1.6 + Math.random() * 1.4) + 's'); s.style.setProperty('--l', (Math.random() * 1.6) + 's'); d.appendChild(s); }
     var box = document.createElement('div'); box.className = 'in';
     var bd = document.createElement('div'); bd.className = 'bd'; bd.innerHTML = ICON[kind] || ICON.level;
-    var kk = document.createElement('div'); kk.className = 'kk'; kk.textContent = kind === 'goal' ? 'Mục tiêu ngày' : kind === 'streak' ? 'Chuỗi ngày học' : 'Lên cấp';
+    var kk = document.createElement('div'); kk.className = 'kk'; kk.textContent = kick ? kick : kind === 'goal' ? 'Mục tiêu ngày' : kind === 'streak' ? 'Chuỗi ngày học' : 'Lên cấp';
     var h = document.createElement('h2'); h.textContent = title || '';
     var p = document.createElement('p'); p.textContent = sub || '';
     var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Tiếp tục';
@@ -2078,16 +2078,21 @@ const AVATARS = [];
 const levelInfo = xp => { const lvl = Math.floor((xp || 0) / 200) + 1; return { lvl, into: (xp || 0) % 200, name: LEVELS[Math.min(lvl - 1, LEVELS.length - 1)] }; };
 const isDone = (p, k) => p && p[k] != null && p[k] !== false;
 const BADGES = [
-  { id: 'first', ic: '', n: 'Bước đầu', d: 'Kiếm XP đầu tiên', ok: (p) => (p.xp || 0) > 0 },
-  { id: 'xp500', ic: '', n: '500 XP', d: 'Đạt 500 XP', ok: p => (p.xp || 0) >= 500 },
-  { id: 'xp2000', ic: '', n: '2000 XP', d: 'Đạt 2000 XP', ok: p => (p.xp || 0) >= 2000 },
-  { id: 's3', ic: '', n: 'Chuỗi 3 ngày', d: 'Học 3 ngày liên tiếp', ok: p => (p.streak || 0) >= 3 },
-  { id: 's7', ic: '', n: 'Chuỗi 7 ngày', d: 'Học 7 ngày liên tiếp', ok: p => (p.streak || 0) >= 7 },
-  { id: 'perfect', ic: '', n: 'Điểm tuyệt đối', d: 'Trắc nghiệm đạt 100%', ok: (p, s) => s.any('quiz', 100) },
-  { id: 'ears', ic: '', n: 'Tai thính', d: 'Nghe & chọn đạt 100%', ok: (p, s) => s.any('listen', 100) },
-  { id: 'lesson1', ic: '', n: 'Xong bài đầu', d: 'Chơi từ 6 trò trong một bài', ok: (p, s) => s.completed >= 1 },
-  { id: 'lesson3', ic: '', n: 'Chăm chỉ', d: 'Hoàn thành 3 bài', ok: (p, s) => s.completed >= 3 },
-  { id: 'test90', ic: '', n: 'Thủ khoa', d: 'Bài kiểm tra từ 90%', ok: (p, s) => s.any('test', 90) }
+  { id: 'first', ic: '🌟', n: 'Bước đầu', d: 'Kiếm XP đầu tiên', ok: (p) => (p.xp || 0) > 0 },
+  { id: 'xp500', ic: '⚡', n: '500 XP', d: 'Đạt 500 XP', ok: p => (p.xp || 0) >= 500 },
+  { id: 'xp2000', ic: '🚀', n: '2000 XP', d: 'Đạt 2000 XP', ok: p => (p.xp || 0) >= 2000 },
+  { id: 'xp5000', ic: '👑', n: '5000 XP', d: 'Đạt 5000 XP', ok: p => (p.xp || 0) >= 5000 },
+  { id: 's3', ic: '🔥', n: 'Chuỗi 3 ngày', d: 'Học 3 ngày liên tiếp', ok: p => (p.streak || 0) >= 3 },
+  { id: 's7', ic: '🏅', n: 'Chuỗi 7 ngày', d: 'Học 7 ngày liên tiếp', ok: p => (p.streak || 0) >= 7 },
+  { id: 's30', ic: '🏆', n: 'Chuỗi 30 ngày', d: 'Học 30 ngày liên tiếp', ok: p => (p.streak || 0) >= 30 },
+  { id: 'perfect', ic: '💯', n: 'Điểm tuyệt đối', d: 'Trắc nghiệm đạt 100%', ok: (p, s) => s.any('quiz', 100) },
+  { id: 'ears', ic: '👂', n: 'Tai thính', d: 'Nghe & chọn đạt 100%', ok: (p, s) => s.any('listen', 100) },
+  { id: 'lesson1', ic: '📘', n: 'Xong bài đầu', d: 'Chơi từ 6 trò trong một bài', ok: (p, s) => s.completed >= 1 },
+  { id: 'lesson3', ic: '📚', n: 'Chăm chỉ', d: 'Hoàn thành 3 bài', ok: (p, s) => s.completed >= 3 },
+  { id: 'lesson10', ic: '🎓', n: 'Mọt sách', d: 'Hoàn thành 10 bài', ok: (p, s) => s.completed >= 10 },
+  { id: 'test90', ic: '🥇', n: 'Thủ khoa', d: 'Bài kiểm tra từ 90%', ok: (p, s) => s.any('test', 90) },
+  { id: 'spin', ic: '🎡', n: 'May mắn', d: 'Quay vòng quay may mắn', ok: p => Object.keys(p.claims || {}).some(k => k.indexOf('c_spin_') === 0) },
+  { id: 'kidst', ic: '🦄', n: 'Nhà sưu tầm', d: 'Có 10 sticker Kids khác nhau', ok: p => Object.keys(p.stickers || {}).filter(k => +(p.stickers || {})[k] > 0).length >= 10 }
 ];
 
 const GS9T = ["Local community", "City life", "Healthy living for teens", "Remembering the past", "Our experiences", "Vietnamese lifestyles: Then and now", "Natural wonders of the world", "Tourism", "World Englishes", "Planet Earth", "Electronic devices", "Career choices"];
@@ -10212,7 +10217,7 @@ function mountDocs(el, { lesson }) {
 function checkBadges() {
   if (!S.profile || !S.user) return;
   const st = stats(S.profile), earned = BADGES.filter(b => b.ok(S.profile, st)).map(b => b.id), key = 'badges_' + S.user.uid, prev = store.get(key);
-  if (prev !== null) { const had = prev ? prev.split(',') : []; BADGES.filter(b => earned.includes(b.id) && !had.includes(b.id)).forEach(b => { toast(`${b.ic} Huy hiệu mới: ${b.n}!`); sfx.win(); confetti(); }); }
+  if (prev !== null) { const had = prev ? prev.split(',') : []; BADGES.filter(b => earned.includes(b.id) && !had.includes(b.id)).forEach(b => { toast(`${b.ic} Huy hiệu mới: ${b.n}!`); try { window.fxCelebrate && window.fxCelebrate('level', b.ic + ' ' + b.n, b.d, 'Huy hiệu mới'); } catch (e) {}; sfx.win(); confetti(); }); }
   store.set(key, earned.join(','));
 }
 

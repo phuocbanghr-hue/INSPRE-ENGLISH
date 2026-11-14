@@ -9073,7 +9073,7 @@ function viewHome() {
     const p = S.profile, h = new Date().getHours(), hi = h < 11 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối', nm = esc(String(p.name || p.displayName || '').split(' ').pop() || 'em');
     let last = null; try { last = JSON.parse(store.get('last_' + S.user.uid)); } catch {}
     const ls = last && (S.lessons || []).find(l => l.id === last[0]);
-    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b" id="spin-open" style="margin-left:8px">🎡 Quay may mắn</button>'}</section><div id="rmd"></div>`);
+    main.insertAdjacentHTML('afterbegin', `<section class="hero-m"><div class="hero-t"><small>${hi}, <em class="lv-chip">${(() => { const x = p.xp || 0; return x >= 1000 ? 'Bậc thầy' : x >= 600 ? 'Huyền thoại' : x >= 300 ? 'Siêu sao' : x >= 100 ? 'Chăm chỉ' : 'Tân binh'; })()}</em></small><b>${nm}!</b><span>${(p.streak || 0) > 0 ? 'Em đang giữ chuỗi ' + p.streak + ' ngày. Giỏi quá!' : 'Hôm nay mình học một chút nhé?'}</span></div><div class="hero-s hero-ring" style="--p:${Math.min(100, Math.round(((p.daily || {})[dayKey()] || 0) / 50 * 100))}"><i>${(p.daily || {})[dayKey()] || 0}</i><small>/ 50 XP hôm nay</small></div>${ls ? `<button class="btn hero-b" id="hero-go">Học tiếp: ${esc(ls.title)}</button>` : ''}${claimed('spin_' + dayKey()) ? '' : '<button class="btn hero-b sp-open" id="spin-open">🎡 Quay may mắn</button>'}</section><div id="rmd"></div>`);
     drawReminders();
     const hb = $('#hero-go'); if (((p.daily || {})[dayKey()] || 0) >= 50) { const tt = $('.hero-t span'); if (tt) tt.textContent = 'Em đạt mục tiêu hôm nay rồi. Tuyệt vời!'; } if (hb) hb.onclick = () => openLesson(last[0], last[1]);
   }
@@ -13362,6 +13362,9 @@ document.addEventListener('click', e => {
 .sp-pin{position:absolute;left:50%;top:-12px;transform:translateX(-50%);z-index:2;width:0;height:0;border:13px solid transparent;border-top:24px solid #B10B32;filter:drop-shadow(0 3px 2px rgba(0,0,0,.3))}
 .sp-hub{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #F26522;z-index:1;display:grid;place-items:center;font-size:1.3rem}
 .sp-btn{border:0;border-radius:999px;padding:13px 30px;font:800 1rem system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#F26B1D,#B10B32);cursor:pointer;min-height:48px}
+.hero-m .hero-b.sp-open.btn,.btn.sp-open{background:#fff!important;color:#C2490F!important;border:0!important;font-weight:800;box-shadow:0 8px 18px -8px rgba(0,0,0,.4);animation:spPulse 2.4s ease-in-out infinite}
+@keyframes spPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+@media (prefers-reduced-motion:reduce){.btn.sp-open{animation:none}}
 .sp-btn:disabled{opacity:.6}.sp-x{display:block;margin:10px auto 0;border:0;background:none;color:#64748B;cursor:pointer;font-size:.9rem;min-height:40px}
 /* ===== v24: nút Công cụ học thu thành nút tròn trên điện thoại ===== */
 @media(max-width:700px){

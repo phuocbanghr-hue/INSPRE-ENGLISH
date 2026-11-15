@@ -3311,6 +3311,23 @@ body,.wapp{background:linear-gradient(180deg,#F3F7FC 0,#F8FAFD 320px,#F5F8FC 100
 .wapp #content tbody tr:nth-child(even){background:#FAFCFF}
 .wapp #content .card>h3:first-child{padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid #EEF1F5}
 .wapp #content input:focus,.wapp #content select:focus,.wapp #content textarea:focus{border-color:#F26522!important;box-shadow:0 0 0 4px rgba(242,101,34,.15)!important;outline:0}
+/* ===== Menu Khac: nhom + mo ta + tim kiem ===== */
+.wapp .wmenu{display:block!important;width:min(720px,94vw)!important;padding:16px 18px 18px!important;border-radius:22px!important;overflow:auto}
+.wapp .wmenu[hidden]{display:none!important}
+.wapp .wmenu .wm-q{width:100%;padding:12px 16px 12px 42px;border:1.5px solid #9FB0C3;border-radius:999px;font-size:1rem;margin-bottom:12px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B5CA8' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") 15px center/18px no-repeat;color:#111827;outline:0}
+.wapp .wmenu .wm-q:focus{border-color:#F26522;box-shadow:0 0 0 4px rgba(242,101,34,.15)}
+.wapp .wmenu .wm-g{margin-top:6px}
+.wapp .wmenu .wm-g h6{margin:10px 6px 6px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#F26522;font-weight:800}
+.wapp .wmenu .wm-l{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wapp .wmenu .wm-l .wnb{align-items:flex-start!important;padding:12px 14px!important;border-radius:14px!important;border:1px solid #E3EAF3!important;background:#fff!important}
+.wapp .wmenu .wm-l .wnb:hover{background:#FFF4EC!important;border-color:#F5B58A!important}
+.wapp .wmenu .wm-l .wnb.on{background:#FDE4D6!important;border-color:#F26522!important}
+.wapp .wmenu .wnb svg{margin-top:2px}
+.wapp .wmenu .wm-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wapp .wmenu .wm-t b{font-size:.92rem;color:#0B4C8C;text-transform:uppercase;letter-spacing:.03em;font-weight:800}
+.wapp .wmenu .wm-t small{font-size:.8rem;font-weight:500;color:#5B6675;line-height:1.35}
+.wapp .wmenu .wm-none{text-align:center;color:#5B6675;padding:18px}
+@media(max-width:600px){.wapp .wmenu .wm-l{grid-template-columns:1fr}}
 .wapp #content .cxcard{border:1px solid #DEE2E6!important;border-left:5px solid #0B5CA8!important;border-radius:12px!important;padding:18px 20px!important;background:linear-gradient(135deg,#fff 60%,#EEF5FC)!important;transition:transform .2s,box-shadow .2s}
 .wapp #content .cxcard:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(16,24,40,.1)!important}
 .wapp #content .cxcard>b{font-size:1.1rem;color:#0B5CA8}
@@ -4717,6 +4734,19 @@ function markTitle() {
   if (h && !h.classList.contains('wh-t')) h.classList.add('wh-t');
   if (h) { const t = h.textContent.trim().toLowerCase(); c.querySelectorAll('.card>h3:first-child,.card>h2:first-child').forEach(x => x.classList.toggle('wh-dup', x.textContent.trim().toLowerCase() === t)); }
 }
+const MORE_G = [
+  ['Việc hằng ngày', { today: 'Những việc cần làm trong hôm nay', hw: 'Chấm và xem bài học sinh đã làm', calendar: 'Lịch giao bài và hạn nộp', notice: 'Gửi thông báo đến học sinh', msg: 'Nhắn riêng cho học sinh', chat: 'Trả lời tin nhắn của học sinh' }],
+  ['Học tập & thi', { banks: 'Soạn và quản lý câu hỏi', room: 'Kết quả phòng thi thử', exam: 'Ôn thi theo chuyên đề', risk: 'Học sinh lâu không học, điểm thấp', games: 'Bộ từ cho trò chơi', art: 'Sản phẩm của học sinh', news: 'Bài đăng và thảo luận' }],
+  ['Hệ thống', { dash: 'Số liệu toàn web', teachers: 'Tạo và gán lớp cho giáo viên', admins: 'Phân quyền quản trị', site: 'Banner, ảnh, thông tin trung tâm', tools: 'Công cụ nâng cao', content: 'Nội dung học tập' }]
+];
+function moreMenu(items, tab) {
+  const used = new Set(), out = ['<input class="wm-q" id="wmq" type="search" placeholder="Tìm chức năng…" aria-label="Tìm chức năng" autocomplete="off">'];
+  const card = x => { const d = (MORE_G.map(g => g[1][x[0]]).find(Boolean)) || ''; return `<button class="wnb mi" data-v="${x[0]}" data-q="${(x[2] + ' ' + d).toLowerCase()}">${x[1]}<span class="wm-t"><b>${x[2]}</b>${d ? `<small>${d}</small>` : ''}</span>${x[0] === 'chat' ? '<span class="bdg hidden" id="cbdg"></span>' : ''}</button>`; };
+  MORE_G.forEach(([name, m]) => { const g = items.filter(x => m[x[0]]); g.forEach(x => used.add(x[0])); if (g.length) out.push(`<div class="wm-g"><h6>${name}</h6><div class="wm-l">${g.map(card).join('')}</div></div>`); });
+  const rest = items.filter(x => !used.has(x[0])); if (rest.length) out.push(`<div class="wm-g"><h6>Khác</h6><div class="wm-l">${rest.map(card).join('')}</div></div>`);
+  out.push('<p class="wm-none" hidden>Không có chức năng phù hợp.</p>');
+  return out.join('');
+}
 function shell() {
   const env = TEACHER() ? '<span class="pill-role">Giáo viên</span>' : MODE === 'demo' ? '<span class="pill-demo">Dùng thử – KHÔNG lưu lên Firebase</span>' : '<span class="pill-ok">Firebase: ' + esc(firebaseConfig.projectId) + '</span>';
   const items = navList(), MAINK = TEACHER() ? items.map(n => n[0]) : ['hub', 'cls', 'students', 'lessons', 'courses', 'assign', 'report'];
@@ -4727,7 +4757,7 @@ function shell() {
   root.innerHTML = `<div class="app wapp"><header class="wtop"><div class="wts"><div class="wts-in">${env}<div class="wuser"><button class="wav" id="wavb" aria-haspopup="true" aria-expanded="false" aria-label="Tài khoản">${esc(ini)}</button>
       <div class="wumenu" id="wum" hidden><div class="wu-i"><b>${esc((S.me && S.me.name) || 'Tài khoản')}</b><small>${esc(S.user.email || '')}</small></div><button data-pal="1">Tìm nhanh <em>Ctrl K</em></button><a href="index.html" target="_blank" rel="noopener">Xem web học sinh</a><button id="out">Đăng xuất</button></div></div></div></div>
     <div class="wbar"><div class="wbrand"><img src="${LOGO}" alt=""><span><b>Inspire</b><small>Do it with passion</small></span></div>
-      <nav class="wnav" aria-label="Điều hướng">${mainT.map(x => tab(x)).join('')}${moreT.length ? `<div class="wmore"><button class="wnb" id="wmorb" aria-haspopup="true" aria-expanded="false">Khác</button><div class="wmenu" id="wmm" hidden>${moreT.map(x => tab(x, 'mi')).join('')}</div></div>` : ''}</nav></div></header>
+      <nav class="wnav" aria-label="Điều hướng">${mainT.map(x => tab(x)).join('')}${moreT.length ? `<div class="wmore"><button class="wnb" id="wmorb" aria-haspopup="true" aria-expanded="false">Khác</button><div class="wmenu" id="wmm" hidden>${moreMenu(moreT, tab)}</div></div>` : ''}</nav></div></header>
     <div class="wpg"><nav class="wcr" id="wcr"></nav><main class="content" id="content"></main></div>
     <footer class="wfoot"><div class="wf-in"><div class="wf-c"><b>Inspire Connect</b><span>Cổng giáo viên: quản lý lớp, bài học, bài tập và học sinh.</span></div><div class="wf-c"><h5>Cơ sở</h5>${camp.map(x => `<span>${esc(x)}</span>`).join('')}</div><div class="wf-c"><h5>Liên hệ</h5>${t.phone ? `<span>Hotline: <b>${esc(t.phone)}</b></span>` : ''}<a href="index.html" target="_blank" rel="noopener">Xem web học sinh</a></div></div><div class="wf-b">© ${new Date().getFullYear()} Inspire Connect</div></footer></div>`;
   root.querySelector('.wapp').onclick = e => {
@@ -4740,6 +4770,7 @@ function shell() {
     if (e.target.closest('[data-pal]')) um.hidden = true;
   };
   $('#out').onclick = () => api.signOut();
+  { const q = $('#wmq'); if (q) { q.onclick = e => e.stopPropagation(); q.oninput = () => { const v = q.value.trim().toLowerCase(); let n = 0; root.querySelectorAll('#wmm .wnb').forEach(b => { const ok = !v || b.dataset.q.includes(v); b.hidden = !ok; if (ok) n++; }); root.querySelectorAll('#wmm .wm-g').forEach(g => { g.hidden = !g.querySelector('.wnb:not([hidden])'); }); const nn = root.querySelector('.wm-none'); if (nn) nn.hidden = n > 0; }; } }
   new MutationObserver(markTitle).observe($('#content'), { childList: true, subtree: true });
   draw();
 }

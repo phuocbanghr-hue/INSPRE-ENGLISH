@@ -9541,7 +9541,7 @@ function rrPassage() {
   const qs = p.q.map((q, k) => `<div class="rr-q" data-k="${k}"><p class="rr-qt"><b>${p.cl ? 'Chỗ trống (' + (k + 1) + ')' : 'Câu ' + (k + 1)}</b>${q.q ? ' ' + rrHTML(q.q) : ''}</p><div class="rr-os">${q.o.map((o, j) => `<button type="button" class="rr-o" data-q="${k}" data-j="${j}"><span>${LET[j]}</span><i>${esc(o)}</i></button>`).join('')}</div><div class="rr-ex" hidden></div></div>`).join('');
   main.innerHTML = `<div class="rr-bar"><button type="button" class="btn soft sm" id="rr-back">← Danh sách</button><b>Reading ${p.n}</b><span id="rr-sc" class="muted"></span></div>
   <div class="rr-wrap rr-sel"><section class="card rr-psg"><small class="rr-ins">${esc(p.ins)}</small>${paras}<div class="rr-hint">Bôi đen hoặc chạm vào một từ để xem nghĩa.</div>${p.vi.length ? `<button type="button" class="btn soft sm" id="rr-vi">Xem bản dịch tiếng Việt</button><div class="rr-trans" id="rr-tr" hidden>${p.vi.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : '<div class="muted" style="font-size:.85rem">Bài này chưa có bản dịch trong tài liệu.</div>'}</section>
-  <section class="rr-qs">${qs}</section><div id="rr-res"></div><div class="rr-nav"><button type="button" class="btn soft" id="rr-prev" ${i === 0 ? 'disabled' : ''}>← Bài trước</button><button type="button" class="btn" id="rr-next" ${i === D.length - 1 ? 'disabled' : ''}>Bài sau →</button></div></div>`;
+  <div class="rr-right"><section class="rr-qs"><h4 class="rr-qh">Câu hỏi <span>${p.q.length} câu</span></h4>${qs}</section><div id="rr-res"></div><div class="rr-nav"><button type="button" class="btn soft" id="rr-prev" ${i === 0 ? 'disabled' : ''}>← Bài trước</button><button type="button" class="btn" id="rr-next" ${i === D.length - 1 ? 'disabled' : ''}>Bài sau →</button></div></div></div>`;
   const upd = () => { const ok = p.q.filter((q, k) => q.a >= 0 && A[k] === q.a).length, ans = p.q.filter((q, k) => q.a >= 0 && A[k] >= 0).length; $('#rr-sc').textContent = ans + '/' + graded + ' câu · đúng ' + ok; return { ok, ans }; };
   const reveal = (k, pick) => {
     const q = p.q[k], box = main.querySelector(`.rr-q[data-k="${k}"]`); box.classList.add('done');
@@ -13682,6 +13682,17 @@ document.addEventListener('click', e => {
 .rr-card em{font-style:normal;font-weight:800;border-radius:999px;padding:3px 9px;font-size:.78rem}.rr-card em.g{background:#DCFCE7;color:#15803D}.rr-card em.o{background:#FEF3C7;color:#B45309}.rr-card em.r{background:#FEE2E2;color:#B91C1C}
 .rr-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 0;margin-top:12px;background:linear-gradient(#fff 70%,rgba(255,255,255,0))}.rr-bar b{color:#0B5CA8}.rr-bar span{margin-left:auto;font-size:.85rem}
 .rr-wrap{display:grid;grid-template-columns:1fr;gap:14px;max-width:880px;margin:0 auto 40px}
+/* Chia đôi màn hình kiểu thi IELTS: bài đọc bên trái, câu hỏi bên phải, mỗi bên cuộn riêng */
+.rr-right{display:flex;flex-direction:column;gap:14px;min-width:0}.rr-qh{margin:0;display:flex;justify-content:space-between;align-items:baseline;color:#0B5CA8;font-size:1.05rem;padding:2px 4px}.rr-qh span{font-size:.82rem;color:#64748B;font-weight:600}
+@media(min-width:900px){
+  .rr-wrap{max-width:1500px!important;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr)!important;gap:16px;align-items:stretch;height:calc(100vh - 170px);min-height:460px;margin-bottom:12px!important}
+  .rr-psg,.rr-right{height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px}
+  .rr-psg{padding:22px 26px!important;border-right:4px solid #F26522;font-size:1.1rem;line-height:1.85}
+  .rr-right{padding:2px 8px 24px 2px}
+  .rr-bar{position:static!important;background:none!important;margin-top:6px!important;max-width:1500px;margin-left:auto;margin-right:auto}
+  .rr-qs{display:flex;flex-direction:column;gap:12px}
+}
+
 .rr-psg{line-height:1.8;font-size:1.05rem}.rr-psg p{margin:0 0 12px}.rr-title{margin:0 0 10px;color:#0B5CA8}.rr-ins{display:block;color:#64748B;margin-bottom:10px;font-style:italic}.rr-hint{font-size:.82rem;color:#B45309;background:#FFF7ED;border-radius:10px;padding:6px 10px;margin:4px 0 12px}
 .rw{border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}.rw:hover{background:#FEF3C7}.rw.on{background:#FDE68A}
 .rr-b{display:inline-grid;place-items:center;min-width:26px;height:24px;padding:0 6px;margin:0 2px;border-radius:8px;background:#DBEAFE;color:#1D4ED8;font-weight:800;font-size:.85rem;vertical-align:1px}

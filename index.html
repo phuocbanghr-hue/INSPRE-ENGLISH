@@ -9379,11 +9379,45 @@ async function shareCard() {
 }
 document.addEventListener('click', e => { const b = e.target.closest('#share-card'); if (!b || b.disabled) return; b.disabled = true; shareCard().catch(er => toast('Không chia sẻ được: ' + er.message, 'bad')).finally(() => { b.disabled = false; }); });
 /* ===== Phòng đọc: 100 bài đọc hiểu có đáp án + lời giải chi tiết, bôi hoặc chạm từ để hiện nghĩa ===== */
+/* ===== Cấp độ CEFR (A1–C2) của từng từ: dữ liệu CEFR-J Wordlist 1.5 (Tono Lab, TUFS) + Octanove C1/C2 (CC BY-SA 4.0) ===== */
+const CF = { map: null, p: null }, CF_RANK = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
+const CF_INFO = { A1: ['Sơ cấp', '#15A05A'], A2: ['Cơ bản', '#0E9F9A'], B1: ['Trung cấp', '#2563EB'], B2: ['Trung cao cấp', '#D97706'], C1: ['Cao cấp', '#DC2626'], C2: ['Thành thạo', '#7C3AED'] };
+const CF_IRR = { was: 'be', were: 'be', been: 'be', is: 'be', are: 'be', am: 'be', went: 'go', gone: 'go', had: 'have', has: 'have', did: 'do', done: 'do', does: 'do', saw: 'see', seen: 'see', made: 'make', took: 'take', taken: 'take', came: 'come', got: 'get', gotten: 'get', gave: 'give', given: 'give', knew: 'know', known: 'know', thought: 'think', told: 'tell', found: 'find', felt: 'feel', left: 'leave', kept: 'keep', began: 'begin', begun: 'begin', ran: 'run', wrote: 'write', written: 'write', spoke: 'speak', spoken: 'speak', ate: 'eat', eaten: 'eat', bought: 'buy', brought: 'bring', taught: 'teach', caught: 'catch', built: 'build', sold: 'sell', sent: 'send', spent: 'spend', lost: 'lose', met: 'meet', paid: 'pay', said: 'say', sat: 'sit', stood: 'stand', understood: 'understand', won: 'win', wore: 'wear', worn: 'wear', drew: 'draw', drawn: 'draw', drove: 'drive', driven: 'drive', flew: 'fly', flown: 'fly', grew: 'grow', grown: 'grow', chose: 'choose', chosen: 'choose', broke: 'break', broken: 'break', fell: 'fall', fallen: 'fall', forgot: 'forget', forgotten: 'forget', heard: 'hear', held: 'hold', led: 'lead', read: 'read', rose: 'rise', risen: 'rise', sang: 'sing', sung: 'sing', swam: 'swim', threw: 'throw', thrown: 'throw', woke: 'wake', children: 'child', men: 'man', women: 'woman', people: 'person', feet: 'foot', teeth: 'tooth', mice: 'mouse', better: 'good', best: 'good', worse: 'bad', worst: 'bad', more: 'much', most: 'much', less: 'little', became: 'become', born: 'bear', cannot: 'can', "don't": 'do', "doesn't": 'do', "didn't": 'do', "isn't": 'be', "aren't": 'be', "can't": 'can', "won't": 'will', "wasn't": 'be' };
+function cfLoad() {
+  if (CF.p) return CF.p;
+  return (CF.p = fetch('docs/reading/cefr.json').then(r => r.json()).then(j => {
+    const m = Object.create(null); Object.keys(CF_RANK).forEach(l => String(j[l] || '').split(' | ').forEach(w => { if (w) m[w] = l; })); CF.map = m;
+    document.querySelectorAll('[data-cf]').forEach(el => { el.outerHTML = cfBadge(el.dataset.cf); });
+  }).catch(() => { CF.p = null; }));
+}
+function cfForms(w) {
+  w = w.toLowerCase().replace(/’/g, "'").replace(/'s$/, '');
+  const v = [w]; if (CF_IRR[w]) v.push(CF_IRR[w]);
+  if (w.endsWith('ies')) v.push(w.slice(0, -3) + 'y'); if (w.endsWith('es')) v.push(w.slice(0, -2)); if (w.endsWith('s')) v.push(w.slice(0, -1));
+  if (w.endsWith('ied')) v.push(w.slice(0, -3) + 'y'); if (w.endsWith('ed')) { v.push(w.slice(0, -2)); v.push(w.slice(0, -1)); if (/(.)\1ed$/.test(w)) v.push(w.slice(0, -3)); }
+  if (w.endsWith('ing')) { v.push(w.slice(0, -3)); v.push(w.slice(0, -3) + 'e'); if (/(.)\1ing$/.test(w)) v.push(w.slice(0, -4)); }
+  if (w.endsWith('ily')) v.push(w.slice(0, -3) + 'y'); if (w.endsWith('ly')) v.push(w.slice(0, -2));
+  if (w.endsWith('ier') || w.endsWith('iest')) v.push(w.replace(/ier$|iest$/, 'y'));
+  if (w.endsWith('er')) { v.push(w.slice(0, -2)); v.push(w.slice(0, -1)); if (/(.)\1er$/.test(w)) v.push(w.slice(0, -3)); }
+  if (w.endsWith('est')) { v.push(w.slice(0, -3)); v.push(w.slice(0, -2)); if (/(.)\1est$/.test(w)) v.push(w.slice(0, -4)); }
+  if (w.endsWith('ness')) v.push(w.slice(0, -4)); if (w.endsWith('ment')) v.push(w.slice(0, -4));
+  return v;
+}
+/* Trả về { lv, part } — part = true nếu là cụm nhiều từ (lấy cấp cao nhất trong cụm) */
+function cfLevel(text) {
+  if (!CF.map) return null; const t = String(text || '').toLowerCase().replace(/’/g, "'").trim(); if (!t) return null;
+  if (CF.map[t]) return { lv: CF.map[t] };
+  const ws = t.match(/[a-z][a-z'\-]*/g) || []; let best = 0, bl = '', miss = 0;
+  ws.forEach(w => { let lv = ''; for (const f of cfForms(w)) { if (CF.map[f]) { lv = CF.map[f]; break; } } if (!lv && w.includes('-')) w.split('-').forEach(x => { for (const f of cfForms(x)) { if (CF.map[f] && CF_RANK[CF.map[f]] > (lv ? CF_RANK[lv] : 0)) { lv = CF.map[f]; break; } } }); if (lv) { if (CF_RANK[lv] > best) { best = CF_RANK[lv]; bl = lv; } } else miss++; });
+  return bl ? { lv: bl, part: ws.length > 1 } : null;
+}
+const cfBadge = w => { const r = cfLevel(w); if (!r) return CF.map ? '' : `<span data-cf="${esc(w)}"></span>`; return `<span class="cf-b" style="--cf:${CF_INFO[r.lv][1]}" title="Cấp độ ${r.lv} · ${CF_INFO[r.lv][0]}">${r.lv}</span>`; };
+cfLoad();
 const RR = { data: null, lex: null, app: null, load: null, open: 0, filter: 'all', q: '', ans: {}, vi: false, tipEl: null, tipT: 0 };
 function rrLoad() {
   if (RR.load) return RR.load;
-  RR.load = Promise.all([fetch('docs/reading/doc100.json').then(r => r.json()), fetch('docs/reading/lex.json').then(r => r.json()).catch(() => ({}))])
-    .then(([d, l]) => { RR.data = d; RR.lex = l || {}; }).catch(e => { RR.load = null; throw e; });
+  RR.load = Promise.all([cfLoad(), fetch('docs/reading/doc100.json').then(r => r.json()), fetch('docs/reading/lex.json').then(r => r.json()).catch(() => ({}))])
+    .then(([, d, l]) => { RR.data = d; RR.lex = l || {}; }).catch(e => { RR.load = null; throw e; });
   return RR.load;
 }
 const rrProg = () => { try { return JSON.parse(localStorage.getItem('rr_prog') || '{}') || {}; } catch (e) { return {}; } };
@@ -9420,11 +9454,16 @@ async function rrMean(text) {
     if (!vi) return null; const o = { vi, alt, src: 'Dịch tự động' }; rrCacheSet(key, o); return o;
   } catch (e) { return null; }
 }
+function rrCf(text) {
+  const r = cfLevel(text); if (!r) return CF.map ? '<div class="rr-cf none">Ngoài danh sách A1–C2 (từ hiếm, chuyên ngành hoặc tên riêng)</div>' : '';
+  const [n, c] = CF_INFO[r.lv], hi = CF_RANK[r.lv] >= 5;
+  return `<div class="rr-cf" style="--cf:${c}"><span class="cf-b">${r.lv}</span><span>${r.part ? 'Từ khó nhất trong cụm: ' : 'Cấp độ '}<b>${r.lv}</b> · ${n}${hi ? ' · ⭐ Từ vựng nâng cao' : ''}</span></div>`;
+}
 function rrTipHide() { if (RR.tipEl) { RR.tipEl.remove(); RR.tipEl = null; } document.querySelectorAll('.rw.on').forEach(x => x.classList.remove('on')); }
 async function rrTip(text, rect, el) {
   text = text.replace(/\s+/g, ' ').trim(); if (text.length < 2 || text.length > 300 || !/[A-Za-z]{2}/.test(text)) return;
   rrTipHide(); if (el) el.classList.add('on');
-  const t = document.createElement('div'); t.className = 'rr-tip'; t.innerHTML = `<div class="rr-th"><b>${esc(text.length > 60 ? text.slice(0, 60) + '…' : text)}</b><button type="button" data-rr="say" aria-label="Nghe phát âm">🔊</button><button type="button" data-rr="x" aria-label="Đóng">✕</button></div><div class="rr-tm muted">Đang tra nghĩa…</div>`;
+  const t = document.createElement('div'); t.className = 'rr-tip'; t.innerHTML = `<div class="rr-th"><b>${esc(text.length > 60 ? text.slice(0, 60) + '…' : text)}</b><button type="button" data-rr="say" aria-label="Nghe phát âm">🔊</button><button type="button" data-rr="x" aria-label="Đóng">✕</button></div>${rrCf(text)}<div class="rr-tm muted">Đang tra nghĩa…</div>`;
   document.body.appendChild(t); RR.tipEl = t; t.dataset.txt = text;
   const place = () => { const w = t.offsetWidth, h = t.offsetHeight, vw = document.documentElement.clientWidth; let x = rect.left + rect.width / 2 - w / 2; x = Math.max(8, Math.min(vw - w - 8, x)); let y = rect.top - h - 10 < 8 ? rect.bottom + 10 : rect.top - h - 10; t.style.left = x + scrollX + 'px'; t.style.top = y + scrollY + 'px'; };
   place(); const id = ++RR.tipT; const r = await rrMean(text); if (RR.tipT !== id || RR.tipEl !== t) return;
@@ -9476,7 +9515,7 @@ function rrList() {
   main.innerHTML = `<section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc hiểu có đáp án và lời giải chi tiết. Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
   <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div></section>
   ${saved.length ? `<section class="card rr-saved"><details><summary>Sổ từ của em (${saved.length})</summary><div class="rr-sw">${saved.map((w, i) => `<span class="rr-sc"><b>${esc(w.en)}</b> ${esc(w.vi)}<button type="button" data-rrs="${i}" aria-label="Nghe">🔊</button><button type="button" data-rrd="${i}" aria-label="Xoá">✕</button></span>`).join('')}</div></details></section>` : ''}
-  <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>${esc(x.t)}</b><small>${x.cl ? 'Điền từ' : 'Đọc hiểu'} · ${x.q.length} câu${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
+  <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>Reading ${x.n}</b><small>${x.cl ? 'Điền từ' : 'Đọc hiểu'} · ${x.q.length} câu${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
   main.onclick = e => {
     const c = e.target.closest('[data-rro]'); if (c) { RR.open = +c.dataset.rro; return rrPassage(); }
     const ch = e.target.closest('[data-rrf]'); if (ch) { RR.filter = ch.dataset.rrf; return rrList(); }
@@ -9489,9 +9528,9 @@ function rrList() {
 function rrPassage() {
   const D = RR.data, i = D.findIndex(x => x.n === RR.open), p = D[i]; if (!p) { RR.open = 0; return rrList(); }
   const A = RR.ans[p.n] || (RR.ans[p.n] = p.q.map(() => -1)), LET = 'ABCD', graded = p.q.filter(q => q.a >= 0).length;
-  const paras = p.p.map((t, k) => k === 0 && t === p.t && p.p.length > 1 ? `<h3 class="rr-title">${rrHTML(t)}</h3>` : `<p>${rrHTML(t)}</p>`).join('');
+  const paras = `<h3 class="rr-title">Reading ${p.n}</h3>` + p.p.map(t => `<p>${rrHTML(t)}</p>`).join('');
   const qs = p.q.map((q, k) => `<div class="rr-q" data-k="${k}"><p class="rr-qt"><b>${p.cl ? 'Chỗ trống (' + (k + 1) + ')' : 'Câu ' + (k + 1)}</b>${q.q ? ' ' + rrHTML(q.q) : ''}</p><div class="rr-os">${q.o.map((o, j) => `<button type="button" class="rr-o" data-q="${k}" data-j="${j}"><span>${LET[j]}</span><i>${esc(o)}</i></button>`).join('')}</div><div class="rr-ex" hidden></div></div>`).join('');
-  main.innerHTML = `<div class="rr-bar"><button type="button" class="btn soft sm" id="rr-back">← Danh sách</button><b>Bài ${p.n}</b><span id="rr-sc" class="muted"></span></div>
+  main.innerHTML = `<div class="rr-bar"><button type="button" class="btn soft sm" id="rr-back">← Danh sách</button><b>Reading ${p.n}</b><span id="rr-sc" class="muted"></span></div>
   <div class="rr-wrap rr-sel"><section class="card rr-psg"><small class="rr-ins">${esc(p.ins)}</small>${paras}<div class="rr-hint">Bôi đen hoặc chạm vào một từ để xem nghĩa.</div>${p.vi.length ? `<button type="button" class="btn soft sm" id="rr-vi">Xem bản dịch tiếng Việt</button><div class="rr-trans" id="rr-tr" hidden>${p.vi.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : '<div class="muted" style="font-size:.85rem">Bài này chưa có bản dịch trong tài liệu.</div>'}</section>
   <section class="rr-qs">${qs}</section><div id="rr-res"></div><div class="rr-nav"><button type="button" class="btn soft" id="rr-prev" ${i === 0 ? 'disabled' : ''}>← Bài trước</button><button type="button" class="btn" id="rr-next" ${i === D.length - 1 ? 'disabled' : ''}>Bài sau →</button></div></div>`;
   const upd = () => { const ok = p.q.filter((q, k) => q.a >= 0 && A[k] === q.a).length, ans = p.q.filter((q, k) => q.a >= 0 && A[k] >= 0).length; $('#rr-sc').textContent = ans + '/' + graded + ' câu · đúng ' + ok; return { ok, ans }; };
@@ -9689,7 +9728,7 @@ function mountList(el, { words }) {
   const draw = () => {
     const q = norm($('#ls', el).value), arr = words.map((w, i) => [w, i]).filter(([w]) => !q || norm(w.en + ' ' + w.vi).includes(q));
     $('#lt', el).innerHTML = `<table class="wtable"><tbody>${arr.map(([w, i]) => `<tr><td style="width:50px"><button class="spk" data-i="${i}" aria-label="Nghe phát âm ${esc(w.en)}"></button></td>
-      <td>${w.img ? `<img class="wimg" src="${esc(w.img)}" alt="" loading="lazy">` : ''}<div class="w-en">${w.emo ? `<span class="w-emo">${w.emo}</span>` : ''}${esc(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}</td><td class="w-vi">${esc(w.vi)}${w.ex ? `<div class="w-ex">${esc(w.ex)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
+      <td>${w.img ? `<img class="wimg" src="${esc(w.img)}" alt="" loading="lazy">` : ''}<div class="w-en">${w.emo ? `<span class="w-emo">${w.emo}</span>` : ''}${esc(w.en)} ${cfBadge(w.en)}</div>${w.ipa ? `<div class="w-ipa">${esc(w.ipa)}</div>` : ''}</td><td class="w-vi">${esc(w.vi)}${w.ex ? `<div class="w-ex">${esc(w.ex)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
   };
   $('#ls', el).oninput = draw; draw();
   $('#hide', el).onclick = () => { const t = $('#lt', el); t.classList.toggle('blur'); };
@@ -13647,6 +13686,9 @@ document.addEventListener('click', e => {
 .rr-result{text-align:center}.rr-nav{display:flex;justify-content:space-between;gap:10px}
 .rr-tip{position:absolute;z-index:500;width:min(300px,calc(100vw - 16px));background:#0F2A4A;color:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 18px 36px -10px rgba(0,0,0,.55);font-size:.95rem}
 .rr-th{display:flex;align-items:center;gap:6px}.rr-th b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rr-th button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer}
+.cf-b{display:inline-block;vertical-align:middle;min-width:30px;text-align:center;padding:2px 8px;border-radius:999px;background:var(--cf,#64748B);color:#fff;font:800 .68rem/1.5 system-ui,sans-serif;letter-spacing:.04em;margin-left:4px}
+.rr-cf{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.1);font-size:.82rem;color:#E2E8F0}.rr-cf .cf-b{margin:0;background:var(--cf)}.rr-cf b{color:#fff}.rr-cf.none{color:#94A3B8;background:none;padding:0 2px}
+.rw[data-lv]{}
 .rr-tm{margin-top:6px}.rr-tm.muted{color:#A8B8CE}.rr-vi{font-size:1.1rem;font-weight:800;color:#FCD34D;line-height:1.4}.rr-alt{margin-top:4px;color:#CBD5E1;font-size:.85rem}
 .rr-src{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.rr-src span{font-size:.72rem;color:#94A3B8}.rr-src button{border:0;background:#F26B1D;color:#fff;border-radius:999px;padding:6px 12px;font:700 .8rem system-ui,sans-serif;cursor:pointer;min-height:32px}.rr-src button:disabled{background:#16A864}
 @media(max-width:700px){.rr-hero{flex-direction:column;align-items:flex-start}.rr-psg{font-size:1rem}.rr-grid{grid-template-columns:1fr}}

@@ -9385,8 +9385,9 @@ const CF_INFO = { A1: ['Sơ cấp', '#15A05A'], A2: ['Cơ bản', '#0E9F9A'], B1
 const CF_IRR = { was: 'be', were: 'be', been: 'be', is: 'be', are: 'be', am: 'be', went: 'go', gone: 'go', had: 'have', has: 'have', did: 'do', done: 'do', does: 'do', saw: 'see', seen: 'see', made: 'make', took: 'take', taken: 'take', came: 'come', got: 'get', gotten: 'get', gave: 'give', given: 'give', knew: 'know', known: 'know', thought: 'think', told: 'tell', found: 'find', felt: 'feel', left: 'leave', kept: 'keep', began: 'begin', begun: 'begin', ran: 'run', wrote: 'write', written: 'write', spoke: 'speak', spoken: 'speak', ate: 'eat', eaten: 'eat', bought: 'buy', brought: 'bring', taught: 'teach', caught: 'catch', built: 'build', sold: 'sell', sent: 'send', spent: 'spend', lost: 'lose', met: 'meet', paid: 'pay', said: 'say', sat: 'sit', stood: 'stand', understood: 'understand', won: 'win', wore: 'wear', worn: 'wear', drew: 'draw', drawn: 'draw', drove: 'drive', driven: 'drive', flew: 'fly', flown: 'fly', grew: 'grow', grown: 'grow', chose: 'choose', chosen: 'choose', broke: 'break', broken: 'break', fell: 'fall', fallen: 'fall', forgot: 'forget', forgotten: 'forget', heard: 'hear', held: 'hold', led: 'lead', read: 'read', rose: 'rise', risen: 'rise', sang: 'sing', sung: 'sing', swam: 'swim', threw: 'throw', thrown: 'throw', woke: 'wake', children: 'child', men: 'man', women: 'woman', people: 'person', feet: 'foot', teeth: 'tooth', mice: 'mouse', better: 'good', best: 'good', worse: 'bad', worst: 'bad', more: 'much', most: 'much', less: 'little', became: 'become', born: 'bear', cannot: 'can', "don't": 'do', "doesn't": 'do', "didn't": 'do', "isn't": 'be', "aren't": 'be', "can't": 'can', "won't": 'will', "wasn't": 'be' };
 function cfLoad() {
   if (CF.p) return CF.p;
-  return (CF.p = fetch('docs/reading/cefr.json').then(r => r.json()).then(j => {
+  return (CF.p = Promise.all([fetch('docs/reading/cefr.json').then(r => r.json()), fetch('docs/reading/cefr-est.json').then(r => r.json()).catch(() => ({}))]).then(([j, e]) => {
     const m = Object.create(null); Object.keys(CF_RANK).forEach(l => String(j[l] || '').split(' | ').forEach(w => { if (w) m[w] = l; })); CF.map = m;
+    const x = Object.create(null); Object.keys(CF_RANK).forEach(l => String(e[l] || '').split(' ').forEach(w => { if (w) x[w] = l; })); CF.est = x;
     document.querySelectorAll('[data-cf]').forEach(el => { el.outerHTML = cfBadge(el.dataset.cf); });
   }).catch(() => { CF.p = null; }));
 }
@@ -9409,9 +9410,17 @@ function cfLevel(text) {
   if (CF.map[t]) return { lv: CF.map[t] };
   const ws = t.match(/[a-z][a-z'\-]*/g) || []; let best = 0, bl = '', miss = 0;
   ws.forEach(w => { let lv = ''; for (const f of cfForms(w)) { if (CF.map[f]) { lv = CF.map[f]; break; } } if (!lv && w.includes('-')) w.split('-').forEach(x => { for (const f of cfForms(x)) { if (CF.map[f] && CF_RANK[CF.map[f]] > (lv ? CF_RANK[lv] : 0)) { lv = CF.map[f]; break; } } }); if (lv) { if (CF_RANK[lv] > best) { best = CF_RANK[lv]; bl = lv; } } else miss++; });
-  return bl ? { lv: bl, part: ws.length > 1 } : null;
+  if (bl) return { lv: bl, part: ws.length > 1 };
+  /* Không có trong danh sách chuẩn: ước tính theo độ phổ biến của từ (và dạng gốc của nó) */
+  if (CF.est && ws.length) {
+    let eb = 0, el = '', unk = 0, cap = 0;
+    ws.forEach(w => { let lv = '', mn = 9; for (const f of cfForms(w)) { const l = CF.est[f]; if (l && CF_RANK[l] < mn) { mn = CF_RANK[l]; lv = l; } } if (!lv) { if (/^[a-z]{4,}$/.test(w)) lv = 'C2'; else unk++; } if (lv && CF_RANK[lv] > eb) { eb = CF_RANK[lv]; el = lv; } });
+    if (/^[A-Z]/.test(String(text).trim()) && ws.length === 1 && el === 'C2') return null;
+    if (el) return { lv: el, part: ws.length > 1, est: true };
+  }
+  return null;
 }
-const cfBadge = w => { const r = cfLevel(w); if (!r) return CF.map ? '' : `<span data-cf="${esc(w)}"></span>`; return `<span class="cf-b" style="--cf:${CF_INFO[r.lv][1]}" title="Cấp độ ${r.lv} · ${CF_INFO[r.lv][0]}">${r.lv}</span>`; };
+const cfBadge = w => { const r = cfLevel(w); if (!r) return CF.map ? '' : `<span data-cf="${esc(w)}"></span>`; return `<span class="cf-b ${r.est ? 'est' : ''}" style="--cf:${CF_INFO[r.lv][1]}" title="Cấp độ ${r.est ? '(ước tính) ' : ''}${r.lv} · ${CF_INFO[r.lv][0]}">${r.est ? '~' : ''}${r.lv}</span>`; };
 cfLoad();
 const RR = { data: null, lex: null, app: null, load: null, open: 0, filter: 'all', q: '', ans: {}, vi: false, tipEl: null, tipT: 0 };
 function rrLoad() {
@@ -9457,7 +9466,7 @@ async function rrMean(text) {
 function rrCf(text) {
   const r = cfLevel(text); if (!r) return CF.map ? '<div class="rr-cf none">Ngoài danh sách A1–C2 (từ hiếm, chuyên ngành hoặc tên riêng)</div>' : '';
   const [n, c] = CF_INFO[r.lv], hi = CF_RANK[r.lv] >= 5;
-  return `<div class="rr-cf" style="--cf:${c}"><span class="cf-b">${r.lv}</span><span>${r.part ? 'Từ khó nhất trong cụm: ' : 'Cấp độ '}<b>${r.lv}</b> · ${n}${hi ? ' · ⭐ Từ vựng nâng cao' : ''}</span></div>`;
+  return `<div class="rr-cf" style="--cf:${c}"><span class="cf-b ${r.est ? 'est' : ''}">${r.est ? '~' : ''}${r.lv}</span><span>${r.part ? 'Từ khó nhất trong cụm: ' : 'Cấp độ '}${r.est ? 'ước tính ' : ''}<b>${r.lv}</b> · ${n}${hi ? ' · ⭐ Từ vựng nâng cao' : ''}${r.est ? '<small>Ước tính theo độ phổ biến của từ</small>' : ''}</span></div>`;
 }
 function rrTipHide() { if (RR.tipEl) { RR.tipEl.remove(); RR.tipEl = null; } document.querySelectorAll('.rw.on').forEach(x => x.classList.remove('on')); }
 async function rrTip(text, rect, el) {
@@ -13687,7 +13696,7 @@ document.addEventListener('click', e => {
 .rr-tip{position:absolute;z-index:500;width:min(300px,calc(100vw - 16px));background:#0F2A4A;color:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 18px 36px -10px rgba(0,0,0,.55);font-size:.95rem}
 .rr-th{display:flex;align-items:center;gap:6px}.rr-th b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rr-th button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer}
 .cf-b{display:inline-block;vertical-align:middle;min-width:30px;text-align:center;padding:2px 8px;border-radius:999px;background:var(--cf,#64748B);color:#fff;font:800 .68rem/1.5 system-ui,sans-serif;letter-spacing:.04em;margin-left:4px}
-.rr-cf{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.1);font-size:.82rem;color:#E2E8F0}.rr-cf .cf-b{margin:0;background:var(--cf)}.rr-cf b{color:#fff}.rr-cf.none{color:#94A3B8;background:none;padding:0 2px}
+.rr-cf{display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.1);font-size:.82rem;color:#E2E8F0}.rr-cf .cf-b{margin:0;background:var(--cf)}.rr-cf b{color:#fff}.cf-b.est{background:transparent;color:var(--cf);box-shadow:inset 0 0 0 1.5px var(--cf)}.rr-cf .cf-b.est{background:rgba(255,255,255,.08);color:#fff}.rr-cf small{display:block;color:#94A3B8;font-size:.72rem}.rr-cf.none{color:#94A3B8;background:none;padding:0 2px}
 .rw[data-lv]{}
 .rr-tm{margin-top:6px}.rr-tm.muted{color:#A8B8CE}.rr-vi{font-size:1.1rem;font-weight:800;color:#FCD34D;line-height:1.4}.rr-alt{margin-top:4px;color:#CBD5E1;font-size:.85rem}
 .rr-src{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}.rr-src span{font-size:.72rem;color:#94A3B8}.rr-src button{border:0;background:#F26B1D;color:#fff;border-radius:999px;padding:6px 12px;font:700 .8rem system-ui,sans-serif;cursor:pointer;min-height:32px}.rr-src button:disabled{background:#16A864}

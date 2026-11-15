@@ -3328,6 +3328,17 @@ body,.wapp{background:linear-gradient(180deg,#F3F7FC 0,#F8FAFD 320px,#F5F8FC 100
 .wapp .wmenu .wm-t small{font-size:.8rem;font-weight:500;color:#5B6675;line-height:1.35}
 .wapp .wmenu .wm-none{text-align:center;color:#5B6675;padding:18px}
 @media(max-width:600px){.wapp .wmenu .wm-l{grid-template-columns:1fr}}
+/* ===== Loi tat nhanh ===== */
+.wapp #content .qk{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:0 0 18px}
+.wapp #content .qk-i{position:relative;text-align:left;cursor:pointer;background:#fff;border:1.5px solid #D5DEE9;border-radius:18px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:4px;overflow:hidden;font-family:inherit;transition:transform .18s,box-shadow .18s,border-color .18s}
+.wapp #content .qk-i::after{content:'';position:absolute;right:-26px;top:-26px;width:90px;height:90px;border-radius:50%;background:var(--c);opacity:.08}
+.wapp #content .qk-i:hover{transform:translateY(-4px);border-color:var(--c);box-shadow:0 12px 28px rgba(11,76,140,.15)}
+.wapp #content .qk-i i{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--c);margin-bottom:8px;font-style:normal}
+.wapp #content .qk-i i svg{width:24px;height:24px;stroke:#fff;color:#fff}
+.wapp #content .qk-i b{font-size:1.05rem;color:#0B4C8C}
+@media(max-width:1100px){.wapp #content .qk{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.wapp #content .qk{grid-template-columns:repeat(2,1fr);gap:10px}.wapp #content .qk-i{padding:14px}}
+.wapp #content .qk-i span{font-size:.9rem;color:#4B5563;line-height:1.4}
 .wapp #content .cxcard{border:1px solid #DEE2E6!important;border-left:5px solid #0B5CA8!important;border-radius:12px!important;padding:18px 20px!important;background:linear-gradient(135deg,#fff 60%,#EEF5FC)!important;transition:transform .2s,box-shadow .2s}
 .wapp #content .cxcard:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(16,24,40,.1)!important}
 .wapp #content .cxcard>b{font-size:1.1rem;color:#0B5CA8}
@@ -5350,6 +5361,7 @@ function vHub() {
   $('#content').innerHTML = `<h2>Trung tâm quản lý</h2><p class="muted" style="margin:4px 0 14px">Nhìn toàn bộ web và học sinh trong một trang, xử lý việc cần làm và xuất dữ liệu.</p>
     <section class="thero" style="margin-bottom:16px"><div><span class="thero-k">Quản trị</span><h2>Xin chào, ${esc(((S.me && S.me.name) || '').trim() || 'quản trị viên')}</h2><p>Web đang có ${U.length} học sinh, ${classes.length} lớp.${T.length ? ` Có ${T.length} mục cần xử lý bên dưới.` : ' Mọi thứ đang ổn, không có việc tồn đọng.'}</p></div>
       <div class="thero-s"><div><b>${U.length}</b><span>học sinh</span></div><div><b>${active}</b><span>hoạt động 7 ngày</span></div><div><b>${T.length}</b><span>việc cần làm</span></div></div></section>
+    <div class="qk">${[['cls', 'Tạo lớp mới', 'Lớp, thành viên, điểm danh', '#B10B32'], ['assign', 'Giao bài tập', 'Giao cho cả lớp hoặc từng em', '#F26522'], ['hw', 'Check bài tập', 'Xem ai đã làm, ai chưa', '#0B5CA8'], ['notice', 'Đăng thông báo', 'Gửi đến học sinh ngay', '#1E8E5A'], ['msg', 'Nhắn học sinh', 'Nhắn riêng hoặc cả lớp', '#7A3FB5'], ['report', 'Báo cáo kết quả', 'Điểm cao nhất từng em', '#C2410C']].map(([g, t, d, c]) => `<button class="qk-i" data-go="${g}" style="--c:${c}"><i>${(navList().find(n => n[0] === g) || [])[1] || ''}</i><b>${t}</b><span>${d}</span></button>`).join('')}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">${tile(U.length, 'học sinh (' + active + ' hoạt động 7 ngày)', 'students')}${tile(classes.length, 'lớp', 'students')}${tile(CL.length, 'chương trình học', 'courses')}${tile(en.length, 'lượt ghi danh', 'courses')}${tile(S.lessons.length, 'bài học', 'lessons')}${tile((S.banks || []).length + ' · ' + nq, 'đề · câu hỏi', 'banks')}${tile((S.posts || []).length, 'bài đăng bảng tin', 'news')}${tile(Object.keys(S.cd || {}).length, 'chuyên đề', 'exam')}</div>
     <div class="card" style="margin-bottom:16px"><h3 style="margin-top:0">Việc cần làm</h3>${T.length ? T.map(t => `<div class="row" style="padding:8px 0;border-top:1px solid #eee;margin:0;align-items:center"><span class="tag ${t.tone}">${t.n}</span><span class="grow">${t.text}</span><button class="btn soft sm" data-go="${t.go}">Xử lý</button></div>`).join('') : '<p class="muted">Không có việc tồn đọng. Mọi thứ đang ổn.</p>'}</div>
     <div class="card" style="margin-bottom:16px"><h3 style="margin-top:0">Các lớp</h3>${clsRows ? `<div class="tbl-wrap"><table><thead><tr><th>Lớp</th><th>Sĩ số</th><th>Hoạt động 7 ngày</th><th>XP trung bình</th><th>Khoá đang học</th><th></th></tr></thead><tbody>${clsRows}</tbody></table></div>` : '<p class="muted">Chưa có lớp nào. Dùng "Gán lớp theo danh sách" ở trang Học sinh.</p>'}

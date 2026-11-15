@@ -10089,7 +10089,56 @@ function openHF(pre) {
     } catch (e) { showFb(e.message === 'big' ? 'File lớn, em tải về rồi kéo vào đây để chèn nhé.' : 'Trình duyệt chưa lấy trực tiếp được file này từ Drive. Tải file gốc về rồi kéo vào đây, hệ thống sẽ chèn header ngay.'); }
   })();
 }
+
+/* ---------- Trình duyệt thư mục Drive ngay trên web ---------- */
+const FB_MIME = { 'application/vnd.google-apps.folder': 'dir', 'application/pdf': 'pdf', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'doc', 'application/vnd.google-apps.document': 'doc', 'application/vnd.ms-powerpoint': 'ppt', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'ppt', 'application/vnd.google-apps.presentation': 'ppt', 'application/vnd.ms-excel': 'xls', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xls', 'application/vnd.google-apps.spreadsheet': 'xls', 'application/zip': 'zip', 'application/x-rar-compressed': 'zip' };
+const FB_KIND = { dir: ['', '#F59E0B'], pdf: ['PDF', '#DC2626'], doc: ['DOC', '#2563EB'], ppt: ['PPT', '#EA580C'], xls: ['XLS', '#16A34A'], aud: ['MP3', '#7C3AED'], vid: ['VID', '#DB2777'], img: ['IMG', '#0891B2'], zip: ['ZIP', '#6B7280'], file: ['FILE', '#64748B'] };
+const fbKind = f => FB_MIME[f.mimeType] || (/^audio\//.test(f.mimeType) ? 'aud' : /^video\//.test(f.mimeType) ? 'vid' : /^image\//.test(f.mimeType) ? 'img' : 'file');
+const _fbCache = new Map();
+async function driveList(id) {
+  if (_fbCache.has(id)) return _fbCache.get(id);
+  const out = []; let tok = '';
+  do {
+    const u = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent("'" + id + "' in parents and trashed=false") + '&fields=' + encodeURIComponent('nextPageToken,files(id,name,mimeType,size,modifiedTime)') + '&pageSize=200&orderBy=' + encodeURIComponent('folder,name_natural') + '&key=' + encodeURIComponent(firebaseConfig.apiKey) + (tok ? '&pageToken=' + encodeURIComponent(tok) : '');
+    const r = await fetch(u); if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json(); out.push(...(j.files || [])); tok = j.nextPageToken || '';
+  } while (tok && out.length < 1000);
+  _fbCache.set(id, out); return out;
+}
+function openFolderView(root) {
+  const ov = document.createElement('div'); ov.className = 'dl-ov dl-vw fb';
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; document.documentElement.style.overflow = ''; document.removeEventListener('keydown', esc_); };
+  const esc_ = e => { if (e.key === 'Escape') { if (st.view) { st.view = null; draw(); } else if (st.stack.length > 1) { st.stack.pop(); draw(); } else close(); } };
+  document.addEventListener('keydown', esc_);
+  const st = { stack: [{ id: root.i, name: root.t }], view: null, q: '' };
+  const tile = k => k === 'dir' ? `<span class="fb-i dir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2.5h7A2.5 2.5 0 0 1 21 9v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="currentColor"/></svg></span>` : `<span class="fb-i" style="--c:${FB_KIND[k][1]}">${FB_KIND[k][0]}</span>`;
+  const draw = async () => {
+    const cur = st.stack[st.stack.length - 1];
+    const bc = st.stack.map((x, i) => `<button type="button" class="fb-b ${i === st.stack.length - 1 && !st.view ? 'on' : ''}" data-bc="${i}">${esc(i ? x.name : 'Thư mục gốc')}</button>`).join('<span class="fb-sep">›</span>') + (st.view ? `<span class="fb-sep">›</span><span class="fb-b on">${esc(st.view.name)}</span>` : '');
+    const head = `<div class="dl-vb"><b>${esc(root.t)}</b><span>${st.view ? `<a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${st.view.id}/view">Mở tab mới</a><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${st.view.id}">Tải về</a>` : `<a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${cur.id}">Mở tab mới</a>`}<button class="btn sm" data-x>Đóng</button></span></div><div class="fb-bar">${st.stack.length > 1 || st.view ? '<button type="button" class="btn soft sm" data-back>← Quay lại</button>' : ''}<div class="fb-bc">${bc}</div></div>`;
+    if (st.view) { const v = st.view, pv = /google-apps\.(document|spreadsheet|presentation)/.test(v.mimeType) ? 'https://drive.google.com/file/d/' + v.id + '/preview' : 'https://drive.google.com/file/d/' + v.id + '/preview'; ov.innerHTML = head + `<div class="dl-if"><iframe src="${pv}" allow="autoplay" title="${esc(v.name)}"></iframe></div>`; return; }
+    ov.innerHTML = head + '<div class="fb-body"><p class="muted fb-ld">Đang tải danh sách…</p></div>';
+    let L; try { L = await driveList(cur.id); } catch (er) {
+      if (ov.isConnected && st.stack[st.stack.length - 1] === cur && !st.view) ov.querySelector('.fb-body').innerHTML = `<p class="muted" style="padding:6px 2px">Không tải được danh sách (${esc(er.message)}). Đang hiện bản của Google Drive.</p><div class="dl-if" style="height:70vh"><iframe src="https://drive.google.com/embeddedfolderview?id=${cur.id}#list" title="${esc(cur.name)}"></iframe></div>`; return; }
+    if (!ov.isConnected || st.view || st.stack[st.stack.length - 1] !== cur) return;
+    const q = norm(st.q), F = L.filter(f => !q || norm(f.name).includes(q)), nd = L.filter(f => fbKind(f) === 'dir').length;
+    ov.querySelector('.fb-body').innerHTML = `<div class="fb-t"><input type="search" id="fb-q" placeholder="Tìm trong thư mục này…" value="${esc(st.q)}" autocomplete="off"><span class="muted">${nd} thư mục · ${L.length - nd} tệp</span></div>` + (F.length ? `<div class="fb-g">${F.map(f => { const k = fbKind(f); return `<button type="button" class="fb-c" data-id="${esc(f.id)}" data-k="${k}">${tile(k)}<span class="fb-n"><b>${esc(f.name)}</b><small>${k === 'dir' ? 'Thư mục' : esc(FB_KIND[k][0]) + (f.size ? ' · ' + dlSize(+f.size) : '')}${f.modifiedTime ? ' · ' + new Date(f.modifiedTime).toLocaleDateString('vi-VN') : ''}</small></span></button>`; }).join('')}</div>` : `<p class="muted" style="padding:20px 4px">${L.length ? 'Không tìm thấy.' : 'Thư mục này đang trống.'}</p>`);
+    const qi = ov.querySelector('#fb-q'); qi.oninput = () => { st.q = qi.value; const pos = qi.selectionStart; draw().then(() => { const n = ov.querySelector('#fb-q'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } }); };
+  };
+  ov.onclick = e => {
+    if (e.target.closest('[data-x]')) return close();
+    if (e.target.closest('[data-back]')) { if (st.view) st.view = null; else st.stack.pop(); st.q = ''; return draw(); }
+    const b = e.target.closest('[data-bc]'); if (b) { st.stack = st.stack.slice(0, +b.dataset.bc + 1); st.view = null; st.q = ''; return draw(); }
+    const c = e.target.closest('.fb-c'); if (!c) return;
+    const f = (_fbCache.get(st.stack[st.stack.length - 1].id) || []).find(x => x.id === c.dataset.id); if (!f) return;
+    if (c.dataset.k === 'dir') { st.stack.push({ id: f.id, name: f.name }); st.q = ''; } else st.view = f;
+    draw();
+  };
+  draw();
+}
 function openDocView(it) {
+  if (it.f) return openFolderView(it);
   const ov = document.createElement('div'); ov.className = 'dl-ov dl-vw';
   if (it.f) ov.innerHTML = `<div class="dl-vb"><b>${esc(it.t)}</b><span><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${it.i}">Mở tab mới</a><button class="btn sm" data-x>Đóng</button></span></div><div class="dl-note">Bấm vào tên file trong danh sách để mở, hoặc bấm vào thư mục con để đi sâu hơn.</div><div class="dl-if"><iframe src="https://drive.google.com/embeddedfolderview?id=${it.i}#list" title="${esc(it.t)}"></iframe></div>`;
   else ov.innerHTML = `<div class="dl-vb"><b>${esc(it.t)}</b><span><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${it.i}/view">Mở tab mới</a><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? '<button class="btn sm" data-hf>Chèn header &amp; tải về</button>' : ''}<button class="btn sm" data-x>Đóng</button></span></div>${/\.doc$/i.test(it.t) ? '<div class="dl-note">File .doc đời cũ có thể không xem được hết trang, nếu bị lỗi hãy bấm “Mở tab mới”.</div>' : ''}<div class="dl-if"><iframe src="https://drive.google.com/file/d/${it.i}/preview" allow="autoplay" title="${esc(it.t)}"></iframe></div>`;
@@ -13884,6 +13933,13 @@ document.addEventListener('click', e => {
 .th-pill{display:inline-block;margin:0 0 10px;padding:6px 14px;border-radius:99px;background:#FFF4E0;color:#8a5a00;font-size:.85rem;font-weight:700;text-decoration:none}.th-pill:hover{background:#FFE9C2}
 .rr-lvs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB}.rr-lvs>span{font-weight:700;font-size:.88rem;color:#374151}.rr-lv{border:1.5px solid #D5DEE9;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;color:#0B4C8C;transition:all .15s}.rr-lv small{opacity:.7;margin-left:2px}.rr-lv:hover{border-color:var(--cf,#0B4C8C)}.rr-lv.on{background:var(--cf,#0B4C8C);border-color:var(--cf,#0B4C8C);color:#fff}.rr-lv[data-rrl=all].on{background:#0B4C8C}.rr-ct .cf-b{margin:0 4px 0 0;font-size:.62rem;padding:0 7px}
 .rr-th button[data-rr=say]{background:rgba(255,255,255,.92)}.rr-loa{display:block;margin:auto;object-fit:contain;pointer-events:none}.rr-th button[data-rr=say]:hover{transform:scale(1.08)}.rr-sc button img{vertical-align:middle}
+
+.fb{display:flex;flex-direction:column}.fb .dl-vb{flex:none}.fb-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#fff;border-bottom:1px solid #E5E7EB;flex:none}.fb-bc{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}.fb-b{border:0;background:none;font:inherit;font-weight:600;color:#0B5CA8;padding:4px 8px;border-radius:8px;cursor:pointer;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fb-b:hover{background:#EAF2FB}.fb-b.on{color:#111;cursor:default}.fb-sep{color:#9CA3AF}
+.fb-body{flex:1 1 0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#F6F8FB;padding:16px 18px 40px}.fb-t{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}.fb-t input{flex:1;min-width:200px;max-width:420px;border:1.5px solid #D5DEE9;border-radius:999px;padding:9px 16px;font:inherit;background:#fff}.fb-t input:focus{outline:0;border-color:#0B5CA8;box-shadow:0 0 0 3px rgba(11,92,168,.12)}
+.fb-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}.fb-c{display:flex;align-items:center;gap:12px;text-align:left;background:#fff;border:1px solid #E5E7EB;border-radius:16px;padding:12px 14px;cursor:pointer;font:inherit;color:#0B4C8C;box-shadow:0 8px 20px -18px rgba(15,23,42,.5);transition:transform .15s,box-shadow .15s,border-color .15s}.fb-c:hover{transform:translateY(-2px);border-color:#F0B9C3;box-shadow:0 14px 26px -18px rgba(15,23,42,.5)}
+.fb-i{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-weight:800;font-size:.7rem;letter-spacing:.04em;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff)}.fb-i.dir{color:#F59E0B;background:#FFF6E0}.fb-i svg{width:26px;height:26px}
+.fb-n{min-width:0}.fb-n b{display:block;font-size:.95rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}.fb-n small{display:block;color:#6B7280;margin-top:2px;font-size:.78rem}.fb-ld{padding:20px 4px}
+@media(max-width:600px){.fb-g{grid-template-columns:1fr}.fb-body{padding:12px}}
 </style>
 
 <script>

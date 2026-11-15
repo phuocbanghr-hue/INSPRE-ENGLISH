@@ -9422,7 +9422,7 @@ function cfLevel(text) {
 }
 const cfBadge = w => { const r = cfLevel(w); if (!r) return CF.map ? '' : `<span data-cf="${esc(w)}"></span>`; return `<span class="cf-b ${r.est ? 'est' : ''}" style="--cf:${CF_INFO[r.lv][1]}" title="Cấp độ ${r.est ? '(ước tính) ' : ''}${r.lv} · ${CF_INFO[r.lv][0]}">${r.est ? '~' : ''}${r.lv}</span>`; };
 cfLoad();
-const RR = { data: null, lex: null, app: null, load: null, open: 0, filter: 'all', q: '', ans: {}, vi: false, tipEl: null, tipT: 0 };
+const RR = { data: null, lex: null, app: null, load: null, open: 0, filter: 'all', lvf: (() => { try { return localStorage.getItem('rr_lv') || 'all'; } catch (er) { return 'all'; } })(), lv: null, q: '', ans: {}, vi: false, tipEl: null, tipT: 0 };
 function rrLoad() {
   if (RR.load) return RR.load;
   RR.load = Promise.all([cfLoad(), fetch('docs/reading/doc100.json').then(r => r.json()), fetch('docs/reading/lex.json').then(r => r.json()).catch(() => ({})), ...['thi10', 'thpt', 'lop9', 'cam10'].map(f => fetch('docs/reading/' + f + '.json').then(r => r.json()).catch(() => []))])
@@ -9519,21 +9519,38 @@ function viewRead() {
   }
   RR.open ? rrPassage() : rrList();
 }
+const RR_TIERS = [['A', 'A1–A2', ['A1', 'A2']], ['B1', 'B1', ['B1']], ['B2', 'B2', ['B2']], ['C', 'C1–C2', ['C1', 'C2']]];
+const rrTier = lv => { const t = RR_TIERS.find(x => x[2].includes(lv)); return t ? t[0] : ''; };
+function rrLevels() {
+  if (RR.lv || !CF.map || !RR.data) return RR.lv;
+  const memo = new Map(), out = {};
+  RR.data.forEach(x => {
+    const txt = x.p.join(' '), seen = new Set(), cnt = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; let tot = 0, m; const re = /(^|[.!?:]["”')]*\s+)?([A-Za-z][A-Za-z'’-]*)/g;
+    while ((m = re.exec(txt))) { const w = m[2], lw = w.toLowerCase(); if (lw.length < 3 || seen.has(lw)) continue; seen.add(lw);
+      let r = memo.get(lw); if (r === undefined) { r = cfLevel(lw) || null; memo.set(lw, r); }
+      if (!r || (r.est && /^[A-Z]/.test(w) && !m[1])) continue; cnt[r.lv]++; tot++; }
+    let acc = 0, lvl = 'C2'; if (!tot) return; for (const l of Object.keys(cnt)) { acc += cnt[l]; if (acc / tot >= 0.9) { lvl = l; break; } }
+    out[x.n] = lvl; });
+  return (RR.lv = out);
+}
 function rrList() {
   const D = RR.data, pg = rrProg(), done = D.filter(x => pg[x.n]).length, f = RR.filter, q = RR.q.trim().toLowerCase();
-  const items = D.filter(x => (f === 'all' || (f === 'cl' && x.cl && !x.g) || (f === 'rd' && !x.cl && !x.g) || (f === 'g10' && x.g) || (f === 'todo' && !pg[x.n])) && (!q || String(x.n) === q || x.t.toLowerCase().includes(q) || (x.p[0] || '').toLowerCase().includes(q)));
+  const LV = rrLevels(), lf = RR.lvf, tc = {}; if (LV) D.forEach(x => { const t = rrTier(LV[x.n]); if (t) tc[t] = (tc[t] || 0) + 1; });
+  const items = D.filter(x => (lf === 'all' || !LV || rrTier(LV[x.n]) === lf) && (f === 'all' || (f === 'cl' && x.cl && !x.g) || (f === 'rd' && !x.cl && !x.g) || (f === 'g10' && x.g) || (f === 'todo' && !pg[x.n])) && (!q || String(x.n) === q || x.t.toLowerCase().includes(q) || (x.p[0] || '').toLowerCase().includes(q)));
   const saved = rrWordsOf();
   main.innerHTML = `<div class="rr-poster mt"><img src="img/reading-poster.webp" alt="Reading" width="1200" height="675" fetchpriority="high"></div><section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc, trong đó ${D.filter(x => x.g).length} bài luyện thi (vào 10, THPT, Anh 9, Cambridge 10). Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
-  <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['g10', 'Luyện thi'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div></section>
+  <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['g10', 'Luyện thi'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div>${LV ? `<div class="rr-lvs"><span>Chọn cấp độ:</span>${[['all', 'Mọi cấp độ']].concat(RR_TIERS.map(t => [t[0], t[1]])).map(([k, n]) => `<button type="button" class="rr-lv ${lf === k ? 'on' : ''}" data-rrl="${k}" ${k !== 'all' ? `style="--cf:${CF_INFO[(RR_TIERS.find(t => t[0] === k) || [0, 0, ['B1']])[2][0]][1]}"` : ''}>${n}${k !== 'all' ? ` <small>${tc[k] || 0}</small>` : ''}</button>`).join('')}</div>` : ''}</section>
   ${saved.length ? `<section class="card rr-saved"><details><summary>Sổ từ của em (${saved.length})</summary><div class="rr-sw">${saved.map((w, i) => `<span class="rr-sc"><b>${esc(w.en)}</b> ${esc(w.vi)}<button type="button" data-rrs="${i}" aria-label="Nghe">🔊</button><button type="button" data-rrd="${i}" aria-label="Xoá">✕</button></span>`).join('')}</div></details></section>` : ''}
-  <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>Reading ${x.n}</b><small>${esc(x.g || (x.cl ? 'Điền từ' : 'Đọc hiểu'))} · ${x.q.length ? x.q.length + ' câu' : 'đọc + từ vựng'}${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
+  <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>Reading ${x.n}</b><small>${LV && LV[x.n] ? `<span class="cf-b" style="--cf:${CF_INFO[LV[x.n]][1]}">${LV[x.n]}</span> ` : ''}${esc(x.g || (x.cl ? 'Điền từ' : 'Đọc hiểu'))} · ${x.q.length ? x.q.length + ' câu' : 'đọc + từ vựng'}${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
   main.onclick = e => {
     const c = e.target.closest('[data-rro]'); if (c) { RR.open = +c.dataset.rro; return rrPassage(); }
+    const lb = e.target.closest('[data-rrl]'); if (lb) { RR.lvf = lb.dataset.rrl; try { localStorage.setItem('rr_lv', RR.lvf); } catch (er) {} return rrList(); }
     const ch = e.target.closest('[data-rrf]'); if (ch) { RR.filter = ch.dataset.rrf; return rrList(); }
     const sp = e.target.closest('[data-rrs]'); if (sp) { try { speak(saved[+sp.dataset.rrs].en); } catch (er) {} return; }
     const dl = e.target.closest('[data-rrd]'); if (dl) { const w = saved[+dl.dataset.rrd], item = w.en + '|' + w.vi; if (S.profile) S.profile = { ...S.profile, rdwords: (S.profile.rdwords || []).filter(x => x !== item) }; api.updateMe({ rdwords: REMOVE(item) }).catch(() => {}); return rrList(); }
   };
   const s = $('#rr-s'); s.oninput = () => { RR.q = s.value; clearTimeout(rrList._t); rrList._t = setTimeout(() => { const pos = s.selectionStart; rrList(); const n = $('#rr-s'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} }, 250); };
+  if (!LV) cfLoad().then(() => { if (rrLevels() && main.querySelector('.rr-grid') && document.activeElement !== $('#rr-s')) rrList(); });
   scrollTo(0, 0);
 }
 function rrPassage() {
@@ -13730,7 +13747,7 @@ document.addEventListener('click', e => {
 .rr-bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 0;margin-top:12px;background:linear-gradient(#fff 70%,rgba(255,255,255,0))}.rr-bar b{color:#0B5CA8}.rr-bar span{margin-left:auto;font-size:.85rem}
 .rr-wrap{display:grid;grid-template-columns:1fr;gap:14px;max-width:880px;margin:0 auto 40px}
 /* Chia đôi màn hình kiểu thi IELTS: bài đọc bên trái, câu hỏi bên phải, mỗi bên cuộn riêng */
-.rr-poster{max-width:880px;margin-left:auto;margin-right:auto}.rr-poster img{display:block;width:100%;height:auto;border-radius:22px;box-shadow:0 14px 34px -14px rgba(11,76,140,.45)}
+.rr-poster{max-width:460px;margin-left:auto;margin-right:auto}.rr-poster img{display:block;width:100%;height:auto;border-radius:22px;box-shadow:0 14px 34px -14px rgba(11,76,140,.45)}
 .rr-lock{margin:10px 0;padding:12px 14px;border:1.5px dashed #F5B58A;background:#FFF7ED;border-radius:14px}.rr-lock label{display:block;font-weight:700;color:#B45309;margin-bottom:8px;font-size:.92rem}.rr-lr{display:flex;gap:8px}.rr-lr input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid #9FB0C3;border-radius:10px;font-size:1rem}.rr-lr input:focus{outline:0;border-color:#F26522;box-shadow:0 0 0 3px rgba(242,101,34,.18)}.rr-le{margin:8px 0 0;color:#B91C1C;font-size:.88rem;font-weight:600}
 .rr-bar .rr-tmr{display:inline-flex;align-items:center;gap:8px;margin-left:auto}.rr-bar #rr-sc{margin-left:14px}.rr-tmr b{font:800 1.05rem/1 system-ui,sans-serif;color:#0B4C8C;background:#EAF2FB;border-radius:10px;padding:8px 10px;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}.rr-tmr b.low{background:#FFEDD5;color:#C2410C}.rr-tmr b.end{background:#FEE2E2;color:#B91C1C}.rr-tmr button{border:1.5px solid #B10B32;background:#B10B32;color:#fff;border-radius:10px;height:34px;padding:0 12px;font-weight:700;cursor:pointer}.rr-tmr button:hover{background:#8A0925}
 .rr-an{margin:8px 0 4px;padding:6px 12px;border:1px solid #D5DEE9;border-radius:12px;background:#F7FAFE;font-size:.88rem;line-height:1.4}.rr-an summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;color:#4B5563}.rr-an summary::-webkit-details-marker{display:none}.rr-an summary .cf-b{margin:0}.rr-an summary b{color:#0B4C8C;font-weight:700}.rr-ar{margin-left:auto;transition:transform .2s}.rr-an[open] .rr-ar{transform:rotate(180deg)}.rr-ah{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rr-ah b{color:#0B4C8C}.rr-ah small{color:#4B5563}.rr-ah .cf-b{margin:0;font-size:.85rem}
@@ -13864,6 +13881,7 @@ document.addEventListener('click', e => {
 .th-cats{display:grid;gap:4px;margin-bottom:10px}.th-srt{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-s)}.th-srt .th-o{padding:6px 14px;text-align:center}
 .bar .nav .navb[data-go=think],.bar .menu .mi[data-go=think]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z'/%3E%3C/svg%3E")}
 .th-pill{display:inline-block;margin:0 0 10px;padding:6px 14px;border-radius:99px;background:#FFF4E0;color:#8a5a00;font-size:.85rem;font-weight:700;text-decoration:none}.th-pill:hover{background:#FFE9C2}
+.rr-lvs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB}.rr-lvs>span{font-weight:700;font-size:.88rem;color:#374151}.rr-lv{border:1.5px solid #D5DEE9;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;color:#0B4C8C;transition:all .15s}.rr-lv small{opacity:.7;margin-left:2px}.rr-lv:hover{border-color:var(--cf,#0B4C8C)}.rr-lv.on{background:var(--cf,#0B4C8C);border-color:var(--cf,#0B4C8C);color:#fff}.rr-lv[data-rrl=all].on{background:#0B4C8C}.rr-ct .cf-b{margin:0 4px 0 0;font-size:.62rem;padding:0 7px}
 </style>
 
 <script>

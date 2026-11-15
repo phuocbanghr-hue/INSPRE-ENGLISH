@@ -9351,6 +9351,33 @@ document.addEventListener('click', async e => {
   if (e.target.closest('#inst-x')) { try { store.set('inst_hide', String(Date.now() + 7 * 864e5)); } catch (er) {} const c = document.getElementById('inst'); if (c) c.remove(); return; }
   if (e.target.closest('#inst-go') && _instEv) { const ev = _instEv; _instEv = null; try { ev.prompt(); await ev.userChoice; } catch (er) {} const c = document.getElementById('inst'); if (c) c.remove(); }
 });
+/* Chia sẻ thành tích: vẽ ảnh vuông 1080px rồi chia sẻ (Zalo, Facebook…) hoặc tải về */
+async function shareCard() {
+  const p = S.profile || {}, st = stats(p), lv = levelInfo(p.xp), got = BADGES.filter(b => { try { return b.ok(p, st); } catch { return false; } });
+  const W = 1080, c = document.createElement('canvas'); c.width = c.height = W; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, W, W); gr.addColorStop(0, '#F26B1D'); gr.addColorStop(1, '#B10B32'); g.fillStyle = gr; g.fillRect(0, 0, W, W);
+  g.globalAlpha = .12; g.fillStyle = '#fff'; [[160, 150, 200], [930, 260, 140], [880, 900, 220], [120, 880, 120]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); g.globalAlpha = 1;
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  g.fillStyle = '#fff'; rr(80, 150, 920, 800, 48); g.fill();
+  const F = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'; g.textAlign = 'center';
+  g.fillStyle = '#fff'; g.font = '800 54px ' + F; g.fillText('Inspire English', W / 2, 110);
+  g.fillStyle = '#B10B32'; g.font = '900 78px ' + F; let nm = String(p.name || 'Học sinh'); while (g.measureText(nm).width > 820 && nm.length > 3) nm = nm.slice(0, -2); g.fillText(nm, W / 2, 290);
+  g.fillStyle = '#64748B'; g.font = '600 38px ' + F; g.fillText((p.className ? p.className + ' · ' : '') + lv.name + ' · Cấp ' + lv.lvl, W / 2, 352);
+  [['XP', p.xp || 0, '#B10B32'], ['Chuỗi ngày', p.streak || 0, '#F26B1D'], ['Bài xong', st.completed || 0, '#16A864']].forEach((x, i) => {
+    const cx = 80 + 920 / 6 + i * 920 / 3; g.fillStyle = '#FFF4EC'; rr(cx - 135, 400, 270, 200, 30); g.fill();
+    g.fillStyle = x[2]; g.font = '900 88px ' + F; g.fillText(String(x[1]), cx, 510); g.fillStyle = '#64748B'; g.font = '600 32px ' + F; g.fillText(x[0], cx, 565);
+  });
+  g.fillStyle = '#0B5CA8'; g.font = '800 38px ' + F; g.fillText(got.length ? 'Huy hiệu đã đạt (' + got.length + '/' + BADGES.length + ')' : 'Hành trình mới bắt đầu', W / 2, 670);
+  g.font = '68px ' + F; const show = got.slice(0, 8); const gap = 100, x0 = W / 2 - (show.length - 1) * gap / 2; show.forEach((b, i) => g.fillText(b.ic, x0 + i * gap, 770));
+  g.fillStyle = '#475569'; g.font = '600 34px ' + F; g.fillText('Mỗi ngày học một chút, em sẽ tiến bộ rất nhanh!', W / 2, 880);
+  g.fillStyle = '#fff'; g.font = '700 36px ' + F; g.fillText('Cùng học tiếng Anh với Inspire nhé', W / 2, 1020);
+  const blob = await new Promise(r => c.toBlob(r, 'image/png')); if (!blob) { toast('Không tạo được ảnh, em thử lại nhé.', 'bad'); return; }
+  const file = new File([blob], 'inspire-thanh-tich.png', { type: 'image/png' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Thành tích học tiếng Anh của em' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Đã tải ảnh thành tích về máy, em gửi cho bạn bè nhé!', 'ok');
+}
+document.addEventListener('click', e => { const b = e.target.closest('#share-card'); if (!b || b.disabled) return; b.disabled = true; shareCard().catch(er => toast('Không chia sẻ được: ' + er.message, 'bad')).finally(() => { b.disabled = false; }); });
 /* Từ của ngày: chọn theo ngày từ các bài em đã ghi danh, nghe + lưu để ôn */
 function wodPick() {
   const L = (S.lessons || []).filter(l => { const c = courseOf(l); return c && isEnrolled(c.id) && c.id !== 'kids'; }), pool = [];
@@ -9419,7 +9446,7 @@ function viewProfile() {
   main.innerHTML = `${window.__iHaveBoba ? '<p class="boba-note" style="margin-top:20px">🧋 Em đang là Top 1 XP tuần của lớp! Giữ vững để nhận trà sữa nhé!</p>' : ''}<section class="card" style="margin-top:24px"><div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div class="avatar-btn" style="width:76px;height:76px;font-size:2.6rem">${avHTML(p)}</div>
       <div><h2 style="font-size:2rem">${esc(p.name)}</h2><p class="muted">${esc(p.email)}${p.className ? ' · ' + esc(p.className) : ''}</p><p><b>${lv.name}</b> · Cấp ${lv.lvl}</p></div></div>
     <div class="pgrid"><div class="pstat"><b>${p.xp || 0}</b>Tổng XP</div><div class="pstat"><b>${p.streak || 0}</b>Ngày liên tiếp</div><div class="pstat"><b>${st.completed}</b>Bài hoàn thành</div><div class="pstat"><b>${bestTest}%</b>Kiểm tra cao nhất</div></div></section>
-    <section class="card" style="margin-top:20px"><h3>Huy hiệu</h3><div class="badges">${BADGES.map(b => { const ok = b.ok(p, st); return `<div class="badge ${ok ? '' : 'lock'}"><div class="bi">${b.ic}</div><b>${b.n}</b><small>${b.d}</small></div>`; }).join('')}</div></section>
+    <section class="card" style="margin-top:20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Huy hiệu</h3><button type="button" class="btn sm" id="share-card">Chia sẻ thành tích</button></div><div class="badges">${BADGES.map(b => { const ok = b.ok(p, st); return `<div class="badge ${ok ? '' : 'lock'}"><div class="bi">${b.ic}</div><b>${b.n}</b><small>${b.d}</small></div>`; }).join('')}</div></section>
     <section class="card" style="margin:20px 0 50px"><h3>Cài đặt</h3>
       <p style="margin-bottom:6px">Ảnh đại diện</p><div class="avup"><div class="avatar-btn" id="avprev">${avHTML({ avatar: av, name: p.name })}</div><div><label class="btn soft sm" for="avfile" style="cursor:pointer">Tải ảnh lên</label><input id="avfile" type="file" accept="image/*" hidden><p class="muted" style="font-size:.85rem;margin-top:6px">Ảnh được tự cắt vuông và nén nhỏ. Nhớ bấm Lưu thay đổi.</p></div></div><div class="avs">${AVATARS.map(a => `<button data-av="${a}" class="${a === av ? 'on' : ''}" aria-label="Chọn ${a}">${a}</button>`).join('')}</div>
       <div class="form2"><label class="field"><span>Tên hiển thị</span><input id="s-name" maxlength="40" value="${esc(p.name)}"></label><label class="field"><span>Lớp</span><input id="s-class" maxlength="30" value="${esc(p.className || '')}"></label></div>

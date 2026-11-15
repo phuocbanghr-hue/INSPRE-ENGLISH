@@ -9541,6 +9541,7 @@ function rrPassage() {
   const qs = p.q.map((q, k) => `<div class="rr-q" data-k="${k}"><p class="rr-qt"><b>${p.cl ? 'Chỗ trống (' + (k + 1) + ')' : 'Câu ' + (k + 1)}</b>${q.q ? ' ' + rrHTML(q.q) : ''}</p><div class="rr-os">${q.o.map((o, j) => `<button type="button" class="rr-o" data-q="${k}" data-j="${j}"><span>${LET[j]}</span><i>${esc(o)}</i></button>`).join('')}</div><div class="rr-ex" hidden></div></div>`).join('');
   main.innerHTML = `<div class="rr-bar"><button type="button" class="btn soft sm" id="rr-back">← Danh sách</button><b>Reading ${p.n}</b><span id="rr-sc" class="muted"></span><span class="rr-fs" role="group" aria-label="Cỡ chữ"><button type="button" data-fs="-1" aria-label="Chữ nhỏ lại">A−</button><button type="button" data-fs="1" aria-label="Chữ to lên">A+</button></span></div>
   <div class="rr-wrap rr-sel"><section class="card rr-psg"><small class="rr-ins">${esc(p.ins)}</small>${paras}<div class="rr-hint">Bôi đen hoặc chạm vào một từ để xem nghĩa.</div>${p.vi.length ? `<button type="button" class="btn soft sm" id="rr-vi">Xem bản dịch tiếng Việt</button><div class="rr-trans" id="rr-tr" hidden>${p.vi.map(t => `<p>${esc(t)}</p>`).join('')}</div>` : '<div class="muted" style="font-size:.85rem">Bài này chưa có bản dịch trong tài liệu.</div>'}</section>
+  <div class="rr-div" id="rr-div" role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng hai bên" tabindex="0" title="Kéo để chỉnh độ rộng · bấm đúp để về mặc định"><i></i></div>
   <div class="rr-right"><section class="rr-qs"><div class="rr-pal" id="rr-pal"><div class="rr-pr"><i id="rr-pf"></i></div><div class="rr-pc">${p.q.map((q, k) => `<button type="button" class="rr-pb" data-pk="${k}" aria-label="Đến câu ${k + 1}">${k + 1}</button>`).join('')}</div></div>${qs}</section><div id="rr-res"></div><div class="rr-nav"><button type="button" class="btn soft" id="rr-prev" ${i === 0 ? 'disabled' : ''}>← Bài trước</button><button type="button" class="btn" id="rr-next" ${i === D.length - 1 ? 'disabled' : ''}>Bài sau →</button></div></div></div>`;
   const upd = () => { const ok = p.q.filter((q, k) => q.a >= 0 && A[k] === q.a).length, ans = p.q.filter((q, k) => q.a >= 0 && A[k] >= 0).length; $('#rr-sc').textContent = ans + '/' + graded + ' câu · đúng ' + ok;
     main.querySelectorAll('.rr-pb').forEach((b, k) => { const q = p.q[k], d = A[k] >= 0; b.classList.toggle('did', d && q.a < 0); b.classList.toggle('ok', d && q.a >= 0 && A[k] === q.a); b.classList.toggle('no', d && q.a >= 0 && A[k] !== q.a); });
@@ -9559,6 +9560,18 @@ function rrPassage() {
     $('#rr-res').scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
   A.forEach((a, k) => { if (a >= 0) reveal(k, a); }); upd();
+  { const dv = $('#rr-div'), wr = main.querySelector('.rr-wrap'); if (dv && wr) {
+    const lim = v => Math.max(28, Math.min(72, v)), set = v => { v = lim(v); wr.style.setProperty('--rl', v + '%'); dv.setAttribute('aria-valuenow', Math.round(v)); return v; };
+    let cur = lim(+(localStorage.getItem('rr_split') || 54) || 54); set(cur);
+    const save = () => { try { localStorage.setItem('rr_split', String(Math.round(cur * 10) / 10)); } catch (er) {} };
+    const move = x => { const r = wr.getBoundingClientRect(); cur = set((x - r.left) / r.width * 100); };
+    dv.onpointerdown = e => { e.preventDefault(); dv.setPointerCapture(e.pointerId); dv.classList.add('drag'); document.body.classList.add('rr-dragging'); };
+    dv.onpointermove = e => { if (dv.classList.contains('drag')) move(e.clientX); };
+    const end = () => { if (!dv.classList.contains('drag')) return; dv.classList.remove('drag'); document.body.classList.remove('rr-dragging'); save(); };
+    dv.onpointerup = end; dv.onpointercancel = end; dv.onlostpointercapture = end;
+    dv.ondblclick = () => { cur = set(54); save(); };
+    dv.onkeydown = e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); cur = set(cur + (e.key === 'ArrowLeft' ? -2 : 2)); save(); } else if (e.key === 'Home') { cur = set(54); save(); } };
+  } }
   { const fs = +(localStorage.getItem('rr_fs') || 0) || 0, ap = v => { const el = main.querySelector('.rr-psg'); if (el) el.style.fontSize = (1.1 + v * 0.1) + 'rem'; }; let cur = Math.max(-2, Math.min(4, fs)); ap(cur);
     main.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => { cur = Math.max(-2, Math.min(4, cur + +b.dataset.fs)); try { localStorage.setItem('rr_fs', String(cur)); } catch (er) {} ap(cur); });
     main.querySelectorAll('.rr-pb').forEach(b => b.onclick = () => { const q = main.querySelector(`.rr-q[data-k="${b.dataset.pk}"]`); if (q) { q.scrollIntoView({ behavior: 'smooth', block: 'start' }); q.classList.add('rr-flash'); setTimeout(() => q.classList.remove('rr-flash'), 1200); } }); }
@@ -13694,11 +13707,13 @@ document.addEventListener('click', e => {
 .rr-pb.did{background:#DBEAFE;border-color:#2563EB}.rr-pb.ok{background:#16A864;border-color:#16A864;color:#fff}.rr-pb.no{background:#DC2626;border-color:#DC2626;color:#fff}
 .rr-bar .rr-fs{display:inline-flex;gap:6px;margin-left:10px}.rr-fs button{border:1.5px solid #9FB0C3;background:#fff;color:#0B4C8C;border-radius:10px;min-width:40px;height:34px;font-weight:800;cursor:pointer}.rr-fs button:hover{border-color:#F26522;color:#F26522}
 .rr-q{scroll-margin-top:84px;transition:box-shadow .3s}.rr-q.rr-flash{box-shadow:0 0 0 3px #F26522}.rr-o{min-height:48px}
+.rr-div{display:none}
+@media(min-width:900px){.rr-div{display:grid;place-items:center;cursor:col-resize;touch-action:none;user-select:none;border-radius:99px;margin:0 -2px}.rr-div i{width:6px;height:100%;border-radius:99px;background:#F5B58A;position:relative;transition:background .15s,width .15s}.rr-div i::after{content:'';position:absolute;left:50%;top:50%;width:22px;height:54px;transform:translate(-50%,-50%);border-radius:99px;background:#F26522 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 54'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='20' r='2'/%3E%3Ccircle cx='16' cy='20' r='2'/%3E%3Ccircle cx='8' cy='27' r='2'/%3E%3Ccircle cx='16' cy='27' r='2'/%3E%3Ccircle cx='8' cy='34' r='2'/%3E%3Ccircle cx='16' cy='34' r='2'/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat;box-shadow:0 3px 10px rgba(242,101,34,.4)}.rr-div:hover i,.rr-div.drag i,.rr-div:focus-visible i{background:#F26522;width:8px}body.rr-dragging{cursor:col-resize;user-select:none}body.rr-dragging .rr-psg,body.rr-dragging .rr-right{pointer-events:none}}
 .rr-right{display:flex;flex-direction:column;gap:14px;min-width:0}.rr-qh{margin:0;display:flex;justify-content:space-between;align-items:baseline;color:#0B5CA8;font-size:1.05rem;padding:2px 4px}.rr-qh span{font-size:.82rem;color:#64748B;font-weight:600}
 @media(min-width:900px){
-  .rr-wrap{max-width:1500px!important;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr)!important;gap:16px;align-items:stretch;height:calc(100vh - 170px);min-height:460px;margin-bottom:12px!important}
+  .rr-wrap{max-width:1500px!important;grid-template-columns:minmax(0,var(--rl,54%)) 16px minmax(0,1fr)!important;gap:16px;align-items:stretch;height:calc(100vh - 170px);min-height:460px;margin-bottom:12px!important}
   .rr-psg,.rr-right{height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px}
-  .rr-psg{padding:22px 26px!important;border-right:4px solid #F26522;font-size:1.1rem;line-height:1.85}
+  .rr-psg{padding:22px 26px!important;font-size:1.1rem;line-height:1.85}
   .rr-right{padding:2px 8px 24px 2px}
   .rr-bar{position:static!important;background:none!important;margin-top:6px!important;max-width:1500px;margin-left:auto;margin-right:auto}
   .rr-qs{display:flex;flex-direction:column;gap:12px}

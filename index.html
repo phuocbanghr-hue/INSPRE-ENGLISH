@@ -7593,7 +7593,7 @@ function cxlListen(c) {
 function cxlPeople(c) {
   const me = S.user.uid, ids = (c.members || []).slice().sort((a, b) => ((c.names || {})[a] || '').localeCompare((c.names || {})[b] || '', 'vi'));
   return `<section class="card"><h3>Giáo viên</h3>${Object.values(c.teacherNames || {}).map(n => `<div class="cxl-p"><span class="cxl-av t">${esc(inic(n))}</span><b>${esc(n)}</b><span class="tg tk">Giáo viên</span></div>`).join('') || '<p class="muted">Chưa có.</p>'}</section>
-    <section class="card" style="margin-top:16px"><h3>Bạn cùng lớp (${ids.length})</h3><div class="cxl-ppl">${ids.map(id => { const n = (c.names || {})[id] || 'Học sinh'; return `<div class="cxl-p"><span class="cxl-av">${esc(inic(n))}</span><b>${esc(n)}${id === me ? ' (em)' : ''}</b>${id !== me ? `<button class="btn soft sm" data-dm="${esc(id)}">Nhắn tin</button>` : ''}</div>`; }).join('')}</div></section>`;
+    <section class="card" style="margin-top:16px"><h3>Bạn cùng lớp (${ids.length})</h3>${ids.length > 8 ? `<input class="cxl-find" type="search" placeholder="Tìm bạn trong lớp…" aria-label="Tìm bạn" style="margin:6px 0 8px" oninput="var q=this.value.trim().toLowerCase();document.querySelectorAll('.cxl-ppl .cxl-p').forEach(function(r){r.style.display=!q||r.textContent.toLowerCase().indexOf(q)>-1?'':'none'})">` : ''}<div class="cxl-ppl">${ids.map(id => { const n = (c.names || {})[id] || 'Học sinh'; return `<div class="cxl-p"><span class="cxl-av">${esc(inic(n))}</span><b>${esc(n)}${id === me ? ' (em)' : ''}</b>${id !== me ? `<button class="btn soft sm" data-dm="${esc(id)}">Nhắn tin</button>` : ''}</div>`; }).join('')}</div></section>`;
 }
 function cxlGrades(c) {
   const P = S.profile || {}, B = (S.banks || []).filter(b => b.classId === c.id);
@@ -7603,7 +7603,13 @@ function cxlGrades(c) {
   if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div></section>`;
   const rows = B.map(b => { const v = (P.bankbest || {})[b.id], at = (P.bankat || {})[b.id], n = (P.bankatt || {})[b.id] || (v != null ? 1 : 0);
     return `<tr><td class="gr-name"><span class="gr-ic">▸</span>${esc(b.title)}</td><td>${pill(v)}</td><td>${n}</td><td>${at ? new Date(at).toLocaleDateString('vi-VN') : '–'}</td></tr>`; }).join('');
-  return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}
+  const dn = B.filter(b => (P.bankbest || {})[b.id] != null), sc = dn.map(b => P.bankbest[b.id]), avg = sc.length ? Math.round(sc.reduce((a, x) => a + x, 0) / sc.length) : null, top = sc.length ? Math.max(...sc) : null;
+  const weak = dn.filter(b => P.bankbest[b.id] < 70).sort((a, b) => P.bankbest[a.id] - P.bankbest[b.id]).slice(0, 4), todo = B.filter(b => (P.bankbest || {})[b.id] == null && b.published !== false).slice(0, 3);
+  const stat = (n, l, c2) => `<div class="gr-st ${c2 || ''}"><b>${n}</b><span>${l}</span></div>`;
+  const sum = `<div class="gr-sum">${stat(dn.length + '/' + B.length, 'Bài đã làm')}${stat(avg == null ? '–' : avg + '%', 'Điểm trung bình', avg == null ? '' : avg >= 80 ? 'hi' : avg >= 50 ? 'mid' : 'lo')}${stat(top == null ? '–' : top + '%', 'Điểm cao nhất', 'hi')}${stat(weak.length, 'Bài nên ôn lại', weak.length ? 'lo' : '')}</div>`;
+  const nb = (b, t) => `<div class="gr-nx"><span><b>${esc(b.title)}</b><small>${t}</small></span><button class="btn sm" data-bank="${esc(b.id)}">Luyện tập</button></div>`;
+  const adv = weak.length || todo.length ? `<div class="gr-adv"><h4>${weak.length ? 'Nên ôn lại để lên điểm' : 'Bài chưa làm'}</h4>${weak.map(b => nb(b, 'Đang ' + P.bankbest[b.id] + '%, mục tiêu 70%')).join('')}${weak.length ? '' : todo.map(b => nb(b, 'Chưa làm')).join('')}</div>` : '<div class="gr-adv ok"><h4>Tuyệt vời! Em đã làm hết và đạt trên 70% mọi bài.</h4></div>';
+  return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}${sum}${adv}
     <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
@@ -13877,6 +13883,8 @@ document.addEventListener('click', e => {
 .cxl-tools{margin-bottom:14px;display:flex;flex-direction:column;gap:10px}.cxl-prog{display:flex;align-items:center;gap:16px;background:#fff;border-radius:16px;padding:14px 18px;box-shadow:0 10px 26px -22px rgba(15,23,42,.5)}.cxl-prog>div{flex:none}.cxl-prog b{display:block;font-size:.95rem}.cxl-prog span{font-size:.82rem;color:#6B7280}.cxl-prog>i{flex:1;height:10px;border-radius:99px;background:#F1F2F5;overflow:hidden}.cxl-prog u{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#C8142D,#FF8A5B);transition:width .5s}.cxl-find{width:100%;border:1.5px solid #E5E7EB;border-radius:14px;padding:11px 16px;font:inherit;font-size:.92rem;background:#fff}.cxl-find:focus{outline:0;border-color:#C8142D;box-shadow:0 0 0 3px rgba(200,20,45,.12)}.cxl-nf{padding:6px 4px}
 .cxl-sec>h2{cursor:pointer;user-select:none}.cxl-st{flex:1}.cxl-cnt{font-style:normal;font-size:.72rem;font-weight:700;text-transform:none;letter-spacing:0;color:#6B7280;background:#F3F4F6;border-radius:99px;padding:3px 10px}.cxl-cnt.ok{background:#DCFCE7;color:#15803D}.cxl-sec.fold>h2::before{transform:rotate(-90deg)}.cxl-sec.fold>*:not(h2){display:none!important}.cxl-sec>h2::before{transition:transform .2s}
 @media(max-width:600px){.cxl-prog{flex-direction:column;align-items:stretch;gap:8px}}
+.gr-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.gr-st{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 10px 26px -22px rgba(15,23,42,.5);border-top:4px solid #CBD5E1}.gr-st b{display:block;font-size:1.6rem;line-height:1.1}.gr-st span{font-size:.8rem;color:#6B7280}.gr-st.hi{border-color:#22C55E}.gr-st.mid{border-color:#F59E0B}.gr-st.lo{border-color:#EF4444}.gr-adv{background:#FFF8F0;border-radius:16px;padding:14px 16px;margin-bottom:14px}.gr-adv.ok{background:#F0FDF4}.gr-adv h4{margin:0 0 8px;font-size:.95rem}.gr-nx{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid rgba(0,0,0,.06)}.gr-nx:first-of-type{border-top:0}.gr-nx span{min-width:0}.gr-nx b{display:block;font-size:.92rem}.gr-nx small{color:#6B7280}
+@media(max-width:700px){.gr-sum{grid-template-columns:repeat(2,1fr)}}
 </style>
 
 <script>

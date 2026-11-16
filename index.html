@@ -8087,7 +8087,9 @@ function startRoom(cfg, resume, preQ) {
   const bankOf = i => Q[i].opts.map((o, k) => `<span><b>${LET[k]}.</b> ${esc(o.d)}</span>`).join('');
   const paper = Q.map((q, i) => { const gp = q.psg || q.aud || q.bank, first = !gp || q.pk !== lastPk, cl = q.cls, newPart = cl[0] !== lastPart, newSub = newPart || cl[1] !== lastSub; lastPk = gp ? q.pk : null; if (newPart) subN = 0; if (newSub) subN++; lastPart = cl[0]; lastSub = cl[1];
     const hd = q.fh ? `<div class="rm-part"><h4 class="rm-ph ${newPart ? '' : 'dup'}">${q.fh[0]}</h4><p class="rm-sh ${newSub ? '' : 'dup'}"><b>${ROM[subN - 1]}.</b> ${q.fh[1]}</p></div>` : `<div class="rm-part"><h4 class="rm-ph ${newPart ? '' : 'dup'}">${cl[0]}. ${RM_PART[cl[0]]} <small>(${fp(cnt[cl[0]] * PT)} pts)</small></h4><p class="rm-sh ${newSub ? '' : 'dup'}"><b>${ROM[subN - 1]}.</b> ${cl[2]} <i>(${fp(subCnt[cl[0] + cl[1]] * PT)} pt)</i></p></div>`;
-    const aud = q.aud ? `<div class="rm-aud rm-nohl ${first ? '' : 'dup'}"><div class="rm-ah"><span class="rm-an">Bài nghe</span><b>Listen and answer the questions</b></div><p class="rm-tip">Bấm nút phát để nghe. Nghe kỹ lần đầu, lần sau dùng để kiểm tra lại đáp án. Nếu không nghe được, bấm biểu tượng mở ở góc phải của trình phát.</p>${(q.aud.files || []).map(f => `<div class="rm-af"><small>${esc(f.title || 'Audio')}</small><audio controls preload="none" src="${esc(f.url)}"></audio></div>`).join('')}${q.aud.drive ? `<iframe class="drv" src="${esc(q.aud.drive)}" allow="autoplay" title="File nghe"></iframe>` : ''}</div>` : '';
+    const audOf = (u, t) => `<div class="rm-af"><small>${esc(t || 'Audio')}</small><audio class="rm-lim" controls controlsList="nodownload noplaybackrate" preload="none" src="${esc(u)}"></audio><em class="rm-cnt">Còn 2 lượt nghe</em></div>`;
+    const dvId = q.aud && q.aud.drive ? (q.aud.drive.match(/\/d\/([^/]+)/) || [])[1] : '';
+    const aud = q.aud ? `<div class="rm-aud rm-nohl ${first ? '' : 'dup'}"><div class="rm-ah"><span class="rm-an">Bài nghe</span><b>Listen and answer the questions</b></div><p class="rm-tip">Bài nghe được phát tối đa 2 lần.</p>${(q.aud.files || []).map(f => audOf(f.url, f.title)).join('')}${dvId ? `<div class="rm-af" data-dv="${esc(q.aud.drive)}">${audOf('https://drive.google.com/uc?export=download&id=' + dvId, '')}</div>` : ''}</div>` : '';
     const bank = q.bank ? `<div class="rm-bank ${first ? '' : 'dup'}"><i>Words in the box</i><div>${bankOf(i)}</div></div>` : '';
     const opts = q.type === 'text' ? `<input class="rm-in" data-in="${i}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Viết câu hoàn chỉnh vào đây" aria-label="Câu trả lời ${i + 1}">`
       : q.bank ? `<div class="rm-lc">${q.opts.map((o, k) => `<div class="rm-o" role="radio" tabindex="0" aria-checked="false" data-q="${i}" data-k="${k}"><span class="rm-l">${LET[k]}</span></div>`).join('')}</div>`
@@ -10335,6 +10337,15 @@ function mountBook(el, c, withImg) {
 }
 
 const driveId = u => { const m = String(u || '').match(/\/d\/([\w-]{10,})|[?&]id=([\w-]{10,})/); return m ? (m[1] || m[2]) : ''; };
+// Bài nghe trong đề thi: tối đa 2 lượt, không tua lại
+(() => {
+  const info = a => a.closest('.rm-af').querySelector('.rm-cnt');
+  document.addEventListener('play', e => { const a = e.target; if (!a.classList || !a.classList.contains('rm-lim')) return; if (a.dataset.done) { a.pause(); return; } if (!a.dataset.run) { a.dataset.run = 1; info(a).textContent = 'Đang nghe lượt ' + ((+a.dataset.n || 0) + 1) + '/2'; } }, true);
+  document.addEventListener('timeupdate', e => { const a = e.target; if (a.classList && a.classList.contains('rm-lim') && a.dataset.run) a.dataset.mx = Math.max(+a.dataset.mx || 0, a.currentTime); }, true);
+  document.addEventListener('seeking', e => { const a = e.target; if (a.classList && a.classList.contains('rm-lim') && a.dataset.run && a.currentTime < (+a.dataset.mx || 0) - 1) a.currentTime = +a.dataset.mx; }, true);
+  document.addEventListener('ended', e => { const a = e.target; if (!a.classList || !a.classList.contains('rm-lim')) return; const n = (+a.dataset.n || 0) + 1; a.dataset.n = n; a.dataset.run = ''; a.dataset.mx = 0; const t = info(a); if (n >= 2) { a.dataset.done = 1; a.removeAttribute('controls'); a.style.display = 'none'; t.textContent = 'Đã hết 2 lượt nghe'; t.classList.add('end'); } else t.textContent = 'Còn 1 lượt nghe'; }, true);
+  document.addEventListener('error', e => { const a = e.target, w = a.classList && a.classList.contains('rm-lim') && a.closest('.rm-af[data-dv]'); if (w && !w.dataset.fb) { w.dataset.fb = 1; w.innerHTML = '<iframe class="drv" src="' + w.dataset.dv + '" allow="autoplay" title="File nghe"></iframe><em class="rm-cnt">Nếu trình phát không chạy, bấm biểu tượng mở ở góc phải.</em>'; } }, true);
+})();
 const drivePrev = u => { const id = driveId(u); return id ? 'https://drive.google.com/file/d/' + id + '/preview' : ''; };
 const audioLink = lid => {
   const s = S.site && S.site.audio && S.site.audio[lid]; if (s) return s;
@@ -14092,6 +14103,8 @@ document.addEventListener('click', e => {
 /* ===== v26: đề thi giữ nguyên giấy trắng; chỉ chỉnh khung bài nghe cho dễ dùng ===== */
 .rm-paper .rm-aud{background:#fff;padding:10px 14px 8px}.rm-ah{margin-bottom:2px}.rm-an{font-weight:700;font-size:.9rem;margin-right:8px}.rm-an::after{content:' :'}.rm-aud .rm-ah b{font-weight:400;font-style:italic}.rm-tip{margin:0 0 8px;font-size:.82rem;color:#555;font-family:system-ui,sans-serif}
 .rm-aud .drv{height:230px!important;border-radius:8px;background:#202124;margin:0 0 4px!important}.rm-af audio{height:40px}
+
+.rm-aud{padding:8px 12px 6px!important}.rm-tip{margin:0 0 4px!important;font-size:.78rem!important}.rm-af audio{height:34px!important;max-width:100%}.rm-af small:empty{display:none}.rm-cnt{display:block;font:.76rem system-ui,sans-serif;color:#666;margin:2px 0 4px}.rm-cnt.end{color:#b3261e;font-weight:600}.rm-aud .drv{height:120px!important}
 </style>
 
 <script>

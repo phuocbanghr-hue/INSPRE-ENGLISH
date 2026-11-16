@@ -9596,12 +9596,14 @@ function rrList() {
   const LV = rrLevels(), lf = RR.lvf, tc = {}; if (LV) D.forEach(x => { const t = rrTier(LV[x.n]); if (t) tc[t] = (tc[t] || 0) + 1; });
   const items = D.filter(x => (lf === 'all' || !LV || rrTier(LV[x.n]) === lf) && (f === 'all' || (f === 'cl' && x.cl && !x.g) || (f === 'rd' && !x.cl && !x.g) || (f === 'g10' && x.g) || (f === 'todo' && !pg[x.n])) && (!q || String(x.n) === q || x.t.toLowerCase().includes(q) || (x.p[0] || '').toLowerCase().includes(q)));
   const saved = rrWordsOf();
-  main.innerHTML = `<div class="rr-poster mt"><img src="img/reading-poster.webp" alt="Reading" width="1200" height="675" fetchpriority="high"></div><section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc, trong đó ${D.filter(x => x.g).length} bài luyện thi (vào 10, THPT, Anh 9, Cambridge 10, IELTS). Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
+  if (RR.room === 'listen') return rrListen();
+  main.innerHTML = `${rrRoomBar()}<div class="rr-poster"><img src="img/reading-poster.webp" alt="Reading" width="1200" height="675" fetchpriority="high"></div><section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc, trong đó ${D.filter(x => x.g).length} bài luyện thi (vào 10, THPT, Anh 9, Cambridge 10, IELTS). Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
   <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['g10', 'Luyện thi'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div>${LV ? `<div class="rr-lvs"><span>Chọn cấp độ:</span>${[['all', 'Mọi cấp độ']].concat(RR_TIERS.map(t => [t[0], t[1]])).map(([k, n]) => `<button type="button" class="rr-lv ${lf === k ? 'on' : ''}" data-rrl="${k}" ${k !== 'all' ? `style="--cf:${CF_INFO[(RR_TIERS.find(t => t[0] === k) || [0, 0, ['B1']])[2][0]][1]}"` : ''}>${n}${k !== 'all' ? ` <small>${tc[k] || 0}</small>` : ''}</button>`).join('')}</div>` : ''}</section>
   ${saved.length ? `<section class="card rr-saved"><details><summary>Sổ từ của em (${saved.length})</summary><div class="rr-sw">${saved.map((w, i) => `<span class="rr-sc"><b>${esc(w.en)}</b> ${esc(w.vi)}<button type="button" data-rrs="${i}" aria-label="Nghe"><img class="rr-loa" src="img/loa.png" alt="" width="16" height="13"></button><button type="button" data-rrd="${i}" aria-label="Xoá">✕</button></span>`).join('')}</div></details></section>` : ''}
   <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>Reading ${x.n}</b><small>${LV && LV[x.n] ? `<span class="cf-b" style="--cf:${CF_INFO[LV[x.n]][1]}">${LV[x.n]}</span> ` : ''}${esc(x.g || (x.cl ? 'Điền từ' : 'Đọc hiểu'))} · ${x.q.length ? x.q.length + ' câu' : 'đọc + từ vựng'}${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
   main.onclick = e => {
     const c = e.target.closest('[data-rro]'); if (c) { RR.open = +c.dataset.rro; return rrPassage(); }
+    if (rrRoomClick(e)) return;
     const lb = e.target.closest('[data-rrl]'); if (lb) { RR.lvf = lb.dataset.rrl; try { localStorage.setItem('rr_lv', RR.lvf); } catch (er) {} return rrList(); }
     const ch = e.target.closest('[data-rrf]'); if (ch) { RR.filter = ch.dataset.rrf; return rrList(); }
     const sp = e.target.closest('[data-rrs]'); if (sp) { try { speak(saved[+sp.dataset.rrs].en); } catch (er) {} return; }
@@ -9609,6 +9611,91 @@ function rrList() {
   };
   const s = $('#rr-s'); s.oninput = () => { RR.q = s.value; clearTimeout(rrList._t); rrList._t = setTimeout(() => { const pos = s.selectionStart; rrList(); const n = $('#rr-s'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} }, 250); };
   if (!LV) cfLoad().then(() => { if (rrLevels() && main.querySelector('.rr-grid') && document.activeElement !== $('#rr-s')) rrList(); });
+  scrollTo(0, 0);
+}
+/* ===== Phòng nghe (trong Phòng đọc): nghe chép chính tả + gom toàn bộ đề nghe của web ===== */
+RR.room = RR.room || 'read'; RR.dic = null;
+function rrRoomBar() {
+  return `<div class="rm-tabs mt" role="tablist"><button type="button" role="tab" class="${RR.room === 'read' ? 'on' : ''}" data-rrroom="read">📖 Phòng đọc</button><button type="button" role="tab" class="${RR.room === 'listen' ? 'on' : ''}" data-rrroom="listen">🎧 Phòng nghe</button></div>`;
+}
+function rrRoomClick(e) { const b = e.target.closest('[data-rrroom]'); if (!b) return false; RR.room = b.dataset.rrroom; RR.dic = null; RR.open = 0; try { speechSynthesis.cancel(); } catch (er) {} viewRead(); return true; }
+const isLisLesson = l => /(^|_)lis/i.test(l.id || '') || !!l.lis || (l.audios && l.audios.length > 0) || (l.exs || []).some(x => x.k === 'lis');
+function dicSplit(p, lv) {
+  const max = lv === 'e' ? 9 : lv === 'm' ? 16 : 99, out = [];
+  (p.p || []).forEach(t => String(t).replace(/\s+/g, ' ').split(/(?<=[.!?])["”’']?\s+(?=[A-Z“"‘'(])/).forEach(s => { s = s.trim(); const n = s.split(/\s+/).length; if (n >= 3 && n <= max && /[a-z]{2}/i.test(s) && !/_{2,}|\(\d+\)/.test(s)) out.push(s); }));
+  return out;
+}
+const dicNorm = s => String(s).toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[^a-z0-9'\s-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+function dicDiff(ans, key) {
+  const a = dicNorm(ans), k = dicNorm(key), n = a.length, m = k.length, L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === k[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, ok = 0; const h = [];
+  while (i < n && j < m) { if (a[i] === k[j]) { h.push(`<span class="dc-ok">${esc(a[i])}</span>`); i++; j++; ok++; } else if (L[i + 1][j] >= L[i][j + 1]) { h.push(`<span class="dc-no">${esc(a[i])}</span>`); i++; } else { h.push(`<span class="dc-miss">${'_'.repeat(Math.min(8, k[j].length))}</span>`); j++; } }
+  while (i < n) h.push(`<span class="dc-no">${esc(a[i++])}</span>`); while (j < m) { h.push(`<span class="dc-miss">${'_'.repeat(Math.min(8, k[j].length))}</span>`); j++; }
+  return { html: h.join(' '), pct: m ? Math.round(ok / Math.max(m, n) * 100) : 0 };
+}
+function rrListen() {
+  const D = RR.data || [], dd = (() => { try { return JSON.parse(localStorage.getItem('dic_best') || '{}'); } catch (e) { return {}; } })();
+  if (RR.dic) return rrDictation(RR.dic, dd);
+  const lvl = RR.dlv || 'm', rate = RR.drate || .85, q = (RR.dq || '').trim().toLowerCase();
+  const items = D.filter(x => !q || String(x.n).includes(q) || (x.t || '').toLowerCase().includes(q) || (x.g || '').toLowerCase().includes(q)).filter(x => dicSplit(x, lvl).length >= 3);
+  const L = (S.allLessons || []).filter(isLisLesson), banks = (S.banks || []).filter(b => b.published !== false && (b.qs || []).some(z => z.audio));
+  const grp = {}; L.forEach(l => { const k = (l.topic || 'Bài nghe').split('·').slice(0, 2).join('·').trim() || 'Bài nghe'; (grp[k] = grp[k] || []).push(l); });
+  const lessonCard = l => `<button type="button" class="rr-card" data-lisopen="${esc(l.id)}"><span class="rr-cn">🎧</span><span class="rr-ct"><b>${esc(l.title || ('Bài nghe ' + (l.n || '')))}</b><small>${esc(l.rng ? 'Câu ' + l.rng + (l.topic ? ' · ' + l.topic : '') : (l.description || l.topic || ''))}</small></span></button>`;
+  main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero"><div><h2>Phòng nghe</h2><p>Nghe chép chính tả theo ${D.length} bài đọc, nghe đề có audio của các khối lớp, nghe & làm bài của lớp. Nghe nhiều lần cũng được nhé.</p></div><div class="rr-st"><b>${Object.keys(dd).length}</b><span>bài đã chép</span></div></section>
+  <section class="card rr-tools"><h3 style="margin:0 0 6px">✍️ Nghe chép chính tả</h3><p class="muted" style="margin:0 0 10px">Máy đọc từng câu, em nghe rồi gõ lại. Chấm theo từng từ, chỉ rõ từ sai và từ thiếu.</p>
+    <div class="rr-chips"><span class="muted" style="align-self:center">Độ dài câu:</span>${[['e', 'Ngắn'], ['m', 'Vừa'], ['h', 'Dài']].map(([k, n]) => `<button type="button" class="rr-chip ${lvl === k ? 'on' : ''}" data-dlv="${k}">${n}</button>`).join('')}<span class="muted" style="align-self:center;margin-left:8px">Tốc độ:</span>${[[.7, 'Chậm'], [.85, 'Vừa'], [1, 'Nhanh']].map(([k, n]) => `<button type="button" class="rr-chip ${rate === k ? 'on' : ''}" data-drate="${k}">${n}</button>`).join('')}</div>
+    <input id="dic-s" type="search" placeholder="Tìm bài (số bài, tên, nhóm đề…)" value="${esc(RR.dq || '')}" aria-label="Tìm bài chép chính tả" style="margin-top:10px"></section>
+  <div class="rr-grid">${items.slice(0, 120).map(x => { const b = dd[x.n]; return `<button type="button" class="rr-card ${b != null ? 'did' : ''}" data-dic="${x.n}"><span class="rr-cn">${x.n}</span><span class="rr-ct"><b>${esc(x.t || 'Reading ' + x.n)}</b><small>${esc(x.g || 'Bài đọc')} · ${dicSplit(x, lvl).length} câu${b != null ? ' · tốt nhất ' + b + '%' : ''}</small></span></button>`; }).join('') || '<div class="card empty">Không có bài phù hợp.</div>'}</div>${items.length > 120 ? `<p class="muted" style="text-align:center">Còn ${items.length - 120} bài nữa, gõ vào ô tìm để lọc.</p>` : ''}
+  <section class="card mt"><h3 style="margin:0 0 6px">🎧 Đề nghe có audio</h3><p class="muted" style="margin:0">${L.length ? 'Tất cả bài nghe có trên web, gom về một chỗ. Bài thuộc khoá học cần mở khoá sẽ hỏi mã khi bấm.' : 'Chưa tải xong danh sách bài nghe. Em vào mục Học tập một lần rồi quay lại nhé.'}</p></section>
+  ${Object.keys(grp).map(k => `<section class="card mt"><h4 style="margin:0 0 10px">${esc(k)} <small class="muted">(${grp[k].length})</small></h4><div class="rr-grid" style="margin:0">${grp[k].map(lessonCard).join('')}</div></section>`).join('')}
+  ${banks.length ? `<section class="card mt"><h4 style="margin:0 0 10px">Bài nghe của lớp em <small class="muted">(${banks.length})</small></h4><div class="rr-grid" style="margin:0">${banks.map(b => `<button type="button" class="rr-card" data-bank="${esc(b.id)}"><span class="rr-cn">🎧</span><span class="rr-ct"><b>${esc(b.title)}</b><small>${(b.qs || []).filter(z => z.audio).length} câu có âm thanh</small></span></button>`).join('')}</div></section>` : ''}`;
+  main.onclick = e => {
+    if (rrRoomClick(e)) return;
+    const a = e.target.closest('[data-dlv]'); if (a) { RR.dlv = a.dataset.dlv; return rrListen(); }
+    const r = e.target.closest('[data-drate]'); if (r) { RR.drate = +r.dataset.drate; return rrListen(); }
+    const d = e.target.closest('[data-dic]'); if (d) { const p = D.find(x => x.n === +d.dataset.dic); RR.dic = { n: p.n, s: dicSplit(p, lvl), i: 0, sc: [], rate, done: false }; return rrListen(); }
+    const o = e.target.closest('[data-lisopen]'); if (o) return openLesson(o.dataset.lisopen);
+    const bk = e.target.closest('[data-bank]'); if (bk) { S.cbank = bk.dataset.bank; go('cbank'); }
+  };
+  const s = $('#dic-s'); s.oninput = () => { RR.dq = s.value; clearTimeout(rrListen._t); rrListen._t = setTimeout(() => { const pos = s.selectionStart; rrListen(); const n = $('#dic-s'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} }, 250); };
+  scrollTo(0, 0);
+}
+function rrDictation(st, dd) {
+  const p = RR.data.find(x => x.n === st.n), tot = st.s.length;
+  if (st.done) {
+    const avg = st.sc.length ? Math.round(st.sc.reduce((a, b) => a + b, 0) / st.sc.length) : 0;
+    try { dd[st.n] = Math.max(dd[st.n] || 0, avg); localStorage.setItem('dic_best', JSON.stringify(dd)); } catch (e) {}
+    let xp = 0; const key = 'dic_' + st.n; if (!claimed(key) && avg >= 50) { markClaim(key); xp = Math.round(avg / 10) + 3; try { award(null, xp, {}, 'dictation'); } catch (e) {} }
+    main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero" style="text-align:center"><div style="width:100%"><h2>${avg >= 80 ? 'Tuyệt vời! 🎉' : avg >= 50 ? 'Khá tốt, cố thêm nhé 💪' : 'Nghe lại và chép lại lần nữa nhé'}</h2><p>Reading ${st.n} · chép đúng trung bình <b>${avg}%</b> (${tot} câu)${xp ? ' · +' + xp + ' XP' : ''}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="dc-again">Chép lại</button><button type="button" class="btn soft" id="dc-back">← Chọn bài khác</button></div></div></section>`;
+    main.onclick = e => { if (rrRoomClick(e)) return; if (e.target.closest('#dc-again')) { RR.dic = { ...st, i: 0, sc: [], done: false }; return rrListen(); } if (e.target.closest('#dc-back')) { RR.dic = null; return rrListen(); } };
+    return;
+  }
+  const key = st.s[st.i];
+  main.innerHTML = `${rrRoomBar()}<div class="rr-bar"><button type="button" class="btn soft sm" id="dc-back">← Danh sách</button><b>Chép chính tả · Reading ${st.n}</b><span class="muted">Câu ${st.i + 1}/${tot}</span></div>
+  <section class="card dc-card"><div class="rr-pr"><i style="width:${Math.round(st.i / tot * 100)}%"></i></div>
+    <div class="dc-play"><button type="button" class="btn" id="dc-play">🔊 Nghe</button><button type="button" class="btn soft" id="dc-slow">🐢 Nghe chậm</button><span class="muted" id="dc-wc">${key.split(/\s+/).length} từ</span></div>
+    <textarea id="dc-in" rows="3" placeholder="Nghe rồi gõ lại câu em nghe được…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+    <div class="dc-act"><button type="button" class="btn" id="dc-chk">Kiểm tra</button><button type="button" class="btn soft" id="dc-hint">💡 Gợi ý</button><button type="button" class="btn soft" id="dc-skip">Bỏ qua</button></div><div id="dc-res"></div></section>`;
+  const inp = $('#dc-in'), say = r => speak(key, r || st.rate); let checked = false;
+  setTimeout(() => { say(); try { inp.focus(); } catch (e) {} }, 250);
+  const next = () => { st.i++; if (st.i >= tot) st.done = true; rrListen(); };
+  main.onclick = e => {
+    if (rrRoomClick(e)) return;
+    if (e.target.closest('#dc-back')) { try { speechSynthesis.cancel(); } catch (er) {} RR.dic = null; return rrListen(); }
+    if (e.target.closest('#dc-play')) return say();
+    if (e.target.closest('#dc-slow')) return say(.6);
+    if (e.target.closest('#dc-hint')) { const w = key.split(/\s+/); $('#dc-res').innerHTML = `<p class="dc-h">${w.map(x => esc(x.charAt(0)) + '·'.repeat(Math.max(0, x.replace(/[^A-Za-z']/g, '').length - 1))).join('&nbsp; ')}</p>`; return; }
+    if (e.target.closest('#dc-skip')) { st.sc.push(0); return next(); }
+    if (e.target.closest('#dc-nx')) return next();
+    if (e.target.closest('#dc-chk')) {
+      if (checked) return next(); const v = inp.value.trim(); if (!v) { inp.focus(); return; }
+      const r = dicDiff(v, key); st.sc.push(r.pct); checked = true; try { r.pct === 100 ? sfx.ok() : sfx.no(); } catch (er) {}
+      $('#dc-res').innerHTML = `<div class="dc-r"><b>${r.pct === 100 ? 'Chính xác! ✅' : 'Đúng ' + r.pct + '%'}</b><p class="dc-line">${r.html}</p><p class="dc-key"><small>Đáp án:</small> ${esc(key)}</p></div>`;
+      $('#dc-chk').textContent = st.i + 1 >= tot ? 'Xem kết quả' : 'Câu tiếp →'; $('#dc-skip').hidden = true; inp.readOnly = true;
+    }
+  };
+  inp.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#dc-chk').click(); } };
   scrollTo(0, 0);
 }
 function rrPassage() {
@@ -13862,6 +13949,8 @@ document.addEventListener('click', e => {
 .rr-ab{display:flex;height:12px;border-radius:99px;overflow:hidden;margin:10px 0 6px;background:#E2E8F0}.rr-ab i{display:block;height:100%}.rr-al{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.78rem;color:#4B5563}.rr-al em{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
 .rr-ach{margin-top:10px}.rr-ach small{color:#4B5563;display:block;margin-bottom:6px}.rr-ach>div{display:flex;flex-wrap:wrap;gap:6px}.rr-ac{border:1.5px solid var(--cf);background:#fff;color:#0B4C8C;border-radius:999px;padding:4px 6px 4px 12px;font-weight:700;cursor:pointer;font-size:.88rem}.rr-ac:hover{background:#FFF4EC}.rr-ac .cf-b{margin-left:2px}
 .rr-fl{background:#FDE68A!important;border-radius:6px;box-shadow:0 0 0 3px #FDE68A;transition:background .4s}
+.rm-tabs{display:flex;gap:6px;padding:5px;background:#EEF2F7;border-radius:16px;max-width:460px}.rm-tabs button{flex:1;border:0;background:transparent;padding:11px 14px;border-radius:12px;font:inherit;font-weight:700;color:#4A5766;cursor:pointer}.rm-tabs button.on{background:#fff;color:#F26522;box-shadow:0 2px 8px rgba(30,50,80,.12)}.rm-tabs button:focus-visible{outline:2px solid #F26522}
+.dc-card{margin-top:12px}.dc-play{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}#dc-in{width:100%;box-sizing:border-box;padding:14px;border:1.5px solid #9FB0C3;border-radius:14px;font:inherit;font-size:1.1rem;line-height:1.5;resize:vertical}#dc-in:focus{outline:0;border-color:#F26522;box-shadow:0 0 0 3px rgba(242,101,34,.18)}.dc-act{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.dc-h{font-size:1.15rem;letter-spacing:.06em;color:#4A5766;margin:12px 0 0}.dc-r{margin-top:14px;padding:14px 16px;background:#F7FAFD;border-radius:14px}.dc-line{font-size:1.1rem;line-height:1.9;margin:8px 0}.dc-ok{color:#1B8A4B;font-weight:600}.dc-no{color:#D63B3B;text-decoration:line-through}.dc-miss{color:#E08A00;font-weight:700;background:#FFF3DC;border-radius:6px;padding:0 6px}.dc-key{margin:6px 0 0;color:#26323F}
 .rr-qi{display:block;max-width:100%;height:auto;margin:4px 0 12px;border:1px solid #D5DEE8;border-radius:12px;background:#fff}.rr-fill{display:flex;gap:8px;margin:2px 0 8px}.rr-fi{flex:1;min-width:0;padding:11px 14px;border:1.5px solid #9FB0C3;border-radius:12px;font-size:1.05rem}.rr-fi:focus{outline:0;border-color:#F26522;box-shadow:0 0 0 3px rgba(242,101,34,.18)}.rr-gt{background:#FFF1E8;color:#C2410C;border-radius:999px;padding:3px 10px;font-weight:700}
 .rr-pal{position:sticky;top:0;z-index:5;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:10px 12px;box-shadow:0 4px 14px rgba(11,76,140,.08)}
 .rr-pr{height:6px;border-radius:99px;background:#E2E8F0;overflow:hidden;margin-bottom:10px}.rr-pr i{display:block;height:100%;width:0;background:linear-gradient(90deg,#F26522,#16A864);transition:width .35s}

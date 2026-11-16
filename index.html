@@ -7916,13 +7916,17 @@ function roomPool(cid) {
   const real = [], words = [], seen = new Set();
   (S.lessons || []).forEach(l => { const c = courseOf(l); if (!c || c.id !== cid) return;
     (l.exs || []).forEach(e => {
-      if (!e.q || e.ty === 'text' || !Array.isArray(e.o) || e.o.length < 2 || e.a == null || e.a === '') return;
-      const a = e.o.includes(e.a) ? e.a : (/^[A-F]$/.test(e.a) ? e.o['ABCDEF'.indexOf(e.a)] : null); if (!a) return;
+      const pend = e.k === 'lis' && l.ans && (e.a == null || e.a === '') && e.n != null;
+      if (!e.q || e.ty === 'text' || !Array.isArray(e.o) || e.o.length < 2 || ((e.a == null || e.a === '') && !pend)) return;
+      const a = pend ? null : e.o.includes(e.a) ? e.a : (/^[A-F]$/.test(e.a) ? e.o['ABCDEF'.indexOf(e.a)] : null); if (!a && !pend) return;
       const key = e.q + '|' + e.o.join('|'); if (seen.has(key)) return; seen.add(key);
       const ps = e.p && l.psg && l.psg[e.p]; let aud = null;
       if (e.k === 'lis') { const dv = drivePrev(audioLink(l.id)), fl = (l.audios || []).filter(z => z && z.url); if (!l.noAudio && (dv || fl.length)) aud = { files: fl, drive: dv || '' }; else return; }
-      real.push({ aud, tr: aud && ps ? ps.text || '' : '', q: e.q, o: e.o, a, img: e.img || '', sec: e.k === 'lis' ? 'Nghe hiểu' : e.k === 'voc' ? 'Từ vựng' : e.k === 'gra' ? 'Ngữ pháp' : e.k === 'rea' ? 'Đọc hiểu' : (e.t || 'Bài tập'), psg: aud ? '' : ps && ps.text ? ps.text : '', pk: l.id + '|' + (e.p || ''), e: e.e || '' });
+      real.push({ aud, tr: aud && ps ? ps.text || '' : '', q: e.q, o: e.o, a, img: e.img || '', sec: e.k === 'lis' ? 'Nghe hiểu' : e.k === 'voc' ? 'Từ vựng' : e.k === 'gra' ? 'Ngữ pháp' : e.k === 'rea' ? 'Đọc hiểu' : (e.t || 'Bài tập'), psg: aud ? '' : ps && ps.text ? ps.text : '', pk: l.id + '|' + (e.p || ''), e: e.e || '', lenc: pend ? { u: l.ans, n: e.n } : null });
     });
+    if (l.lis && l.ans && (l.audios || []).length) l.lis.secs.forEach(sc => { if (sc.t !== 'tf' && sc.t !== 'mcq') return; (sc.items || []).forEach(it => { const o = sc.t === 'tf' ? ['True', 'False'] : (it.o || []); if (o.length < 2 || it.n == null) return;
+      const key = it.q + '|' + o.join('|') + '|' + l.id; if (seen.has(key)) return; seen.add(key);
+      real.push({ aud: { files: l.audios.filter(z => z && z.url), drive: '' }, tr: '', q: it.q, o, a: null, img: it.img && l.base ? l.base + it.img : '', sec: 'Nghe hiểu', psg: '', pk: l.id + '|' + sc.t, e: '', lenc: { u: l.ans, n: it.n } }); }); });
     (l.words || []).forEach(w => { if (w.en && w.vi) words.push(w); });
   });
   if (RM_GRADE[cid]) rrRoomItems().forEach(q => { const key = q.pk + '|' + q.q + '|' + q.o.join('|'); if (!seen.has(key)) { seen.add(key); real.push(q); } });
@@ -7986,11 +7990,12 @@ function rmFinish(all, r) {
 /* Đề cuối kì theo form: 5 phần (Listening, Language, Reading, Writing, Speaking), mỗi phần 2,0 điểm.
    Mỗi lớp chỉnh được cấu trúc bằng cách sửa RM_FORM (số câu n, điểm p của từng mục). */
 const RM_FORM = [
-  { k: 'A', t: 'PART ONE: LISTENING', subs: [{ k: 'lis', n: 4, p: 1, ins: 'Listen to the recording and circle the appropriate option to complete each sentence.' }] },
+  { k: 'A', t: 'PART ONE: LISTENING', subs: [{ k: 'ltf', n: 4, p: 1, ins: 'Listen and tick T (True) or F (False).' }, { k: 'lmc', n: 4, p: 1, ins: 'Listen and circle the appropriate option (A, B or C) to complete each sentence.' }] },
   { k: 'B', t: 'PART TWO: LANGUAGE', subs: [{ k: 'pron', n: 2, p: .5, ins: 'Choose the word whose underlined part is pronounced differently from that of the others in each group.' }, { k: 'mcq', n: 6, p: 1.5, ins: 'Circle the correct answer.' }] },
   { k: 'C', t: 'PART THREE: READING', subs: [{ k: 'cloze', n: 4, p: 1, ins: 'Choose the correct answer A, B, C or D to fill each blank in the following passage.' }, { k: 'read', n: 4, p: 1, ins: 'Read the passage, and then choose the correct answer.' }] },
   { k: 'D', t: 'PART FOUR: WRITING', subs: [{ k: 'rearr', n: 2, p: .5, ins: 'Rearrange the words to make meaningful sentences.' }] }
 ];
+const rmIsTF = q => q.o.length === 2 && rmNorm(q.o[0]) === 'true' && rmNorm(q.o[1]) === 'false';
 const RM_FORM_N = RM_FORM.reduce((a, p) => a + p.subs.reduce((b, x) => b + x.n, 0), 0);
 function roomFormPick(cfg) {
   const r = rmRng([cfg.cid, cfg.code, 'ck', cfg.lv || ''].join('|')), { real: r0, words } = roomPool(cfg.cid), lv = cfg.lv;
@@ -7998,7 +8003,7 @@ function roomFormPick(cfg) {
   const grp = (L, n, whole) => { const m = new Map(); L.forEach(q => { if (!m.has(q.pk)) m.set(q.pk, []); m.get(q.pk).push(q); }); const G = rmShuf([...m.values()], r); const fit = [...G].sort((a, b) => a.length - b.length).find(g => g.length >= n); if (fit) return whole ? fit : fit.slice(0, n); const out = []; for (const g of G.sort((a, b) => b.length - a.length)) { if (out.length >= n) break; out.push(...g); } return out.slice(0, n); };
   const out = []; let ord = 0;
   RM_FORM.forEach(P => { const items = P.subs.map(S2 => { ord++;
-      let L = S2.k === 'rearr' ? roomRearr(words, S2.n, r) : S2.k === 'lis' ? grp(real.filter(q => q.aud), S2.n)
+      let L = S2.k === 'rearr' ? roomRearr(words, S2.n, r) : S2.k === 'ltf' ? grp(real.filter(q => q.aud && rmIsTF(q)), S2.n) : S2.k === 'lmc' ? grp(real.filter(q => q.aud && !rmIsTF(q)), S2.n)
         : S2.k === 'cloze' || S2.k === 'read' ? grp(real.filter(q => !q.aud && rmCls(q)[1] === S2.k), S2.n, S2.k === 'cloze')
         : rmShuf(real.filter(q => !q.aud && rmCls(q)[1] === S2.k), r).slice(0, S2.n);
       return { S2, L, ord }; }).filter(x => x.L.length);
@@ -8034,7 +8039,7 @@ function roomLobby(cid) {
     ${saved && saved.cfg && saved.cfg.cid === cid ? `<div class="rm-sv"><span>Em có bài đang làm dở (mã đề ${esc(saved.cfg.code)}, ${saved.cfg.n} câu).</span><button class="btn sm" id="rm-resume">Làm tiếp</button><button class="btn soft sm" id="rm-drop">Bỏ bài này</button></div>` : ''}
     <h4>1. Chọn loại đề</h4><div class="rm-pre">${ROOM_PRESETS.map(x => `<button class="rm-p ${x.id === preset ? 'on' : ''}" data-pre="${x.id}"><b>${x.name}</b><span>${x.d}</span></button>`).join('')}</div>
     ${preset === 'cu' ? `<div class="rm-cu"><label>Số câu <input type="number" id="rm-cn" min="5" max="60" value="${z.n}"></label><label>Thời gian (phút) <input type="number" id="rm-cm" min="5" max="180" value="${z.m}"></label></div>` : ''}
-    ${preset === 'ck' ? `<h4>2. Cấu trúc đề</h4><div class="rm-form">${RM_FORM.map(P => `<div><b>${P.t}</b><span>${P.subs.map(x => x.n + ' câu ' + ({ lis: 'nghe', pron: 'phát âm', mcq: 'trắc nghiệm', cloze: 'điền từ vào đoạn văn', read: 'đọc hiểu', rearr: 'sắp xếp câu' })[x.k]).join(' · ')}</span></div>`).join('')}<div><b>PART FIVE: SPEAKING</b><span>Giáo viên kiểm tra trực tiếp (2,0 điểm)</span></div></div><p class="muted">Các dạng Listening đúng/sai, tìm lỗi sai, viết lại câu và viết câu từ từ gợi ý sẽ có khi giáo viên nhập thêm đề vào ngân hàng.</p>` : `<h4>2. Phần thi</h4><div class="rm-chips">${ROOM_PARTS.map(([k, n]) => { const t = roomCount(cid, k, lv); return t >= 5 ? `<button class="rm-chip ${k === part ? 'on' : ''}" data-part="${k}">${n} <small>${t}</small></button>` : ''; }).join('')}</div>`}
+    ${preset === 'ck' ? `<h4>2. Cấu trúc đề</h4><div class="rm-form">${RM_FORM.map(P => `<div><b>${P.t}</b><span>${P.subs.map(x => x.n + ' câu ' + ({ ltf: 'nghe đúng/sai', lmc: 'nghe chọn đáp án', pron: 'phát âm', mcq: 'trắc nghiệm', cloze: 'điền từ vào đoạn văn', read: 'đọc hiểu', rearr: 'sắp xếp câu' })[x.k]).join(' · ')}</span></div>`).join('')}<div><b>PART FIVE: SPEAKING</b><span>Giáo viên kiểm tra trực tiếp (2,0 điểm)</span></div></div><p class="muted">Các dạng tìm lỗi sai, viết lại câu và viết câu từ từ gợi ý sẽ có khi giáo viên nhập thêm đề vào ngân hàng.</p>` : `<h4>2. Phần thi</h4><div class="rm-chips">${ROOM_PARTS.map(([k, n]) => { const t = roomCount(cid, k, lv); return t >= 5 ? `<button class="rm-chip ${k === part ? 'on' : ''}" data-part="${k}">${n} <small>${t}</small></button>` : ''; }).join('')}</div>`}
     ${_rrRoom ? `<h4>3. Cấp độ bài đọc <small class="muted">(A1–B2, áp dụng cho các câu Đọc hiểu)</small></h4><div class="rm-chips">${['all', 'A1', 'A2', 'B1', 'B2'].map(k => { const t = roomCount(cid, 'rea', k); return k !== 'all' && t < 5 ? '' : `<button class="rm-chip ${k === lv ? 'on' : ''}" data-lv="${k}">${k === 'all' ? 'Mọi cấp độ' : k} <small>${t}</small></button>`; }).join('')}</div>` : ''}
     <h4>${_rrRoom ? '4' : '3'}. Mã đề</h4><div class="rm-code"><input id="rm-ci" maxlength="8" value="${esc(code)}" aria-label="Mã đề"><button class="btn soft sm" id="rm-rnd">Mã ngẫu nhiên</button><small class="muted">Nhập lại mã cũ để làm lại đúng đề đó.</small></div>
     <label class="rm-chk"><input type="checkbox" id="rm-fc" ${focus ? 'checked' : ''}> Làm từng câu một (có nút Câu trước, Câu sau)</label>
@@ -8140,20 +8145,30 @@ function startRoom(cfg, resume, preQ) {
     if (left <= 0) { toast('Hết giờ, bài đã được nộp.', 'warn'); finish(true); } };
   ROOM.timer = setInterval(tick, 500); tick(); upd(); show(0, false); scrollTo(0, 0);
 }
-async function roomResult(c, cfg, Q, secs, leaves, retry) {
-  const ok = Q.filter(rmGood).length, W = Q.reduce((a, q) => a + (q.w || 0), 0), E = Q.reduce((a, q) => a + (rmGood(q) ? (q.w || 0) : 0), 0), score = W ? Math.round(E / W * 100) / 10 : Math.round(ok / Q.length * 100) / 10, LET = 'ABCDEFGHIJKLMNOPQRST', wrong = Q.length - ok;
+const rmPend = q => !!(q.lenc && !q.un);
+const rmScore = Q => { const G = Q.filter(q => !rmPend(q)), ok = G.filter(rmGood).length, W = G.reduce((a, q) => a + (q.w || 0), 0), E = G.reduce((a, q) => a + (rmGood(q) ? (q.w || 0) : 0), 0); return W ? Math.round(E / W * 100) / 10 : G.length ? Math.round(ok / G.length * 100) / 10 : 0; };
+function rmLisKey(q, kk) { const c = String(kk).split('/').map(rmNorm); for (let k = 0; k < q.opts.length; k++) { const t = rmNorm(q.opts[k].t); if (c.includes(t) || c.includes('abcdef'[k]) || (t === 'true' && c.includes('t')) || (t === 'false' && c.includes('f'))) return k; } return -1; }
+async function roomResult(c, cfg, Q0, secs, leaves, retry) {
+  const Q = Q0, lp = Q.filter(rmPend), G = lp.length ? Q.filter(q => !rmPend(q)) : Q;
+  const ok = G.filter(rmGood).length, W = G.reduce((a, q) => a + (q.w || 0), 0), E = G.reduce((a, q) => a + (rmGood(q) ? (q.w || 0) : 0), 0), score = rmScore(Q), LET = 'ABCDEFGHIJKLMNOPQRST', wrong = G.length - ok;
   const P = (S.profile.room || {})[c.id] || {}, gain = retry ? 0 : Math.round(ok / 2), hist = [...(P.hist || []), [score, Date.now()]].slice(-12);
-  const secs2 = {}; Q.forEach(q => { const k = q.cls[0] + '. ' + RM_PART[q.cls[0]], s = secs2[k] = secs2[k] || [0, 0]; s[1]++; if (rmGood(q)) s[0]++; });
+  const secs2 = {}; G.forEach(q => { const k = q.cls[0] + '. ' + RM_PART[q.cls[0]], s = secs2[k] = secs2[k] || [0, 0]; s[1]++; if (rmGood(q)) s[0]++; });
   main.onclick = null; main.onkeydown = null; document.onkeydown = null; let flt = 'all';
-  const rev = () => Q.map((q, i) => { const good = rmGood(q); if (flt === 'bad' && good) return ''; if (flt === 'none' && rmDone(q)) return '';
-    return `<div class="rm-q rv ${good ? 'good' : 'bad'}">${(q.psg || q.tr) && (i === 0 || Q[i - 1].pk !== q.pk) ? `<div class="rm-psg">${q.tr ? '<b>Lời thoại (script)</b>' : ''}<p>${esc(q.psg || q.tr).replace(/\n/g, '<br>')}</p></div>` : ''}<p class="rm-qt"><b>Câu ${i + 1}.</b> ${esc(q.q)} <em>${!rmDone(q) ? 'Chưa làm' : good ? 'Đúng' : 'Sai'}</em></p>${q.img ? `<img class="rm-img" src="${esc(q.img)}" alt="" loading="lazy">` : ''}${q.type === 'text' ? `<p class="rm-ans">Em viết: <u>${esc(q.txt) || '(bỏ trống)'}</u><br>Đáp án: <b>${esc(q.a)}</b></p>` : ''}<div class="rm-opts">${q.opts.map((o, k) => `<div class="rm-o ${o.ok ? 'right' : k === q.pick ? 'wrong' : ''}"><span class="rm-l">${LET[k]}</span><span class="rm-t">${esc(o.d)}</span></div>`).join('')}</div>${q.e ? `<p class="muted rm-ex">${esc(q.e)}</p>` : ''}</div>`; }).join('') || empty('Không có câu nào ở mục này.');
-  main.innerHTML = `<section class="card rm-res ${score >= 8 ? 'ok' : ''}"><span class="cc-k">${esc(c.name)} · Mã đề ${esc(cfg.code)} · Kết quả</span><div class="rbig">${score}/10</div><div class="rm-gr">${rmGrade(score)}</div>${W ? `<p class="muted">Điểm theo thang đề: <b>${(Math.round(E * 10) / 10).toString().replace('.', ',')}/${(Math.round(W * 10) / 10).toString().replace('.', ',')}</b> (chưa tính Speaking 2,0 do giáo viên chấm; điểm /10 ở trên đã quy đổi).</p>` : ''}<p>Đúng <b>${ok}/${Q.length}</b> câu · ${Math.floor(secs / 60)} phút ${pad(secs % 60)} giây (trung bình ${Math.round(secs / Q.length)} giây mỗi câu)${gain ? ` · <b>+${gain} XP</b>` : ''}${leaves ? ` · rời màn hình thi ${leaves} lần` : ''}</p>
+  const rev = () => Q.map((q, i) => { const good = rmGood(q), pd = rmPend(q); if (flt === 'bad' && (good || pd)) return ''; if (flt === 'none' && rmDone(q)) return '';
+    return `<div class="rm-q rv ${pd ? 'pend' : good ? 'good' : 'bad'}">${(q.psg || q.tr) && (i === 0 || Q[i - 1].pk !== q.pk) ? `<div class="rm-psg">${q.tr ? '<b>Lời thoại (script)</b>' : ''}<p>${esc(q.psg || q.tr).replace(/\n/g, '<br>')}</p></div>` : ''}<p class="rm-qt"><b>Câu ${i + 1}.</b> ${esc(q.q)} <em>${pd ? 'Chờ chấm' : !rmDone(q) ? 'Chưa làm' : good ? 'Đúng' : 'Sai'}</em></p>${q.img ? `<img class="rm-img" src="${esc(q.img)}" alt="" loading="lazy">` : ''}${q.type === 'text' ? `<p class="rm-ans">Em viết: <u>${esc(q.txt) || '(bỏ trống)'}</u><br>Đáp án: <b>${esc(q.a)}</b></p>` : ''}<div class="rm-opts">${q.opts.map((o, k) => `<div class="rm-o ${o.ok ? 'right' : k === q.pick ? 'wrong' : ''}"><span class="rm-l">${LET[k]}</span><span class="rm-t">${esc(o.d)}</span></div>`).join('')}</div>${q.e ? `<p class="muted rm-ex">${esc(q.e)}</p>` : ''}</div>`; }).join('') || empty('Không có câu nào ở mục này.');
+  main.innerHTML = `<section class="card rm-res ${score >= 8 ? 'ok' : ''}"><span class="cc-k">${esc(c.name)} · Mã đề ${esc(cfg.code)} · Kết quả</span><div class="rbig">${score}/10</div><div class="rm-gr">${rmGrade(score)}</div>${W ? `<p class="muted">Điểm theo thang đề: <b>${(Math.round(E * 10) / 10).toString().replace('.', ',')}/${(Math.round(W * 10) / 10).toString().replace('.', ',')}</b> (chưa tính Speaking 2,0 do giáo viên chấm; điểm /10 ở trên đã quy đổi).</p>` : ''}${lp.length ? `<div class="rm-lg"><b>Phần Listening (${lp.length} câu) đang chờ chấm</b><span>Nhập mật khẩu giáo viên để xem đáp án và tính điểm phần nghe.</span><div><input id="rm-lpw" type="password" placeholder="Mật khẩu giáo viên" autocomplete="off"><button class="btn sm" id="rm-lgo">Xem đáp án nghe</button></div><small id="rm-lerr"></small></div>` : ''}<p>Đúng <b>${ok}/${G.length}</b> câu · ${Math.floor(secs / 60)} phút ${pad(secs % 60)} giây (trung bình ${Math.round(secs / Q.length)} giây mỗi câu)${gain ? ` · <b>+${gain} XP</b>` : ''}${leaves ? ` · rời màn hình thi ${leaves} lần` : ''}</p>
   <div class="rm-bars">${Object.entries(secs2).map(([k, [a, b]]) => `<div class="rm-br"><span>${esc(k)}</span><i><u style="width:${a / b * 100}%" class="${a / b >= .8 ? 'g' : a / b >= .5 ? 'm' : 'r'}"></u></i><b>${a}/${b}</b></div>`).join('')}</div>
   <div class="rbtn"><button class="btn" id="rm-new">Thi đề mới</button>${wrong ? `<button class="btn soft" id="rm-wr">Làm lại ${wrong} câu chưa đúng</button>` : ''}<button class="btn soft" id="rm-same">Làm lại mã đề này</button><button class="btn soft" id="rm-back">Về phòng thi</button></div></section>
   <section class="card rm-rev"><div class="rm-rh"><h3>Xem lại bài làm</h3><span class="rm-chips"><button class="rm-chip on" data-f="all">Tất cả</button><button class="rm-chip" data-f="bad">Câu sai</button><button class="rm-chip" data-f="none">Chưa làm</button></span></div><div id="rm-rv">${rev()}</div></section>`;
   main.onclick = e => { const f = e.target.closest('[data-f]'); if (f) { flt = f.dataset.f; main.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === f)); $('#rm-rv').innerHTML = rev(); } };
   $('#rm-new').onclick = () => roomCountdown(c, { ...cfg, code: rmCode(), focus: cfg.focus }, false); $('#rm-same').onclick = () => roomCountdown(c, cfg, false); $('#rm-back').onclick = () => viewRoom();
-  const w = $('#rm-wr'); if (w) w.onclick = () => { const R = Q.filter(q => !rmGood(q)).map(q => ({ ...q, opts: q.opts.map(o => ({ ...o })), pick: -1, txt: '', flag: false, cut: {} })); startRoom({ ...cfg, n: R.length, m: Math.max(5, Math.ceil(cfg.m * R.length / Q.length)) }, false, R); };
+  const lgo = $('#rm-lgo'); if (lgo) { const go = async () => { const pw = ($('#rm-lpw').value || '').trim().toUpperCase(); if (!pw) return; $('#rm-lerr').textContent = 'Đang kiểm tra…'; const keys = {};
+    try { for (const u of [...new Set(lp.map(q => q.lenc.u))]) keys[u] = await lisDec(u, pw); } catch (e) { $('#rm-lerr').textContent = 'Sai mật khẩu. Vui lòng thử lại.'; return; }
+    lp.forEach(q => { const kk = (keys[q.lenc.u] || {})[q.lenc.n]; if (kk == null) return; const k = rmLisKey(q, Array.isArray(kk) ? kk[0] : kk); if (k < 0) return; q.opts[k].ok = true; q.a = q.opts[k].t; q.un = true; });
+    const s2 = rmScore(Q); toast('Đã chấm phần Listening.', 'ok'); roomResult(c, cfg, Q, secs, leaves, true);
+    try { const P2 = (S.profile.room || {})[c.id] || {}; if (!retry && (P2.score == null || s2 > P2.score)) { await api.updateMe({ ['room.' + c.id + '.score']: s2 }); S.profile.room = { ...(S.profile.room || {}), [c.id]: { ...P2, score: s2 } }; } } catch (e) {} };
+  lgo.onclick = go; $('#rm-lpw').onkeydown = e => { if (e.key === 'Enter') go(); }; }
+  const w = $('#rm-wr'); if (w) w.onclick = () => { const R = Q.filter(q => !rmGood(q) && !rmPend(q)).map(q => ({ ...q, opts: q.opts.map(o => ({ ...o })), pick: -1, txt: '', flag: false, cut: {} })); startRoom({ ...cfg, n: R.length, m: Math.max(5, Math.ceil(cfg.m * R.length / Q.length)) }, false, R); };
   scrollTo(0, 0); if (score >= 8) confetti();
   if (retry) return;
   try { const upd = { ['room.' + c.id + '.n']: INC(1), ['room.' + c.id + '.at']: Date.now(), ['room.' + c.id + '.hist']: hist }; if (P.score == null || score > P.score) upd['room.' + c.id + '.score'] = score; await api.updateMe(upd); S.profile.room = { ...(S.profile.room || {}), [c.id]: { n: (P.n || 0) + 1, score: P.score > score ? P.score : score, at: Date.now(), hist } }; if (gain) await award(null, gain, {}, 'room'); } catch (e) { toast(e.message, 'bad'); }
@@ -13984,6 +13999,7 @@ document.addEventListener('click', e => {
 .fb-n{min-width:0}.fb-n b{display:block;font-size:.95rem;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}.fb-n small{display:block;color:#6B7280;margin-top:2px;font-size:.78rem}.fb-ld{padding:20px 4px}
 @media(max-width:600px){.fb-g{grid-template-columns:1fr}.fb-body{padding:12px}}
 .rm-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:6px 0 8px}.rm-form>div{background:#F4F8FD;border:1px solid #D5DEE9;border-radius:12px;padding:10px 14px}.rm-form b{display:block;color:#0B4C8C;font-size:.86rem}.rm-form span{font-size:.84rem;color:#4B5563}
+.rm-lg{margin:12px 0;padding:12px 16px;border-radius:14px;background:#FFF8E6;border:1px solid #F5D88A;display:flex;flex-direction:column;gap:6px}.rm-lg span{font-size:.9rem;color:#6B5B2A}.rm-lg>div{display:flex;gap:8px;flex-wrap:wrap}.rm-lg input{border:1.5px solid #E5C766;border-radius:10px;padding:7px 12px;font:inherit}.rm-lg small{color:#B10B32}.rm-q.rv.pend{border-left:4px solid #F5B301}
 </style>
 
 <script>

@@ -7926,7 +7926,7 @@ function roomPool(cid) {
     });
     if (l.lis && l.ans && (l.audios || []).length) l.lis.secs.forEach(sc => { if (sc.t !== 'tf' && sc.t !== 'mcq') return; (sc.items || []).forEach(it => { const o = sc.t === 'tf' ? ['True', 'False'] : (it.o || []); if (o.length < 2 || it.n == null) return;
       const key = it.q + '|' + o.join('|') + '|' + l.id; if (seen.has(key)) return; seen.add(key);
-      real.push({ aud: { files: l.audios.filter(z => z && z.url), drive: '' }, tr: '', q: it.q, o, a: null, img: it.img && l.base ? l.base + it.img : '', sec: 'Nghe hiểu', psg: '', pk: l.id + '|' + sc.t, e: '', lenc: { u: l.ans, n: it.n } }); }); });
+      const au = l.audios.filter(z => z && z.url), st = z => +((z.title || '').match(/câu (\d+)/) || [])[1] || 0, mine = au.filter(z => st(z) && st(z) <= it.n).sort((x, y) => st(y) - st(x))[0]; real.push({ aud: { files: mine ? [mine] : au, drive: '' }, tr: '', q: it.q, o, a: null, img: it.img && l.base ? l.base + it.img : '', sec: 'Nghe hiểu', psg: '', pk: l.id + '|' + sc.t, e: '', lenc: { u: l.ans, n: it.n } }); }); });
     (l.words || []).forEach(w => { if (w.en && w.vi) words.push(w); });
   });
   if (RM_GRADE[cid]) rrRoomItems().forEach(q => { const key = q.pk + '|' + q.q + '|' + q.o.join('|'); if (!seen.has(key)) { seen.add(key); real.push(q); } });

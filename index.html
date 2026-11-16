@@ -7901,6 +7901,17 @@ let rmLast = ''; const RM_TITLE = { q15: 'BÀI KIỂM TRA 15 PHÚT', q45: 'ĐỀ
 const rmYear = () => { const d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1; return m >= 8 ? y + ' - ' + (y + 1) : (y - 1) + ' - ' + y; };
 const rmCode = () => { let c; do c = String(1000 + Math.floor(Math.random() * 9000)); while (c === rmLast); return rmLast = c; };
 const rmGrade = s => s >= 9 ? 'Xuất sắc' : s >= 8 ? 'Giỏi' : s >= 6.5 ? 'Khá' : s >= 5 ? 'Trung bình' : 'Cần cố gắng thêm';
+/* Ngân hàng đề: toàn bộ bài đọc (Phòng đọc) cấp A1–B2, gắn nhãn cấp độ */
+let _rrRoom = null, _rrRoomTried = false;
+function rrRoomItems() {
+  if (_rrRoom) return _rrRoom; if (!RR.data || !CF.map) return [];
+  const LV = rrLevels(); if (!LV) return [];
+  const out = [];
+  RR.data.forEach((x, ix) => { const lv = LV[x.n]; if (!lv || !['A1', 'A2', 'B1', 'B2'].includes(lv)) return; const psg = (x.p || []).join('\n\n'); if (!psg) return;
+    (x.q || []).forEach((q, k) => { if (q.f || !q.o || q.o.length < 2 || q.a == null || q.a < 0 || q.a >= q.o.length) return;
+      out.push({ aud: null, tr: '', q: q.q || 'Blank (' + (k + 1) + ')', o: q.o.slice(), a: q.o[q.a], img: '', sec: 'Đọc hiểu', psg, pk: 'rr|' + ix, e: q.e || '', lv }); }); });
+  return (_rrRoom = out);
+}
 function roomPool(cid) {
   const real = [], words = [], seen = new Set();
   (S.lessons || []).forEach(l => { const c = courseOf(l); if (!c || c.id !== cid) return;
@@ -7914,6 +7925,7 @@ function roomPool(cid) {
     });
     (l.words || []).forEach(w => { if (w.en && w.vi) words.push(w); });
   });
+  if (RM_GRADE[cid]) rrRoomItems().forEach(q => { const key = q.pk + '|' + q.q + '|' + q.o.join('|'); if (!seen.has(key)) { seen.add(key); real.push(q); } });
   return { real, words };
 }
 const rmNorm = t => String(t || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -7946,14 +7958,14 @@ function roomRearr(words, n, r) {
   return rmShuf(c, r).slice(0, n).map(w => { const sent = w.ex.trim(), end = (sent.match(/[.!?]+$/) || ['.'])[0], tk = sent.replace(/[.!?]+$/, '').split(/\s+/); let sh = rmShuf(tk, r); if (sh.join(' ') === tk.join(' ')) sh = [...sh].reverse();
     return { type: 'text', q: sh.join(' / ') + ' / ' + end, a: sent, o: [], sec: 'Viết câu', img: '', psg: '', pk: '', e: '', aud: null, tr: '' }; });
 }
-function roomCount(cid, part) {
-  const { real, words } = roomPool(cid), vm = words.length >= 4 ? words.length : 0;
+function roomCount(cid, part, lv) {
+  const { real: r0, words } = roomPool(cid), real = !lv || lv === 'all' ? r0 : r0.filter(q => q.lv ? q.lv === lv : rmKind(q) !== 'rea'), vm = words.length >= 4 ? words.length : 0;
   const wr = roomRearr(words, 999, rmRng('c')).length;
   if (part === 'wri') return wr;
   return part === 'all' ? real.length + vm + wr : part === 'voc' ? real.filter(q => rmKind(q) === 'voc').length + vm : real.filter(q => rmKind(q) === part).length;
 }
 function roomBuild(cfg) {
-  const r = rmRng([cfg.cid, cfg.code, cfg.n, cfg.part].join('|')), { real, words } = roomPool(cfg.cid), n = cfg.n;
+  const r = rmRng([cfg.cid, cfg.code, cfg.n, cfg.part, cfg.lv && cfg.lv !== 'all' ? cfg.lv : ''].join('|')), { real: r0, words } = roomPool(cfg.cid), n = cfg.n, real = !cfg.lv || cfg.lv === 'all' ? r0 : r0.filter(q => q.lv ? q.lv === cfg.lv : rmKind(q) !== 'rea');
   const pr = real.filter(q => cfg.part === 'all' || rmKind(q) === cfg.part), vOK = cfg.part === 'all' || cfg.part === 'voc';
   const vcap = vOK && cfg.part === 'voc' ? Math.floor(n * .5) : 0;
   const rest = cfg.part === 'all' ? pr.filter(q => rmKind(q) !== 'rea' && rmKind(q) !== 'lis') : cfg.part === 'rea' || cfg.part === 'lis' || cfg.part === 'wri' ? [] : pr;
@@ -7969,6 +7981,7 @@ function roomBuild(cfg) {
 const ROOM_PRESETS = [{ id: 'q15', name: 'Kiểm tra 15 phút', n: 20, m: 15, d: 'Nhanh gọn, ôn từng phần' }, { id: 'q45', name: 'Đề 45 phút', n: 40, m: 45, d: 'Bài kiểm tra định kì' }, { id: 'q60', name: 'Thi học kì', n: 50, m: 60, d: 'Đề đầy đủ như thi thật' }, { id: 'cu', name: 'Tự chọn', n: 30, m: 30, d: 'Em tự chỉnh số câu và thời gian' }];
 const ROOM_PARTS = [['all', 'Tổng hợp'], ['voc', 'Từ vựng'], ['gra', 'Ngữ pháp'], ['rea', 'Đọc hiểu'], ['lis', 'Nghe hiểu'], ['wri', 'Viết câu'], ['oth', 'Bài tập khác']];
 function viewRoom() {
+  if (!_rrRoom && !_rrRoomTried) { _rrRoomTried = true; rrLoad().then(() => { if (S.view === 'room') viewRoom(); }).catch(() => {}); }
   clearInterval(ROOM.timer); ROOM.run++; try { ROOM.un && ROOM.un(); } catch (e) {} ROOM.un = null; main.onclick = null; main.onchange = null; main.oninput = null; main.onkeydown = null; window.onbeforeunload = null; document.onkeydown = null;
   const cs = COURSES.filter(c => isEnrolled(c.id)), P = S.profile.room || {};
   main.innerHTML = `<section class="card rm-head"><span class="cc-k">Phòng thi thử</span><h2>Làm đề như thi thật</h2><p class="muted">Đề trộn từ toàn bộ câu hỏi của lớp em ghi danh, có mã đề, đồng hồ đếm ngược, bảng câu hỏi và bút highlight. Đáp án chỉ hiện sau khi nộp bài. Cùng một mã đề thì ra cùng một đề, em có thể cùng bạn thi chung mã.</p></section>
@@ -7982,10 +7995,10 @@ function viewRoom() {
       el.innerHTML = top.length ? `<h4>Bảng vàng phòng thi</h4><ol>${top.map((u, i) => `<li class="${u.id === (S.user || {}).uid ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="nm">${esc(u.name || 'Học sinh')}${u.className ? ' <small>' + esc(u.className) + '</small>' : ''}</span><b>${u.room[cid].score}/10</b><small>${u.room[cid].n || 1} lần thi</small></li>`).join('')}</ol>` : ''; }); }, () => {}); } catch (e) {}
 }
 function roomLobby(cid) {
-  const c = COURSES.find(x => x.id === cid), p = S.profile || {}; let preset = 'q45', part = 'all', code = rmCode(), focus = false;
+  const c = COURSES.find(x => x.id === cid), p = S.profile || {}; let preset = 'q45', part = 'all', code = rmCode(), focus = false, lv = rmLS('rm_lv') || 'all'; if (!['all', 'A1', 'A2', 'B1', 'B2'].includes(lv)) lv = 'all';
   const uid = String((S.user && S.user.uid) || p.name || 'x'); let h = 0; for (const ch of uid) h = (h * 31 + ch.charCodeAt(0)) % 900000; const sbd = 'TS' + String(100000 + h);
   const saved = (() => { try { return JSON.parse(rmLS('rm_save_' + cid) || 'null'); } catch (e) { return null; } })();
-  const sizeOf = () => { const t = roomCount(cid, part), P = ROOM_PRESETS.find(x => x.id === preset); let n = preset === 'cu' ? +($('#rm-cn') || { value: 30 }).value : P.n, m = preset === 'cu' ? +($('#rm-cm') || { value: 30 }).value : P.m;
+  const sizeOf = () => { const t = roomCount(cid, part, lv), P = ROOM_PRESETS.find(x => x.id === preset); let n = preset === 'cu' ? +($('#rm-cn') || { value: 30 }).value : P.n, m = preset === 'cu' ? +($('#rm-cm') || { value: 30 }).value : P.m;
     n = Math.max(1, Math.min(n || 30, t, 60)); if (preset !== 'cu') m = Math.max(5, Math.round(P.m * n / P.n)); return { n, m: Math.max(5, Math.min(m || 30, 180)), t }; };
   const draw = () => { const z = sizeOf();
     main.innerHTML = `<button class="btn soft sm" id="rm-back">Quay lại</button>
@@ -7993,8 +8006,9 @@ function roomLobby(cid) {
     ${saved && saved.cfg && saved.cfg.cid === cid ? `<div class="rm-sv"><span>Em có bài đang làm dở (mã đề ${esc(saved.cfg.code)}, ${saved.cfg.n} câu).</span><button class="btn sm" id="rm-resume">Làm tiếp</button><button class="btn soft sm" id="rm-drop">Bỏ bài này</button></div>` : ''}
     <h4>1. Chọn loại đề</h4><div class="rm-pre">${ROOM_PRESETS.map(x => `<button class="rm-p ${x.id === preset ? 'on' : ''}" data-pre="${x.id}"><b>${x.name}</b><span>${x.d}</span></button>`).join('')}</div>
     ${preset === 'cu' ? `<div class="rm-cu"><label>Số câu <input type="number" id="rm-cn" min="5" max="60" value="${z.n}"></label><label>Thời gian (phút) <input type="number" id="rm-cm" min="5" max="180" value="${z.m}"></label></div>` : ''}
-    <h4>2. Phần thi</h4><div class="rm-chips">${ROOM_PARTS.map(([k, n]) => { const t = roomCount(cid, k); return t >= 5 ? `<button class="rm-chip ${k === part ? 'on' : ''}" data-part="${k}">${n} <small>${t}</small></button>` : ''; }).join('')}</div>
-    <h4>3. Mã đề</h4><div class="rm-code"><input id="rm-ci" maxlength="8" value="${esc(code)}" aria-label="Mã đề"><button class="btn soft sm" id="rm-rnd">Mã ngẫu nhiên</button><small class="muted">Nhập lại mã cũ để làm lại đúng đề đó.</small></div>
+    <h4>2. Phần thi</h4><div class="rm-chips">${ROOM_PARTS.map(([k, n]) => { const t = roomCount(cid, k, lv); return t >= 5 ? `<button class="rm-chip ${k === part ? 'on' : ''}" data-part="${k}">${n} <small>${t}</small></button>` : ''; }).join('')}</div>
+    ${_rrRoom ? `<h4>3. Cấp độ bài đọc <small class="muted">(A1–B2, áp dụng cho các câu Đọc hiểu)</small></h4><div class="rm-chips">${['all', 'A1', 'A2', 'B1', 'B2'].map(k => { const t = roomCount(cid, 'rea', k); return k !== 'all' && t < 5 ? '' : `<button class="rm-chip ${k === lv ? 'on' : ''}" data-lv="${k}">${k === 'all' ? 'Mọi cấp độ' : k} <small>${t}</small></button>`; }).join('')}</div>` : ''}
+    <h4>${_rrRoom ? '4' : '3'}. Mã đề</h4><div class="rm-code"><input id="rm-ci" maxlength="8" value="${esc(code)}" aria-label="Mã đề"><button class="btn soft sm" id="rm-rnd">Mã ngẫu nhiên</button><small class="muted">Nhập lại mã cũ để làm lại đúng đề đó.</small></div>
     <label class="rm-chk"><input type="checkbox" id="rm-fc" ${focus ? 'checked' : ''}> Làm từng câu một (có nút Câu trước, Câu sau)</label>
     <div class="rm-rules"><b>Quy chế phòng thi</b><ul><li>Đề gồm <b>${z.n} câu</b> trắc nghiệm, thời gian <b>${z.m} phút</b>. Hết giờ hệ thống tự nộp bài.</li><li>Đáp án chỉ hiện sau khi nộp bài. Bài làm dở được lưu, em có thể quay lại làm tiếp.</li><li>Dùng bút highlight để gạch ý chính, nút x bên phải đáp án để loại trừ.</li><li>Phím tắt: A, B, C, D chọn đáp án; mũi tên trái, phải đổi câu.</li><li><b>Rời khỏi màn hình thi (chuyển tab, thu nhỏ trình duyệt) lần 1 sẽ bị cảnh báo. Lần 2 bài thi bị huỷ ngay và báo cáo được gửi cho giáo viên.</b></li></ul></div>
     <button class="btn rm-go" id="rm-start">Bắt đầu làm bài</button></section>`;
@@ -8004,10 +8018,11 @@ function roomLobby(cid) {
   main.onclick = e => { const t = e.target;
     const pr = t.closest('[data-pre]'); if (pr) { preset = pr.dataset.pre; return draw(); }
     const pt = t.closest('[data-part]'); if (pt) { part = pt.dataset.part; return draw(); }
+    const lb = t.closest('[data-lv]'); if (lb) { lv = lb.dataset.lv; rmLS('rm_lv', lv); return draw(); }
     if (t.closest('#rm-rnd')) { code = rmCode(); $('#rm-ci').value = code; $('#rm-cd').textContent = code; return; }
     if (t.closest('#rm-drop')) { rmLS('rm_save_' + cid, null); return roomLobby(cid); }
     if (t.closest('#rm-resume')) return roomCountdown(c, saved.cfg, true);
-    if (t.closest('#rm-start')) { const z = sizeOf(), cd = ($('#rm-ci').value || '').trim() || rmCode(); roomCountdown(c, { cid, n: z.n, m: z.m, part, code: cd, focus: $('#rm-fc').checked, pre: preset }, false); } };
+    if (t.closest('#rm-start')) { const z = sizeOf(), cd = ($('#rm-ci').value || '').trim() || rmCode(); roomCountdown(c, { cid, n: z.n, m: z.m, part, lv, code: cd, focus: $('#rm-fc').checked, pre: preset }, false); } };
   main.oninput = e => { if (e.target.id === 'rm-ci') $('#rm-cd').textContent = e.target.value || '---'; if (e.target.id === 'rm-fc') focus = e.target.checked; };
 }
 function roomCountdown(c, cfg, resume) {

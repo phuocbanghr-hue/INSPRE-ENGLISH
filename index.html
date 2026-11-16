@@ -6153,7 +6153,7 @@ function parseCards(text) {
 }
 function viewCards() {
   const key = 'cards_' + S.user.uid;
-  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Tạo flashcard từ tài liệu</h2><p class="muted">Dán nội dung từ tài liệu, ghi chú hoặc bảng từ vựng (copy từ Word, Google Sheet đều được). Mỗi dòng một thẻ, viết dạng <b>từ - nghĩa</b>. Hệ thống nhận dấu gạch ngang, dấu hai chấm, dấu bằng hoặc Tab, và tự tạo thẻ ghi nhớ.</p>
+  main.innerHTML = `<img class="rr-lban mt" src="img/vocabulary.webp" alt="Vocabulary" loading="lazy"><h2 style="margin:26px 0 6px;font-size:2.2rem">Tạo flashcard từ tài liệu</h2><p class="muted">Dán nội dung từ tài liệu, ghi chú hoặc bảng từ vựng (copy từ Word, Google Sheet đều được). Mỗi dòng một thẻ, viết dạng <b>từ - nghĩa</b>. Hệ thống nhận dấu gạch ngang, dấu hai chấm, dấu bằng hoặc Tab, và tự tạo thẻ ghi nhớ.</p>
     <section class="card" style="margin:14px 0" id="cbox"><textarea id="ct" class="note" rows="9" placeholder="environment - môi trường&#10;achieve: đạt được&#10;consequence = hậu quả">${esc(store.get(key) || '')}</textarea><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="cb">Tạo thẻ và học</button><button class="btn soft" id="cl">Xoá nội dung</button></div><p class="muted" id="cm" style="margin-top:8px"></p></section><section class="panel hidden" id="cp" style="margin-top:14px"></section>`;
   $('#cl').onclick = () => { $('#ct').value = ''; store.set(key, ''); };
   $('#cb').onclick = () => {
@@ -6989,7 +6989,7 @@ function viewPron() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mode = 'word', lid = 'all', cur = null, meter = null;
   const pool = () => S.lessons.filter(l => lid === 'all' || l.id === lid).flatMap(l => (l.words || []).map(w => ({ ...w, _lid: l.id })));
-  main.innerHTML = `<h2 style="margin:26px 0 6px;font-size:2.2rem">Phòng luyện phát âm AI</h2><p class="muted">Nghe mẫu, đọc to và nhận chẩn đoán lỗi từng âm. Học trọng âm bằng nhịp, nhận biết âm tiết nhấn và kiểm tra bằng bài trắc nghiệm. Dùng Chrome, Edge hoặc Safari và cho phép micro.</p>
+  main.innerHTML = `<img class="rr-lban mt" src="img/speaking.webp" alt="Speaking" loading="lazy"><h2 style="margin:26px 0 6px;font-size:2.2rem">Phòng luyện phát âm AI</h2><p class="muted">Nghe mẫu, đọc to và nhận chẩn đoán lỗi từng âm. Học trọng âm bằng nhịp, nhận biết âm tiết nhấn và kiểm tra bằng bài trắc nghiệm. Dùng Chrome, Edge hoặc Safari và cho phép micro.</p>
     <div class="rank-tabs" style="margin-top:14px"><button class="btn sm" data-m="word">Luyện từ</button><button class="btn sm soft" data-m="sent">Luyện câu</button><button class="btn sm soft" data-m="stress">Quiz trọng âm</button><button class="btn sm soft" data-m="tips">Mẹo trọng âm</button></div>
     <div style="margin-top:12px"><select id="p-lesson" class="note" style="max-width:420px"><option value="all">Tất cả bài học</option>${S.lessons.map(l => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</select></div>
     <section class="card" id="pr" style="margin:12px 0 50px"></section>`;
@@ -12176,7 +12176,7 @@ else {
   .tl-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .tl-h b{font-size:1.05rem;color:#0B5CA8}
   .tl-x{border:0;background:#F1F3F5;border-radius:999px;width:30px;height:30px;cursor:pointer;font-size:1rem}
-  .tl-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tl-ban{display:block;width:100%;max-height:110px;object-fit:cover;border-radius:12px;margin:0 0 10px}.tl-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
   .tl-tabs button{border:1px solid #DEE2E6;background:#fff;border-radius:999px;padding:6px 12px;font-size:.84rem;font-weight:600;cursor:pointer;color:#5F6670}
   .tl-tabs button.on{background:#B10B32;border-color:#B10B32;color:#fff}
   .tl-big{font-size:2.8rem;font-weight:800;text-align:center;color:#0B5CA8;font-variant-numeric:tabular-nums;margin:6px 0}
@@ -12629,6 +12629,8 @@ else {
     tab = b.dataset.t; panel.querySelectorAll('[data-t]').forEach(x => x.classList.toggle('on', x === b));
     if (tab !== 'sprint' && sp && !sp.done) endSprint();
     draw();
+    const bn = { plan: 'learn-english', write: 'writing', speak: 'speaking', dict: 'vocabulary', listen: 'listening' }[tab];
+    if (bn && body() && !body().querySelector('.tl-ban')) body().insertAdjacentHTML('afterbegin', '<img class="tl-ban" src="img/' + bn + '.webp" alt="" loading="lazy">');
   });
   panel.querySelector('.tl-x').onclick = () => panel.classList.remove('open');
   /* --- Linh vật Bông 3D: mô hình WebGL nhẹ, tải khi mở bảng; lỗi thì giữ hình SVG --- */

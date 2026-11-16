@@ -138,7 +138,7 @@ textarea.note{background:#fff;border:1px solid #CED4DA;width:100%;padding:12px}
 .cgrp summary:before{content:"";flex:none;width:30px;height:30px;border-radius:50%;background:var(--blue-l) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%230B5CA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;transition:transform .2s}
 .cgrp:not([open]) summary:before{transform:rotate(-90deg)}
 .cgrp[open] summary{border-bottom:1px solid var(--line-s)}
-.cg-t{flex:1;min-width:0}.cg-t b{display:block;font-size:1rem;font-weight:700;letter-spacing:.01em}.cg-t small{color:var(--mute);font-size:.84rem}
+.cg-cv{flex:none;width:42px;height:58px;object-fit:cover;object-position:top;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.22)}.cg-t{flex:1;min-width:0}.cg-t b{display:block;font-size:1rem;font-weight:700;letter-spacing:.01em}.cg-t small{color:var(--mute);font-size:.84rem}
 .cg-p{font-weight:600;color:var(--blue);font-size:.9rem;background:var(--blue-l);border-radius:4px;padding:2px 10px}
 .lrow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line-s);padding:12px 18px}
 .lrow:first-child{border-top:0}
@@ -9230,7 +9230,7 @@ function drawCourses() {
   const GC = ['#B10B32', '#2B2B30'];
   $('#courses').innerHTML = Object.entries(groups).map(([t, ls], gi) => {
     const total = ls.length * N, done = ls.reduce((n, l) => n + doneCount(l.id), 0), pc = Math.round(total ? done / total * 100 : 0), fin = ls.filter(l => st(l) === 'done').length;
-    return `<details class="cgrp" style="--gc:${GC[gi % GC.length]}" open><summary><div class="cg-t"><b>${esc(t).toUpperCase()}</b><small>${ls.length} bài học · đã hoàn thành ${fin}/${ls.length}</small></div><div class="cg-bar" aria-hidden="true"><i style="width:${pc}%"></i></div><span class="cg-p">${pc}%</span></summary>
+    return `<details class="cgrp" style="--gc:${GC[gi % GC.length]}" open><summary>${(m => m[1] ? `<img class="cg-cv" src="img/covers/ta${m[1]}.webp" alt="" loading="lazy">` : '')((String(t).match(/Tiếng Anh\s*([6-9])\b/i) || []))}<div class="cg-t"><b>${esc(t).toUpperCase()}</b><small>${ls.length} bài học · đã hoàn thành ${fin}/${ls.length}</small></div><div class="cg-bar" aria-hidden="true"><i style="width:${pc}%"></i></div><span class="cg-p">${pc}%</span></summary>
       <div class="tl">${ls.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), s = st(l), p2 = Math.round(d / N * 100);
         return `<button class="lrow" data-id="${l.id}"><span class="num ${s}">${pad(lessonNum(l) % 100)}</span><span class="lr-b"><b>${esc(l.title)}</b><small>${n} từ vựng · ${d}/${N} dạng bài tập${l.description ? ' · ' + esc(l.description) : ''}</small></span><span class="tg ${TAG[s][1]}">${TAG[s][0]}</span><span class="lr-p"><i style="--w:${p2}%"></i><em>${p2 ? p2 + '%' : '-'}</em></span></button>`; }).join('')}</div></details>`;
   }).join('');

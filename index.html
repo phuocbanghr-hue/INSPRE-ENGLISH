@@ -7086,6 +7086,13 @@ function viewPron() {
 }
 
 /* ---------- Hành trình học tập: biểu đồ năng lực, lịch học, lộ trình ---------- */
+function weekQuests() {
+  const p = S.profile || {}, now = new Date(), dow = (now.getDay() + 6) % 7, mon = new Date(now); mon.setDate(now.getDate() - dow);
+  let xp = 0, days = 0; for (let i = 0; i <= dow; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); const x = (p.daily || {})[dayKey(d)] || 0; xp += x; if (x > 0) days++; }
+  const wk = dayKey(mon);
+  const Q = [['d3', 'Học đủ 3 ngày trong tuần', days, 3, 15], ['d5', 'Học đủ 5 ngày trong tuần', days, 5, 25], ['x300', 'Đạt 300 XP trong tuần', xp, 300, 30]].map(([id, t, v, g, r]) => ({ id, t, v: Math.min(v, g), g, r, ok: v >= g, key: 'wq_' + wk + '_' + id }));
+  return `<section class="card" id="wq" style="margin-bottom:18px"><div class="wk-h"><h3>Nhiệm vụ tuần này</h3><span class="chip">Làm mới thứ Hai</span></div>${Q.map(q => { const done = claimed(q.key); return `<div class="row" style="gap:10px;align-items:center;margin-top:12px"><div class="grow"><b>${q.t}</b><div class="prog" style="margin-top:6px"><i style="width:${Math.round(q.v / q.g * 100)}%"></i></div><small class="muted">${q.v}/${q.g}</small></div>${done ? '<span class="chip ok">Đã nhận</span>' : `<button class="btn" data-wq="${q.key}" data-xp="${q.r}" ${q.ok ? '' : 'disabled'}>+${q.r} XP</button>`}</div>`; }).join('')}</section>`;
+}
 function viewJourney() {
   const p = S.profile || {}, lv = levelInfo(p.xp), prs = Object.values(p.progress || {});
   const avg = ks => { const v = prs.flatMap(x => ks.map(k => x[k]).filter(n => typeof n === 'number')); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; };
@@ -7107,11 +7114,12 @@ function viewJourney() {
     <section class="card"><h3>Em đã đi được bao xa</h3><div class="pgrid five" style="margin-top:10px">${st.map(([ic, v, n, k]) => `<div class="pstat">${ico(ic)}<b data-n="${v}" data-k="${k}">${v}</b><small>${n}</small></div>`).join('')}</div>
       <div class="lvlrow" style="margin-top:16px"><b>${esc(lv.name.trim())} · Cấp ${lv.lvl}</b><span>${lv.into}/200 XP</span></div><div class="prog"><i style="width:${lv.into / 2}%"></i></div><p class="muted" style="font-size:.85rem;margin-top:6px">Còn ${200 - lv.into} XP nữa để lên cấp ${lv.lvl + 1}.</p></section></div>
     <section class="card frz" style="margin-bottom:18px"><div class="wk-h"><h3>Băng giữ chuỗi</h3><span class="chip ${(+p.freeze || 0) ? 'ok' : ''}">${+p.freeze || 0}/2 đang có</span></div><p class="muted" style="margin:6px 0 0">Cứ mỗi 7 ngày học liên tiếp em nhận 1 băng (tối đa 2). Nếu em lỡ quên đúng một ngày, băng tự động dùng để giữ chuỗi ${p.streak || 0} ngày của em, không cần bấm gì.${(+p.streak || 0) ? ' Còn ' + (7 - ((+p.streak || 0) % 7)) + ' ngày nữa để nhận băng tiếp theo.' : ''}</p></section>
+    ${weekQuests()}
     <section class="card" style="margin-bottom:18px"><div class="wk-h"><h3>XP 14 ngày gần đây</h3><span class="chip ${wk.hit ? 'ok' : ''}">${wk.hit}/14 ngày đạt mục tiêu · ${wk.tot} XP</span></div>${wk.html}</section>
     <section class="card" style="margin-bottom:18px"><h3>Lịch học 12 tuần gần đây</h3><div class="heat" style="margin-top:10px">${cells.join('')}</div><div class="heat-lg">Ít ${[.2, .4, .6, .8, 1].map(a => `<i style="background:rgba(224,36,58,${a})"></i>`).join('')} Nhiều</div></section>
     <section class="card" style="margin-bottom:50px"><h3>Lộ trình cấp bậc</h3><div class="road">${LEVELS.map((n, i) => `<div class="${i + 1 === lv.lvl ? 'on' : i + 1 < lv.lvl ? 'past' : ''}">${esc(n.trim())}<br><small>Cấp ${i + 1}</small></div>`).join('')}</div></section></div>`;
   countUp(main); setTimeout(() => { const j = main.querySelector('.jv'); if (j) j.classList.remove('anim'); }, 2200);
-  main.onclick = e => { const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go); };
+  main.onclick = e => { const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go); const w = e.target.closest('[data-wq]'); if (w && !w.disabled) { const k = w.dataset.wq, x = +w.dataset.xp; if (claimed(k)) return; markClaim(k); w.disabled = true; award(null, x, {}, 'weekquest'); toast('+' + x + ' XP nhiệm vụ tuần!', 'ok'); setTimeout(viewJourney, 600); } };
 }
 /* ============================================================
    v7: LỚP HỌC KIỂU MOODLE + CHAT LỚP + NHẮN RIÊNG BẠN CÙNG LỚP

@@ -5726,7 +5726,16 @@ if (MODE === 'firebase' && FB) {
     watchAssignments: cb => FB.onSnapshot(FB.collection(db, 'assignments'), s => cb(list(s)), e => { console.error('assignments', e); toast('Không đọc được bài được giao: ' + e.message, 'bad'); }),
     watchCD: cb => FB.onSnapshot(FB.collection(db, 'chuyende'), sn => cb(Object.fromEntries(sn.docs.map(d => [d.id, d.data()]))), e => { console.error('chuyende', e); if (S.user) toast('Không đọc được chuyên đề (kiểm tra Firestore rules): ' + e.message, 'bad'); }),
     watchAnnounce: cb => FB.onSnapshot(FB.doc(db, 'config', 'announcement'), s => cb(s.exists() ? s.data() : null), e => console.error('announcement', e)),
-    watchTop: (n, cb, err) => FB.onSnapshot(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n)), s => cb(list(s).map(normXp).sort((a, b) => b.xp - a.xp)), err),
+    /* Bảng xếp hạng: đọc theo chu kỳ (60 giây, dừng khi tab ẩn, dùng chung kết quả) thay vì nghe trực tiếp,
+       để mỗi lần có người cộng XP không kéo theo hàng trăm lượt đọc cho mọi máy đang mở. */
+    watchTop: (n, cb, err) => {
+      const C = (api._topC = api._topC || {}); let stop = false, tm = null;
+      const load = async () => { if (stop) return; if (document.hidden) { tm = setTimeout(load, 15000); return; }
+        let e = C[n]; if (!e || Date.now() - e.t > 30000) { e = C[n] = { t: Date.now(), p: FB.getDocs(FB.query(FB.collection(db, 'users'), FB.orderBy('xp', 'desc'), FB.limit(n))).then(s => list(s).map(normXp).sort((a, b) => b.xp - a.xp)) }; e.p.catch(() => { if (C[n] === e) delete C[n]; }); }
+        try { const r = await e.p; if (!stop) cb(r.map(x => ({ ...x }))); } catch (er) { if (!stop && err) err(er); }
+        if (!stop) tm = setTimeout(load, 60000); };
+      load(); return () => { stop = true; clearTimeout(tm); };
+    },
     updateMe: f => FB.updateDoc(FB.doc(db, 'users', S.user.uid), f),
     createProfile: (uid, d) => FB.setDoc(FB.doc(db, 'users', uid), d),
     watchBanks: cb => FB.onSnapshot(FB.collection(db, 'banks'), sn => cb(sn.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('banks', e); cb([]); }),

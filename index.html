@@ -9953,15 +9953,17 @@ function drawLessonBody() {
       return `<button class="lr${nx ? ' next' : ''}${dn ? ' done' : ''}" data-act="${k}" ${dis ? 'disabled' : ''}><span class="lr-i"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k] || ''}</svg></span><span class="lr-t"><b>${a.n}</b><small>${a.d}</small></span>${nx ? '<span class="lr-n">Làm tiếp</span>' : ''}${dn ? `<em class="lr-ok">✓${sc}</em>` : ''}<svg class="lr-c" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;
     };
     const sec = (t, keys) => { keys = keys.filter(k => !(k === 'docs' && !mats)); const cnt = keys.filter(k => k !== 'docs'), dn = cnt.filter(k => isDone(p, k)).length;
-      return `<section class="ls"><div class="ls-h"><h3>${t}</h3>${cnt.length ? `<span class="${dn === cnt.length ? 'ok' : ''}">${dn}/${cnt.length}</span>` : ''}</div><div class="ls-b">${keys.map(row).join('')}</div></section>`; };
+      return `<section class="ls" data-sec="${esc(t)}"><div class="ls-h"><h3>${t}</h3>${cnt.length ? `<span class="ls-bar" aria-hidden="true"><i style="width:${Math.round(dn / cnt.length * 100)}%"></i></span><span class="${dn === cnt.length ? 'ok' : ''}">${dn}/${cnt.length}</span>` : ''}</div><div class="ls-b">${keys.map(row).join('')}</div></section>`; };
     body.innerHTML = `${hasW ? '' : '<div class="note">Bài này chưa có từ vựng. Cô/thầy đang cập nhật nhé!</div>'}
       ${sec('Học từ', ['list', 'flash', 'mind', 'docs'].concat(imgW >= 2 ? ['gallery'] : []))}
       ${sec('Luyện tập', ['quiz', 'listen', 'fill', 'match', 'scramble', 'type', 'tf', 'hang', 'speak'])}
       ${imgW >= 4 || (l.exs || []).some(x => x.img) ? sec('Luyện tập với hình ảnh', ['picmix'].concat(imgW >= 4 ? ['pic', 'picw', 'picl', 'pict', 'pictf'] : [])) : ''}
       ${nEx ? sec('Bài tập từ sách (Workbook)', l.psg ? ['exvoc', 'exgra', 'exrea', 'exlis'].filter(k => (l.exs || []).some(x => 'ex' + x.k === k)) : [(l.exs || []).some(x => x.img) ? 'bookpic' : null, (l.exs || []).some(x => !x.img) ? 'book' : null].filter(Boolean)) : ''}
-      ${(nEx || S.words.length >= 4) ? `<button class="ie-start" data-ielts="1" type="button"><span style="font-size:1.8rem">📝</span><span><b>Chế độ thi kiểu IELTS</b><small>Giao diện thi trên máy tính: đồng hồ đếm ngược, đánh dấu câu, nộp bài và chấm điểm</small></span></button>` : ''}
+      ${(nEx || S.words.length >= 4) ? `<button class="ie-start" data-ielts="1" type="button"><span class="ie-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><span><b>Chế độ thi kiểu IELTS</b><small>Giao diện thi trên máy tính: đồng hồ đếm ngược, đánh dấu câu, nộp bài và chấm điểm</small></span></button>` : ''}
       ${sec('Kiểm tra', ['check', 'test'].concat(mist(l.id).length ? ['review'] : []))}<div style="height:50px"></div>`;
-    body.onclick = e => { if (e.target.closest('[data-ielts]')) return openExam(l, S.words); const c = e.target.closest('.lr'); if (c && !c.disabled) setTab(c.dataset.act); };
+    const secs = [...body.querySelectorAll('.ls[data-sec]')];
+    if (secs.length > 2) { secs.forEach((x, i) => x.id = 'ls-' + i); body.insertAdjacentHTML('afterbegin', '<nav class="ls-nav" aria-label="Mục lục bài">' + secs.map((x, i) => '<a href="#ls-' + i + '" data-jump="ls-' + i + '">' + x.dataset.sec + '</a>').join('') + '</nav>'); }
+    body.onclick = e => { const j = e.target.closest('[data-jump]'); if (j) { e.preventDefault(); const t = document.getElementById(j.dataset.jump); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } if (e.target.closest('[data-ielts]')) return openExam(l, S.words); const c = e.target.closest('.lr'); if (c && !c.disabled) setTab(c.dataset.act); };
     return;
   }
   const meta = EXTRA[S.tab] ? EXTRA[S.tab] : S.tab === 'list' ? { ic: '', n: 'Danh sách từ' } : S.tab === 'docs' ? { ic: '', n: 'Tài liệu' } : S.tab === 'review' ? { ic: '', n: 'Ôn từ sai' } : ACTS[S.tab];
@@ -11937,6 +11939,14 @@ else {
 .ls-h span{font-size:.78rem;font-weight:700;color:#64748B;background:#F1F5F9;border-radius:99px;padding:3px 10px}
 .ls-h span.ok{background:#E6F6EE;color:#1E8E5A}
 .ls-b{display:flex;flex-direction:column}
+.ls-nav{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px;margin:0 0 6px;scrollbar-width:none}.ls-nav::-webkit-scrollbar{display:none}
+.ls-nav a{flex:none;text-decoration:none;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#D85A10;background:#FFF4EC;border:1px solid #FBD9C3;border-radius:99px;padding:7px 14px;transition:background .15s,color .15s}
+.ls-nav a:hover{background:#F26B1D;border-color:#F26B1D;color:#fff}
+.ls .ls-h h3{color:#F26B1D!important}
+.ls-h{justify-content:flex-start!important}.ls-h h3{flex:1}
+.ls-bar{flex:none;width:70px;height:6px;border-radius:99px;background:#F1E4E7;overflow:hidden;padding:0!important}.ls-bar i{display:block;height:100%;background:linear-gradient(90deg,#F26B1D,#FF9A5C);border-radius:99px}
+.ie-start{border-radius:16px!important;padding:16px 20px!important;box-shadow:0 8px 22px rgba(30,60,120,.22);transition:transform .15s,box-shadow .15s}.ie-start:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(30,60,120,.3)}
+.ie-ic{flex:none;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center}.ie-ic svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .lr{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:0;border-top:1px solid #EEF2F6;border-radius:0;padding:13px 12px;color:#0B5CA8;font:inherit;cursor:pointer;position:relative;min-height:0;transition:background .15s}
 .lr:first-child{border-top:0}
 .lr:hover{background:#F4F8FD}

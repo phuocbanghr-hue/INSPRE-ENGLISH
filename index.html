@@ -9705,7 +9705,7 @@ function rrDictation(st, dd) {
 }
 function rrPassage() {
   const D = RR.data.concat(RR.lis || []), i = D.findIndex(x => x.n === RR.open), p = D[i]; if (!p) { RR.open = 0; return rrList(); }
-  const A = RR.ans[p.n] || (RR.ans[p.n] = p.q.map(() => -1)), LET = 'ABCDEFGH', graded = p.q.filter(q => q.a >= 0).length;
+  const A = RR.ans[p.n] || (RR.ans[p.n] = p.q.map(() => -1)), LET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', graded = p.q.filter(q => q.a >= 0).length;
   const paras = p.au ? `<h3 class="rr-title">${esc(p.t)}</h3><div class="rr-au"><audio controls preload="metadata" src="${p.au}"></audio><label>Tốc độ <select id="rr-ar"><option value=".8">0.8x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option></select></label></div><details class="rr-tp"><summary>Xem lời thoại (transcript)</summary>${p.p.map(t => `<p>${rrHTML(t)}</p>`).join('')}</details>` : `<h3 class="rr-title">Reading ${p.n}</h3>` + p.p.map(t => `<p>${rrHTML(t)}</p>`).join('');
   const QN = (q, k) => (p.g && /^IELTS/.test(p.g) && q.n) ? q.n : k + 1;
   const GH = t => { const T = t.toLowerCase(), tip = /true \/ false|yes \/ no/.test(T) ? 'Chọn Đúng / Sai / Không có thông tin so với nội dung bài.' : /heading/.test(T) ? 'Chọn tiêu đề phù hợp nhất cho mỗi đoạn.' : /multiple choice/.test(T) ? 'Chọn 1 đáp án đúng.' : /choose two|choose three/.test(T) ? 'Gõ các chữ cái đáp án đúng (A, B, C…).' : /matching|map|diagram/.test(T) ? 'Nối / chọn đáp án phù hợp.' : /completion|short answer|labell?ing/.test(T) ? 'Điền từ còn thiếu vào chỗ ______, đúng như trong bài, theo giới hạn số từ.' : ''; return tip; };

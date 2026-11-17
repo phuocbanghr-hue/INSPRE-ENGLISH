@@ -138,7 +138,17 @@ textarea.note{background:#fff;border:1px solid #CED4DA;width:100%;padding:12px}
 .cgrp summary:before{content:"";flex:none;width:30px;height:30px;border-radius:50%;background:var(--blue-l) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%230B5CA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;transition:transform .2s}
 .cgrp:not([open]) summary:before{transform:rotate(-90deg)}
 .cgrp[open] summary{border-bottom:1px solid var(--line-s)}
-.cg-cv{flex:none;width:42px;height:58px;object-fit:cover;object-position:top;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.22)}.csec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:11px 18px;background:#FAF4F5;border-top:1px solid var(--line-s);font-size:.9rem;color:#8A1228}.csec>summary::-webkit-details-marker{display:none}.cgrp .csec>summary:before{content:"▸";width:auto;height:auto;background:none!important;border-radius:0;font-size:.8rem;transition:transform .15s;color:#B10B32}.cgrp .csec[open]>summary:before{transform:rotate(90deg)}.cgrp .csec>summary{background:#FAF4F5!important;padding:11px 18px}.csec>summary small{color:var(--mute);margin-left:auto;font-size:.8rem}
+.cg-cv{flex:none;width:42px;height:58px;object-fit:cover;object-position:top;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.22)}.cgrp .csec>summary{display:flex;align-items:center;gap:12px;padding:12px 18px!important;background:#fff!important;border-top:1px solid #F0E3E6;font-size:.95rem;color:#2B2B30;transition:background .15s}
+.cgrp .csec>summary:before{display:none!important;content:none!important}
+.cgrp .csec>summary:hover{background:#FDF6F7!important}
+.csec>summary b{font-weight:700;letter-spacing:.005em;flex:1;min-width:0}
+.cs-i{flex:none;width:28px;height:28px;border-radius:9px;background:color-mix(in srgb,var(--gc) 12%,#fff);color:var(--gc);font-weight:800;font-size:.82rem;display:grid;place-items:center}
+.cs-n{color:var(--mute);font-size:.82rem;white-space:nowrap}
+.cs-bar{flex:none;width:84px;height:6px;border-radius:99px;background:#F1E4E7;overflow:hidden}.cs-bar i{display:block;height:100%;background:var(--gc);border-radius:99px}
+.cs-p{flex:none;min-width:38px;text-align:right;font-size:.8rem;font-weight:700;color:var(--gc)}
+.cs-c{flex:none;width:18px;height:18px;color:#9AA0A8;transition:transform .2s}.csec[open]>summary .cs-c{transform:rotate(180deg);color:var(--gc)}
+.csec[open]>summary{background:color-mix(in srgb,var(--gc) 5%,#fff)!important;box-shadow:inset 3px 0 0 var(--gc)}
+@media(max-width:600px){.cs-bar{display:none}.cs-n{display:none}}
 .cg-gs{height:32px;width:auto;vertical-align:middle;margin-left:8px}
 .cg-t{flex:1;min-width:0}.cg-t b{display:block;font-size:1rem;font-weight:700;letter-spacing:.01em}.cg-t small{color:var(--mute);font-size:.84rem}
 .cg-p{font-weight:600;color:var(--blue);font-size:.9rem;background:var(--blue-l);border-radius:4px;padding:2px 10px}
@@ -9234,25 +9244,26 @@ function drawCourses() {
     const total = ls.length * N, done = ls.reduce((n, l) => n + doneCount(l.id), 0), pc = Math.round(total ? done / total * 100 : 0), fin = ls.filter(l => st(l) === 'done').length;
     return `<details class="cgrp" style="--gc:${GC[gi % GC.length]}" open><summary>${(m => m[1] ? `<img class="cg-cv" src="img/covers/ta${m[1]}.webp" alt="" loading="lazy">` : '')((String(t).match(/Tiếng Anh\s*([6-9])\b/i) || []))}<div class="cg-t"><b>${esc(t).toUpperCase()}${/TIẾNG ANH\s*[6-9]/i.test(t) ? '<img class="cg-gs" src="img/global-success.webp" alt="Global Success">' : ''}</b><small>${ls.length} bài học · đã hoàn thành ${fin}/${ls.length}</small></div><div class="cg-bar" aria-hidden="true"><i style="width:${pc}%"></i></div><span class="cg-p">${pc}%</span></summary>
       <div class="tl">${csecs(ls, L => L.map(l => { const n = l.wordCount ?? (l.words || []).length, d = doneCount(l.id), s = st(l), p2 = Math.round(d / N * 100);
-        return `<button class="lrow" data-id="${l.id}"><span class="num ${s}">${pad(lessonNum(l) % 100)}</span><span class="lr-b"><b>${esc(l.title)}</b><small>${n} từ vựng · ${d}/${N} dạng bài tập${l.description ? ' · ' + esc(l.description) : ''}</small></span><span class="tg ${TAG[s][1]}">${TAG[s][0]}</span><span class="lr-p"><i style="--w:${p2}%"></i><em>${p2 ? p2 + '%' : '-'}</em></span></button>`; }).join(''))}</div></details>`;
+        return `<button class="lrow" data-id="${l.id}"><span class="num ${s}">${pad(lessonNum(l) % 100)}</span><span class="lr-b"><b>${esc(l.title)}</b><small>${n} từ vựng · ${d}/${N} dạng bài tập${l.description ? ' · ' + esc(l.description) : ''}</small></span><span class="tg ${TAG[s][1]}">${TAG[s][0]}</span><span class="lr-p"><i style="--w:${p2}%"></i><em>${p2 ? p2 + '%' : '-'}</em></span></button>`; }).join(''), st)}</div></details>`;
   }).join('');
 }
 
 
 
 /* Gom bài trong khoá thành các mục lớn cho dễ nhìn */
-function csecs(ls, rows) {
+function csecs(ls, rows, st) {
   const key = l => { const t = String(l.title || ''), u = t.match(/^Unit\s*(\d+)/i);
     if (u) { const k = Math.floor((+u[1] - 1) / 3); return [0 + k / 10, 'Unit ' + (k * 3 + 1) + '–' + (k * 3 + 3)]; }
     if (/Ôn thi vào 10/i.test(t)) return [20 + (/Thành ngữ/i.test(t) ? 1 : 0), 'Ôn thi vào 10 · ' + (/Thành ngữ/i.test(t) ? 'Thành ngữ' : 'Cụm từ cố định')];
+    if (/^Sổ tay/i.test(t)) return [45, 'Sổ tay từ vựng'];
     if (/Đọc hiểu/i.test(t)) return [30, 'Đọc hiểu chuyên đề'];
     if (/Practice Test|^Test|Kiểm tra|15 phút|Đề /i.test(t)) return [40, 'Đề luyện tập & kiểm tra'];
     const p = t.split(/\s[·–-]\s/)[0].replace(/\s*\d+\s*$/, '').trim(); return [50, p && p.length < 40 ? p : 'Bài khác']; };
   const m = new Map(); ls.forEach(l => { const [o, n] = key(l); if (!m.has(n)) m.set(n, { o, n, a: [] }); m.get(n).a.push(l); });
   const secs = [...m.values()].sort((x, y) => x.o - y.o);
   if (secs.length < 2) return rows(ls);
-  return secs.map((g, i) => { const fin = g.a.filter(l => doneCount(l.id) > 0 && st(l) === 'done').length;
-    return `<details class="csec"${i === 0 ? ' open' : ''}><summary><b>${esc(g.n)}</b><small>${g.a.length} bài${fin ? ' · xong ' + fin : ''}</small></summary>${rows(g.a)}</details>`; }).join('');
+  return secs.map((g, i) => { const fin = g.a.filter(l => st(l) === 'done').length, pc = Math.round(fin / g.a.length * 100);
+    return `<details class="csec"${i === 0 ? ' open' : ''}><summary><span class="cs-i">${i + 1}</span><b>${esc(g.n)}</b><span class="cs-n">${g.a.length} bài</span><span class="cs-bar" aria-hidden="true"><i style="width:${pc}%"></i></span><span class="cs-p">${fin}/${g.a.length}</span><svg class="cs-c" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>${rows(g.a)}</details>`; }).join('');
 }
 
 /* ---------- ngân hàng đề luyện tập ---------- */

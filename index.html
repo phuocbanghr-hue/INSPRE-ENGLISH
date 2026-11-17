@@ -7868,13 +7868,24 @@ async function srsGrade(card, good) {
   const { k, ...rest } = card;
   await api.updateMe({ ['srs.' + k]: { ...rest, n, ef: +ef.toFixed(2), ivl, due: srsDay(ivl), last: Date.now() } });
 }
+function srsForecast(all) {
+  const days = [], t = srsDay(0);
+  for (let i = 0; i < 7; i++) {
+    const d = srsDay(i);
+    const n = all.filter(c => i === 0 ? (c.due || '') <= t : c.due === d).length;
+    const dt = new Date(); dt.setDate(dt.getDate() + i);
+    days.push({ n, l: i === 0 ? 'Nay' : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][dt.getDay()] });
+  }
+  const mx = Math.max(1, ...days.map(d => d.n));
+  return `<section class="card" style="margin:12px 0"><b>Dự báo ôn tập 7 ngày</b><div style="display:flex;gap:8px;align-items:flex-end;height:90px;margin-top:10px">${days.map(d => `<div style="flex:1;text-align:center;font-size:.8rem"><div>${d.n}</div><div style="height:${Math.max(3, Math.round(d.n / mx * 60))}px;background:${d.l === 'Nay' ? '#B10B32' : '#9aa7c7'};border-radius:4px 4px 0 0"></div><div class="muted">${d.l}</div></div>`).join('')}</div><div class="muted" style="margin-top:8px;font-size:.85rem">Tổng ${all.length} câu đang theo dõi · càng ôn đều, lịch càng thưa.</div></section>`;
+}
 function viewSrs() {
   const back = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><a href="#" data-go="classes">Lớp học</a><span>›</span><b>Ôn lỗi sai</b></nav>`;
   const all = srsAll(), due = all.filter(c => (c.due || '') <= srsDay(0)).sort((a, b) => (a.due || '').localeCompare(b.due || ''));
   if (!due.length) {
     const nxt = all.filter(c => c.due > srsDay(0)).sort((a, b) => a.due.localeCompare(b.due))[0];
     main.onclick = e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); go(g.dataset.go); } };
-    main.innerHTML = `${back}<h2 style="margin:18px 0 6px;font-size:2rem">Ôn lỗi sai</h2><section class="card empty">${all.length ? 'Hôm nay không có câu nào cần ôn.' + (nxt ? ' Câu tiếp theo đến hạn vào ngày ' + nxt.due.split('-').reverse().join('/') + '.' : '') : 'Em chưa có câu sai nào. Khi làm bài kiểm tra sai câu nào, câu đó sẽ được lưu lại và nhắc em ôn đúng lúc.'}</section>`;
+    main.innerHTML = `${back}<h2 style="margin:18px 0 6px;font-size:2rem">Ôn lỗi sai</h2>${srsForecast(all)}<section class="card empty">${all.length ? 'Hôm nay không có câu nào cần ôn.' + (nxt ? ' Câu tiếp theo đến hạn vào ngày ' + nxt.due.split('-').reverse().join('/') + '.' : '') : 'Em chưa có câu sai nào. Khi làm bài kiểm tra sai câu nào, câu đó sẽ được lưu lại và nhắc em ôn đúng lúc.'}</section>`;
     return;
   }
   const queue = due.map(c => ({ ...c, opts: shuffle(c.o.map(t => ({ t, ok: t === c.a }))) }));
@@ -7885,7 +7896,7 @@ function viewSrs() {
       return;
     }
     const c = queue[idx], fb = pick >= 0;
-    main.innerHTML = `${back}<div class="cxl-timer"><b>Ôn lỗi sai</b><span>${idx + 1}/${queue.length}</span><span class="muted">${esc(c.bank || '')}</span></div>
+    main.innerHTML = `${back}${idx === 0 && !fb ? srsForecast(all) : ''}<div class="cxl-timer"><b>Ôn lỗi sai</b><span>${idx + 1}/${queue.length}</span><span class="muted">${esc(c.bank || '')}</span></div>
       <section class="card" style="margin:12px 0 50px"><p style="font-size:1.1rem"><b>${esc(c.q)}</b></p>
       <div class="opts">${c.opts.map((o, k) => { const st = !fb ? '' : o.ok ? 'border-color:#1B7F3B;background:#eaf7ee' : k === pick ? 'border-color:#B10B32;background:#fdeef1' : ''; return `<button class="opt" data-k="${k}" ${fb ? 'disabled' : ''} style="${st}"><b style="margin-right:8px;color:var(--brand)">${LET[k]}.</b>${optHTML(o.t)}</button>`; }).join('')}</div>
       ${fb ? `<div style="margin-top:12px"><b style="color:${c.opts[pick].ok ? '#1B7F3B' : '#B10B32'}">${c.opts[pick].ok ? 'Chính xác!' : 'Chưa đúng.'}</b> ${esc(c.e || '')}</div><div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn" id="nx">${idx + 1 < queue.length ? 'Câu tiếp theo' : 'Hoàn thành'}</button></div>` : ''}</section>`;

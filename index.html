@@ -9653,11 +9653,7 @@ function rrListen() {
   <div class="rr-grid">${items.slice(0, 120).map(x => { const b = dd[x.n]; return `<button type="button" class="rr-card ${b != null ? 'did' : ''}" data-dic="${x.n}"><span class="rr-cn">${x.n}</span><span class="rr-ct"><b>${esc(x.t || 'Reading ' + x.n)}</b><small>${esc(x.g || 'Bài đọc')} · ${dicSplit(x, lvl).length} câu${b != null ? ' · tốt nhất ' + b + '%' : ''}</small></span></button>`; }).join('') || '<div class="card empty">Không có bài phù hợp.</div>'}</div>${items.length > 120 ? `<p class="muted" style="text-align:center">Còn ${items.length - 120} bài nữa, gõ vào ô tìm để lọc.</p>` : ''}
   <section class="card mt"><h3 style="margin:0 0 6px">Đề nghe có audio</h3><p class="muted" style="margin:0">${L.length ? 'Tất cả bài nghe có trên web, gom về một chỗ. Bài thuộc khoá học cần mở khoá sẽ hỏi mã khi bấm.' : 'Chưa tải xong danh sách bài nghe. Em vào mục Học tập một lần rồi quay lại nhé.'}</p></section>
   ${Object.keys(grp).map(k => `<section class="card mt"><h4 style="margin:0 0 10px">${esc(k)} <small class="muted">(${grp[k].length})</small></h4><div class="rr-grid" style="margin:0">${grp[k].map(lessonCard).join('')}</div></section>`).join('')}
-<<<<<<< HEAD
   ${banks.length ? `<section class="card mt"><h4 style="margin:0 0 10px">Bài nghe của lớp em <small class="muted">(${banks.length})</small></h4><div class="rr-grid" style="margin:0">${banks.map(b => `<button type="button" class="rr-card" data-bank="${esc(b.id)}"><span class="rr-ct"><b>${esc(b.title)}</b><small>${(b.qs || []).filter(z => z.audio).length} câu có âm thanh</small></span></button>`).join('')}</div></section>` : ''}`;
-=======
-  ${banks.length ? `<section class="card mt"><h4 style="margin:0 0 10px">Bài nghe của lớp em <small class="muted">(${banks.length})</small></h4><div class="rr-grid" style="margin:0">${banks.map(b => `<button type="button" class="rr-card" data-bank="${esc(b.id)}"><span class="rr-cn">♪</span><span class="rr-ct"><b>${esc(b.title)}</b><small>${(b.qs || []).filter(z => z.audio).length} câu có âm thanh</small></span></button>`).join('')}</div></section>` : ''}`;
->>>>>>> da49d6e (Phòng nghe: thêm 16 phần IELTS Listening Test 1-4 (audio, câu hỏi, lời thoại); bỏ icon emoji và nút chat trong phòng nghe)
   main.onclick = e => {
     if (rrRoomClick(e)) return;
     const a = e.target.closest('[data-dlv]'); if (a) { RR.dlv = a.dataset.dlv; return rrListen(); }
@@ -9676,11 +9672,7 @@ function rrDictation(st, dd) {
     const avg = st.sc.length ? Math.round(st.sc.reduce((a, b) => a + b, 0) / st.sc.length) : 0;
     try { dd[st.n] = Math.max(dd[st.n] || 0, avg); localStorage.setItem('dic_best', JSON.stringify(dd)); } catch (e) {}
     let xp = 0; const key = 'dic_' + st.n; if (!claimed(key) && avg >= 50) { markClaim(key); xp = Math.round(avg / 10) + 3; try { award(null, xp, {}, 'dictation'); } catch (e) {} }
-<<<<<<< HEAD
     main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero" style="text-align:center"><div style="width:100%"><h2>${avg >= 80 ? 'Tuyệt vời! ' : avg >= 50 ? 'Khá tốt, cố thêm nhé ' : 'Nghe lại và chép lại lần nữa nhé'}</h2><p>Reading ${st.n} · chép đúng trung bình <b>${avg}%</b> (${tot} câu)${xp ? ' · +' + xp + ' XP' : ''}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="dc-again">Chép lại</button><button type="button" class="btn soft" id="dc-back">← Chọn bài khác</button></div></div></section>`;
-=======
-    main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero" style="text-align:center"><div style="width:100%"><h2>${avg >= 80 ? 'Tuyệt vời!' : avg >= 50 ? 'Khá tốt, cố thêm nhé' : 'Nghe lại và chép lại lần nữa nhé'}</h2><p>Reading ${st.n} · chép đúng trung bình <b>${avg}%</b> (${tot} câu)${xp ? ' · +' + xp + ' XP' : ''}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="dc-again">Chép lại</button><button type="button" class="btn soft" id="dc-back">← Chọn bài khác</button></div></div></section>`;
->>>>>>> da49d6e (Phòng nghe: thêm 16 phần IELTS Listening Test 1-4 (audio, câu hỏi, lời thoại); bỏ icon emoji và nút chat trong phòng nghe)
     main.onclick = e => { if (rrRoomClick(e)) return; if (e.target.closest('#dc-again')) { RR.dic = { ...st, i: 0, sc: [], done: false }; return rrListen(); } if (e.target.closest('#dc-back')) { RR.dic = null; return rrListen(); } };
     return;
   }

@@ -7006,6 +7006,61 @@ function viewThink() {
     box.innerHTML = '<p class="muted">Viết/nói không bí ý: <b>bước 1</b> biến đề chung chung thành câu hỏi cụ thể; <b>bước 2</b> phát triển ý bằng nguyên nhân–kết quả, giải thích, ví dụ.</p><div id="th-in"></div>'; thWrite($('#th-in'));
   }
 }
+/* ---------- Luyện Speaking theo chủ đề: ghi âm, bản chữ, đếm từ, nhận diện cấu trúc, lưu lịch sử trên máy ---------- */
+const SPK_TOPICS = [
+  ['Gia đình', ['Tell me about your family.', 'Who do you spend the most time with at home, and why?', 'What do you usually do with your family at the weekend?']],
+  ['Trường học', ['Describe your school.', 'What is your favourite subject, and why?', 'How could your school become a better place to study?']],
+  ['Sở thích', ['What do you like doing in your free time?', 'Why do you enjoy this hobby?', 'Is there a new hobby you would like to try? Why?']],
+  ['Quê hương', ['Describe your hometown.', 'What do you like most about your hometown?', 'What advice do you have for visitors to your hometown?']],
+  ['Giao thông', ['Why does (or doesn\'t) your hometown have many transport problems?', 'What advice do you have for your hometown about transport?', 'How do you usually get to school, and why?']],
+  ['Đồ ăn', ['What is your favourite food, and why?', 'Do you prefer eating at home or in a restaurant?', 'What traditional dish would you recommend to a foreigner?']],
+  ['Du lịch', ['Tell me about a place you have visited.', 'Do you prefer travelling with family or with friends?', 'Where would you like to travel in the future, and why?']],
+  ['Công nghệ', ['How often do you use your phone, and what for?', 'What are the good and bad points of using technology?', 'How will technology change school in the future?']],
+  ['Môi trường', ['What environmental problems does your area have?', 'What can students do to protect the environment?', 'Why is recycling important?']],
+  ['Sức khoẻ', ['What do you do to stay healthy?', 'Why is sleep important for students?', 'What advice would you give a friend who is always tired?']],
+  ['Lễ hội', ['Describe a festival you like.', 'How do you celebrate Tet (or another holiday) with your family?', 'Why are traditional festivals important?']]
+];
+const SPK_CK = [['Trả lời trực tiếp', /\b(my hometown|i think|i would say|in my opinion|i like|i love|i usually)\b/i], ['Nêu lý do', /\b(because|the main reason|due to|one important factor|first of all|mainly)\b/i], ['Thêm ý', /\b(what's more|what is more|on top of that|another|also|in addition|secondly)\b/i], ['Ví dụ', /\b(for example|for instance|to give you an example|such as)\b/i], ['Kết quả', /\b(as a result|because of this|that's why|that is why|so)\b/i], ['Kết luận', /\b(all in all|to sum up|in conclusion|finally|lastly)\b/i], ['Câu điều kiện', /\bif\b.+\b(would|could)\b/i]];
+function spkInit(el) {
+  if (!el) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, KEY = 'spk_hist';
+  const hist = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+  let ti = 0, qi = 0, run = null;
+  const fmt = n => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+  const draw = () => {
+    const H = hist(), T = SPK_TOPICS[ti];
+    el.innerHTML = `<h3 style="margin:0 0 4px">Luyện Speaking theo chủ đề</h3><p class="muted" style="margin:0 0 12px">Chọn chủ đề, bấm ghi âm và trả lời trong 1,5 đến 2 phút. Bản ghi chỉ nằm trên máy của em.</p>
+    <div class="spk-tp">${SPK_TOPICS.map((t, i) => `<button type="button" class="spk-c ${i === ti ? 'on' : ''}" data-t="${i}">${esc(t[0])}</button>`).join('')}</div>
+    <div class="spk-qs">${T[1].map((q, i) => `<button type="button" class="spk-q ${i === qi ? 'on' : ''}" data-q="${i}"><b>${i + 1}</b><span>${esc(q)}</span></button>`).join('')}</div>
+    <p class="muted" style="margin:10px 0 4px;font-size:.88rem">Công thức: <b>Trả lời trực tiếp</b> → <b>Lý do chính</b> → <b>Lý do thứ hai</b> → <b>Ví dụ cụ thể</b> → <b>Kết quả hoặc kết luận</b>.</p>
+    <div class="spk-r"><button type="button" class="btn" id="spk-go">${run ? 'Dừng' : 'Ghi âm'}</button><span class="spk-t" id="spk-t">0:00</span><small class="muted">Mục tiêu 1:30 đến 2:00</small></div><div id="spk-out"></div>
+    ${H.length ? `<h4 style="margin:18px 0 6px">Lịch sử luyện nói gần đây</h4><div class="spk-h">${H.slice(0, 6).map(h => `<div><span>${esc(h.t)}</span><em>${fmt(h.s)} · ${h.w} từ · ${h.v} từ/phút · ${h.c}/7 cấu trúc</em></div>`).join('')}</div>` : ''}`;
+    el.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { if (run) return; ti = +b.dataset.t; qi = 0; draw(); });
+    el.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { if (run) return; qi = +b.dataset.q; draw(); });
+    $('#spk-go', el).onclick = () => run ? run.stop() : start();
+  };
+  const start = () => {
+    const out = $('#spk-out', el), tm = $('#spk-t', el), btn = $('#spk-go', el);
+    if (!navigator.mediaDevices || !window.MediaRecorder) { out.innerHTML = '<p class="muted">Trình duyệt này chưa hỗ trợ ghi âm.</p>'; return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      const chunks = [], rec = new MediaRecorder(stream), t0 = Date.now(); let text = '', fin = '', sr = null, live = true;
+      rec.ondataavailable = e => chunks.push(e.data);
+      const stop = () => { if (!live) return; live = false; clearInterval(iv); try { rec.stop(); } catch {} try { sr && sr.stop(); } catch {} stream.getTracks().forEach(t => t.stop()); run = null; btn.textContent = 'Ghi âm lại'; };
+      rec.onstop = () => setTimeout(() => {
+        const secs = Math.max(1, Math.round((Date.now() - t0) / 1000)), url = URL.createObjectURL(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
+        const words = (text.match(/[A-Za-z']+/g) || []).length, wpm = Math.round(words / secs * 60), got = SPK_CK.map(c => c[1].test(text));
+        out.innerHTML = `<audio controls src="${url}" style="width:100%;margin-top:10px"></audio>${SR ? `<div class="spk-tr">${text ? esc(text) : 'Không nhận được lời nói. Hãy thử nói to và rõ hơn.'}</div><div class="spk-st"><div><b>${fmt(secs)}</b><small>thời gian</small></div><div><b>${words}</b><small>số từ</small></div><div><b>${wpm}</b><small>từ mỗi phút</small></div></div><small class="muted">Cấu trúc nhận diện được (chỉ để tham khảo):</small><div class="spk-ck">${SPK_CK.map((c, i) => `<span class="${got[i] ? 'y' : ''}">${c[0]}</span>`).join('')}</div><small>${secs < 75 ? 'Em nói hơi ngắn, thêm lý do hoặc ví dụ để đủ 1,5 phút.' : secs > 130 ? 'Em nói khá dài, hãy gọn lại còn khoảng 2 phút.' : 'Độ dài rất tốt.'}</small>` : '<p class="muted">Trình duyệt này chưa nhận diện giọng nói. Nghe lại bản ghi và tự đối chiếu với công thức (nên dùng Chrome để xem bản chữ).</p>'}`;
+        if (SR && words) { const H = hist(); H.unshift({ t: SPK_TOPICS[ti][0] + ' · câu ' + (qi + 1), s: secs, w: words, v: wpm, c: got.filter(Boolean).length, at: Date.now() }); try { localStorage.setItem(KEY, JSON.stringify(H.slice(0, 20))); } catch {} }
+      }, 700);
+      const iv = setInterval(() => { const s = Math.round((Date.now() - t0) / 1000); tm.textContent = fmt(s); if (s >= 180) stop(); }, 250);
+      run = { stop }; btn.textContent = 'Dừng'; out.innerHTML = '<div class="spk-tr">Đang nghe em nói…</div>'; rec.start();
+      if (SR) { sr = new SR(); sr.lang = 'en-US'; sr.continuous = true; sr.interimResults = true;
+        sr.onresult = e => { let itr = ''; for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) fin += e.results[i][0].transcript + ' '; else itr += e.results[i][0].transcript; } text = (fin + itr).trim(); const tr = $('.spk-tr', out); if (tr) tr.textContent = text || 'Đang nghe em nói…'; };
+        sr.onend = () => { if (live) { try { sr.start(); } catch {} } }; try { sr.start(); } catch {} }
+    }).catch(() => { out.innerHTML = '<p class="muted">Chưa cho phép micro. Hãy bật quyền micro cho trang này rồi thử lại.</p>'; });
+  };
+  draw();
+}
 function viewPron() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mode = 'word', lid = 'all', cur = null, meter = null;
@@ -7013,7 +7068,8 @@ function viewPron() {
   main.innerHTML = `<img class="rr-lban mt" src="img/speaking.webp" alt="Speaking" loading="lazy"><h2 style="margin:26px 0 6px;font-size:2.2rem">Phòng luyện phát âm AI</h2><p class="muted">Nghe mẫu, đọc to và nhận chẩn đoán lỗi từng âm. Học trọng âm bằng nhịp, nhận biết âm tiết nhấn và kiểm tra bằng bài trắc nghiệm. Dùng Chrome, Edge hoặc Safari và cho phép micro.</p>
     <div class="rank-tabs" style="margin-top:14px"><button class="btn sm" data-m="word">Luyện từ</button><button class="btn sm soft" data-m="sent">Luyện câu</button><button class="btn sm soft" data-m="stress">Quiz trọng âm</button><button class="btn sm soft" data-m="tips">Mẹo trọng âm</button></div>
     <div style="margin-top:12px"><select id="p-lesson" class="note" style="max-width:420px"><option value="all">Tất cả bài học</option>${S.lessons.map(l => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</select></div>
-    <section class="card" id="pr" style="margin:12px 0 50px"></section>`;
+    <section class="card" id="pr" style="margin:12px 0 18px"></section><section class="card" id="spk" style="margin:0 0 50px"></section>`;
+  spkInit($('#spk'));
   const el = $('#pr');
   const target = () => mode === 'sent' && cur.ex ? cur.ex : cur.en;
   const next = () => {
@@ -14220,6 +14276,12 @@ body:has(.rm-tabs [data-rrroom="listen"].on) .chat-fab,body:has(.rr-au) .chat-fa
 .pt-st{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.pt-st div{background:#F8FAFC;border:1px solid #E6EBF1;border-radius:12px;padding:10px;text-align:center}.pt-st b{display:block;font-size:1.25rem;color:#1F2937}.pt-st small{color:#64748B;font-size:.76rem}
 .pt-r{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:.82rem}.pt-r span{width:26px;font-weight:800;color:#374151}.pt-r em{width:38px;text-align:right;font-style:normal;color:#64748B;font-weight:700}.pt-w2{background:#FFF4E5;border:1px solid #FFD8A8;color:#9A5B00;border-radius:10px;padding:8px 12px;font-size:.84rem;margin:10px 0 0}
 .rr-card .rr-ct b .rr-tp{font-weight:600;color:#475569;background:none!important;padding:0!important;border:0!important;margin:0!important}.rr-card .rr-ct b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rr-pt{margin-left:auto;border:1.5px solid #F26B1D;background:#FFF4EC;color:#D85A10;font-weight:800;font-size:.84rem;border-radius:999px;padding:7px 16px;cursor:pointer}.rr-pt:hover{background:#F26B1D;color:#fff}
+.spk-tp{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.spk-c{border:1.5px solid #E6EBF1;background:#fff;border-radius:99px;padding:7px 15px;font-weight:700;font-size:.86rem;color:#475569;cursor:pointer}.spk-c.on{background:#F26B1D;border-color:#F26B1D;color:#fff}
+.spk-qs{display:grid;gap:8px}.spk-q{display:flex;gap:12px;align-items:center;text-align:left;border:1.5px solid #E6EBF1;background:#fff;border-radius:12px;padding:10px 14px;cursor:pointer;font:inherit}.spk-q b{flex:none;width:26px;height:26px;border-radius:8px;background:#FFF4EC;color:#D85A10;display:grid;place-items:center;font-size:.85rem}.spk-q.on{border-color:#F26B1D;background:#FFFAF6}
+.spk-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}.spk-t{font-size:1.6rem;font-weight:800;color:#D85A10;font-variant-numeric:tabular-nums}
+.spk-tr{background:#fff;border:1px solid #E6EBF1;border-radius:10px;padding:10px 12px;margin:10px 0;min-height:48px;font-style:italic;color:#334155}.spk-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.spk-st div{background:#F8FAFC;border:1px solid #E6EBF1;border-radius:10px;padding:8px;text-align:center}.spk-st b{display:block;font-size:1.2rem}.spk-st small{font-size:.75rem;color:#64748B}
+.spk-ck{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.spk-ck span{border-radius:99px;padding:3px 11px;font-size:.8rem;font-weight:700;background:#F1F5F9;color:#64748B}.spk-ck span.y{background:#DCFCE7;color:#166534}
+.spk-h div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #F0F2F5;font-size:.88rem}.spk-h em{font-style:normal;color:#64748B}
 .rr-lvs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed #E5E7EB}.rr-lvs>span{font-weight:700;font-size:.88rem;color:#374151}.rr-lv{border:1.5px solid #D5DEE9;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;color:#0B4C8C;transition:all .15s}.rr-lv small{opacity:.7;margin-left:2px}.rr-lv:hover{border-color:var(--cf,#0B4C8C)}.rr-lv.on{background:var(--cf,#0B4C8C);border-color:var(--cf,#0B4C8C);color:#fff}.rr-lv[data-rrl=all].on{background:#0B4C8C}.rr-ct .cf-b{margin:0 4px 0 0;font-size:.62rem;padding:0 7px}
 .rr-th button[data-rr=say]{background:rgba(255,255,255,.92)}.rr-loa{display:block;margin:auto;object-fit:contain;pointer-events:none}.rr-th button[data-rr=say]:hover{transform:scale(1.08)}.rr-sc button img{vertical-align:middle}
 

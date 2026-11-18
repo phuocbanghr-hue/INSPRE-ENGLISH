@@ -7179,7 +7179,6 @@ function wlAnalyze(text, task, L) {
   const ov = Math.round(lenS * .2 + vocS * .25 + cohS * .25 + accS * .3), cef = ov < 35 ? 'A1' : ov < 50 ? 'A2' : ov < 65 ? 'B1' : ov < 80 ? 'B2' : 'C1';
   return { ups, st, paras: paras.length, n, uniq: uniq.size, sents: sents.length, avgLen, links, b1, b2, E, reps, sc: { lenS, vocS, cohS, accS }, ov, cef };
 }
-const WLT = { id: 0, left: 0 };
 async function viewWriting() {
   const L = await spxCefr(), H = (() => { try { return JSON.parse(localStorage.getItem('wl_hist') || '[]'); } catch { return []; } })();
   let ti = +(localStorage.getItem('wl_ti') || 0); if (!WL_TASKS[ti]) ti = 0; let res = null;
@@ -7191,7 +7190,7 @@ async function viewWriting() {
     <section class="wl-main card"><div class="wl-p"><small>ĐỀ BÀI</small><p>${esc(T.p)}</p><div class="wl-k">${T.k.map(x => `<span>${esc(x)}</span>`).join('')}</div></div>
       <textarea id="wl-ta" class="wl-ta" spellcheck="false" placeholder="Viết bài của em ở đây bằng tiếng Anh…">${esc(draft)}</textarea>
       <div class="wl-coach" id="wl-co"></div>
-      <div class="wl-bar"><span id="wl-c" class="wl-c"></span><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn soft sm" id="wl-tm">Bấm giờ 25 phút</button><button type="button" class="btn soft sm" id="wl-m">Xem bài mẫu</button><button type="button" class="btn soft sm" id="wl-x">Xóa bài</button><button type="button" class="btn" id="wl-go">Chấm bài</button></div></div>
+      <div class="wl-bar"><span id="wl-c" class="wl-c"></span><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn soft sm" id="wl-m">Xem bài mẫu</button><button type="button" class="btn soft sm" id="wl-x">Xóa bài</button><button type="button" class="btn" id="wl-go">Chấm bài</button></div></div>
       <div id="wl-mod" class="wl-mod" hidden><b>Bài mẫu</b><p>${esc(T.m).replace(/\n/g, '<br>')}</p></div>
       <div id="wl-res"></div>
       ${H.length > 1 ? (() => { const pts = H.slice(0, 12).reverse(), w = 300, h = 60, xs = i => 8 + i * (w - 16) / Math.max(1, pts.length - 1), ys = v => h - 6 - v / 100 * (h - 12); return `<h4 style="margin:18px 0 4px">Tiến bộ qua ${pts.length} bài gần nhất</h4><svg viewBox="0 0 ${w} ${h}" class="wl-sp" role="img" aria-label="Biểu đồ điểm viết"><polyline fill="none" stroke="#F26B1D" stroke-width="2.5" points="${pts.map((p, i) => xs(i) + ',' + ys(p.ov)).join(' ')}"/>${pts.map((p, i) => `<circle cx="${xs(i)}" cy="${ys(p.ov)}" r="3.5" fill="#F26B1D"><title>${p.ov}/100</title></circle>`).join('')}</svg>`; })() : ''}
@@ -7216,7 +7215,6 @@ async function viewWriting() {
     const put = txt => { const p = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.value.slice(0, p), f = ta.value.slice(p), pre = b && !/\s$/.test(b) ? ' ' : ''; ta.value = b + pre + txt + f; const np = (b + pre + txt).length; ta.focus(); ta.setSelectionRange(np, np); cnt(); try { localStorage.setItem(dk(), ta.value); } catch {} live(); };
     let lt = 0; cnt(); live(); ta.oninput = () => { cnt(); try { localStorage.setItem(dk(), ta.value); } catch {} clearTimeout(lt); lt = setTimeout(live, 350); };
     main.querySelectorAll('[data-ti]').forEach(b => b.onclick = () => { ti = +b.dataset.ti; try { localStorage.setItem('wl_ti', ti); } catch {} res = null; draw(); });
-    $('#wl-tm').onclick = () => { if (WLT.id) { clearInterval(WLT.id); WLT.id = 0; $('#wl-tm').textContent = 'Bấm giờ 25 phút'; return; } WLT.left = 25 * 60; const tick = () => { const b = $('#wl-tm'); if (!b || S.view !== 'read') { clearInterval(WLT.id); WLT.id = 0; return; } WLT.left--; b.textContent = 'Còn ' + Math.floor(WLT.left / 60) + ':' + String(WLT.left % 60).padStart(2, '0') + ' (bấm để dừng)'; if (WLT.left <= 0) { clearInterval(WLT.id); WLT.id = 0; b.textContent = 'Hết giờ'; toast('Hết 25 phút. Hãy chấm bài ngay.', 'bad'); $('#wl-go').click(); } }; WLT.id = setInterval(tick, 1000); tick(); };
     $('#wl-m').onclick = () => { const m = $('#wl-mod'); m.hidden = !m.hidden; };
     $('#wl-x').onclick = async () => { if (!ta.value || await askBox('Xóa toàn bộ bài đang viết?', { title: 'Xóa bài', yes: 'Xóa', danger: true })) { ta.value = ''; try { localStorage.removeItem(dk()); } catch {} cnt(); $('#wl-res').innerHTML = ''; } };
     $('#wl-go').onclick = async () => {

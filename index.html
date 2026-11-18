@@ -7689,7 +7689,9 @@ function cxlGrades(c) {
   if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div></section>`;
   const rows = B.map(b => { const v = (P.bankbest || {})[b.id], at = (P.bankat || {})[b.id], n = (P.bankatt || {})[b.id] || (v != null ? 1 : 0);
     return `<tr><td class="gr-name"><span class="gr-ic">▸</span>${esc(b.title)}</td><td>${pill(v)}</td><td>${n}</td><td>${at ? new Date(at).toLocaleDateString('vi-VN') : '–'}</td></tr>`; }).join('');
-  return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}
+  const vals = B.map(b => (P.bankbest || {})[b.id]).filter(v => v != null), avg = vals.length ? Math.round(vals.reduce((x, y) => x + y, 0) / vals.length) : null, top = vals.length ? Math.max(...vals) : null;
+  const tiles = `<div class="gr-sum"><div><b>${avg == null ? '–' : avg + '%'}</b><small>Điểm trung bình</small></div><div><b>${top == null ? '–' : top + '%'}</b><small>Điểm cao nhất</small></div><div><b>${vals.length}/${B.length}</b><small>Bài đã làm</small></div></div><div class="gr-bars" aria-hidden="true">${B.map(b => { const v = (P.bankbest || {})[b.id]; return `<i title="${esc(b.title)}: ${v == null ? 'chưa làm' : v + '%'}" class="${v == null ? 'n' : v >= 80 ? 'hi' : v >= 50 ? 'mid' : 'lo'}" style="height:${v == null ? 6 : Math.max(8, v)}%"></i>`; }).join('')}</div>`;
+  return `<section class="gr"><h2 class="gr-t">Điểm số của em</h2>${head}${tiles}
     <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
@@ -12077,6 +12079,8 @@ else {
 @media(max-width:600px){.ln-nav{grid-template-columns:1fr}}
 .cxs-toc{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none}.cxs-toc::-webkit-scrollbar{display:none}.cxs-toc a{flex:none;text-decoration:none;font-size:.78rem;font-weight:700;color:#D85A10;background:#FFF4EC;border:1px solid #FBD9C3;border-radius:99px;padding:6px 14px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cxs-toc a:hover{background:#F26B1D;border-color:#F26B1D;color:#fff}
 .cxs-p{display:inline-flex;align-items:center;gap:8px;margin-left:12px;vertical-align:middle;font-size:.78rem;font-weight:800;color:#D85A10;letter-spacing:0}.cxs-p.ok{color:#15803D}.cxs-b{width:64px;height:6px;border-radius:99px;background:#F1E4E7;overflow:hidden;display:inline-block}.cxs-b i{display:block;height:100%;background:#F26B1D;border-radius:99px}.cxs-p.ok .cxs-b i{background:#22C55E}
+.gr-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.gr-sum div{background:#fff;border:1px solid #E6EBF1;border-radius:14px;padding:12px;text-align:center}.gr-sum b{display:block;font-size:1.5rem;color:#D85A10}.gr-sum small{color:#64748B;font-weight:700;font-size:.76rem}
+.gr-bars{display:flex;align-items:flex-end;gap:5px;height:90px;background:#FAFBFC;border:1px solid #E6EBF1;border-radius:14px;padding:10px 12px;margin-bottom:14px}.gr-bars i{flex:1;max-width:36px;border-radius:5px 5px 0 0;background:#CBD5E1}.gr-bars i.hi{background:#22C55E}.gr-bars i.mid{background:#F59E0B}.gr-bars i.lo{background:#EF4444}.gr-bars i.n{background:#E2E8F0}
 .ls-nav{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px;margin:0 0 6px;scrollbar-width:none}.ls-nav::-webkit-scrollbar{display:none}
 .ls-nav a{flex:none;text-decoration:none;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#D85A10;background:#FFF4EC;border:1px solid #FBD9C3;border-radius:99px;padding:7px 14px;transition:background .15s,color .15s}
 .ls-nav a:hover{background:#F26B1D;border-color:#F26B1D;color:#fff}

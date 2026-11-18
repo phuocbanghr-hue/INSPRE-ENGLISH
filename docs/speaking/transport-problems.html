@@ -7,6 +7,10 @@ h3{font-size:1.1rem;margin:24px 0 6px}h4{margin:16px 0 4px;font-size:.82rem;lett
 p{margin:8px 0}p.model{padding-left:14px;border-left:3px solid #FBD9C3}ul,ol{margin:6px 0 10px;padding-left:22px}li{margin:4px 0}ol.steps{padding-left:24px}
 table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:#FFF4EC;color:#D85A10;text-transform:uppercase;font-size:.78rem;letter-spacing:.04em}
 @media(max-width:560px){table,thead,tbody,tr,th,td{display:block}thead{display:none}tr{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:6px}td{border:0;padding:3px 6px}}
+.sp{border:1px solid #FBD9C3;background:#FFFAF6;border-radius:14px;padding:14px 16px;margin:10px 0 14px}.sp button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:9px 18px;cursor:pointer;background:var(--o);color:#fff}.sp button.g{background:#fff;color:#D85A10;border:1.5px solid var(--o)}
+.sp-t{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;color:#D85A10;margin:0 10px}.sp-r{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.sp small{color:var(--mut)}
+.sp-tr{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;min-height:48px;font-style:italic;color:#334155}.sp-st{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}.sp-st div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}.sp-st b{display:block;font-size:1.2rem}.sp-st small{font-size:.75rem}
+.sp-ck{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.sp-ck span{border-radius:99px;padding:3px 11px;font-size:.8rem;font-weight:700;background:#F1F5F9;color:#64748B}.sp-ck span.y{background:#DCFCE7;color:#166534}
 </style></head><body><div class="w"><span class="tag">Speaking test</span><h1>Answer Guide: Transport Problems in Your Hometown</h1><p class="sub">Choose Topic A if your hometown has lots of transport problems, or Topic B if it has few. Each question below comes with idea banks, a model answer of about 150 words, and useful language, so you can speak for a full 1.5 to 2 minutes.</p><h2>1. The answer formula</h2>
 <p class="">A strong answer has five parts, and each one adds 1 or 2 sentences. Together they fill about 150 words.</p>
 <ol class="steps">
@@ -114,4 +118,38 @@ table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.93rem}th,td{b
 <li>Do not memorise the model answers word for word. Memorise the structure and a few key phrases, then speak in your own words.</li>
 <li>Slow down a little, pause between ideas, and stress key words such as traffic, public transport and rush hour.</li>
 <li>Practice by recording yourself, then compare your answer with the idea bank to find ideas you missed.</li>
-</ul></div></body></html>
+</ul></div><script>
+(function(){
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var CK=[['Trả lời trực tiếp',/\b(my hometown|i think|i would say|in my opinion)\b/i],['Nêu lý do',/\b(because|the main reason|due to|one important factor|first of all|mainly)\b/i],['Thêm ý',/\b(what's more|what is more|on top of that|another|also|in addition|secondly)\b/i],['Ví dụ',/\b(for example|for instance|to give you an example|such as)\b/i],['Kết quả',/\b(as a result|because of this|that's why|that is why|so)\b/i],['Kết luận',/\b(all in all|to sum up|in conclusion|finally|lastly)\b/i],['Câu điều kiện',/\bif\b.+\b(would|could)\b/i]];
+document.querySelectorAll('h3').forEach(function(h){
+  if(!/^Question/.test(h.textContent))return;
+  var box=document.createElement('div');box.className='sp';
+  box.innerHTML='<div class="sp-r"><button type="button" class="go">Luyện nói câu này</button><span class="sp-t">0:00</span><small>Mục tiêu 1:30 – 2:00</small></div><div class="out"></div>';
+  h.after(box);
+  var btn=box.querySelector('.go'),tm=box.querySelector('.sp-t'),out=box.querySelector('.out');
+  var rec,chunks,stream,sr,t0,iv,text='',run=false;
+  function fmt(n){return Math.floor(n/60)+':'+('0'+(n%60)).slice(-2)}
+  function stop(){ if(!run)return; run=false; clearInterval(iv); try{rec.stop()}catch(e){} try{sr&&sr.stop()}catch(e){} stream&&stream.getTracks().forEach(function(t){t.stop()}); btn.textContent='Luyện nói lại'; btn.className='go'; }
+  btn.onclick=function(){
+    if(run){stop();return;}
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){
+      stream=st;chunks=[];text='';run=true;out.innerHTML='<div class="sp-tr">Đang nghe em nói…</div>';
+      rec=new MediaRecorder(st);rec.ondataavailable=function(e){chunks.push(e.data)};
+      rec.onstop=function(){ setTimeout(function(){ var secs=Math.max(1,Math.round((Date.now()-t0)/1000)),url=URL.createObjectURL(new Blob(chunks,{type:rec.mimeType||'audio/webm'}));
+        var words=(text.trim().match(/[A-Za-z']+/g)||[]).length,wpm=Math.round(words/secs*60);
+        var ck=CK.map(function(c){return '<span class="'+(c[1].test(text)?'y':'')+'">'+c[0]+'</span>'}).join('');
+        out.innerHTML='<audio controls src="'+url+'" style="width:100%"></audio>'+
+         (SR?'<div class="sp-tr">'+(text?text.replace(/</g,'&lt;'):'Không nhận được lời nói. Hãy thử nói to và rõ hơn.')+'</div><div class="sp-st"><div><b>'+fmt(secs)+'</b><small>thời gian</small></div><div><b>'+words+'</b><small>số từ</small></div><div><b>'+wpm+'</b><small>từ/phút</small></div></div><small>Cấu trúc đã dùng (tự nhận diện, chỉ để tham khảo):</small><div class="sp-ck">'+ck+'</div><small>'+(secs<75?'Em nói hơi ngắn, thử thêm lý do hoặc ví dụ để đủ 1,5 phút.':secs>130?'Em nói khá dài, hãy gọn lại còn khoảng 2 phút.':'Độ dài rất tốt.')+'</small>':'<small>Trình duyệt này chưa hỗ trợ nhận diện giọng nói. Hãy nghe lại bản ghi và tự đối chiếu với công thức ở trên (nên dùng Chrome để xem bản chữ).</small>');
+      },700); };
+      rec.start();t0=Date.now();btn.textContent='Dừng';btn.className='go g';
+      iv=setInterval(function(){var s=Math.round((Date.now()-t0)/1000);tm.textContent=fmt(s);if(s>=180)stop();},250);
+      if(SR){sr=new SR();sr.lang='en-US';sr.continuous=true;sr.interimResults=true;var fin='';
+        sr.onresult=function(e){var itr='';for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript+' ';else itr+=e.results[i][0].transcript;}text=fin+itr;var tr=out.querySelector('.sp-tr');if(tr)tr.textContent=text||'Đang nghe em nói…';};
+        sr.onend=function(){ if(run){try{sr.start()}catch(e){}} };
+        try{sr.start()}catch(e){}}
+    }).catch(function(){out.innerHTML='<small>Chưa cho phép micro. Hãy bật quyền micro cho trang này rồi thử lại.</small>';});
+  };
+});
+})();
+</script></body></html>

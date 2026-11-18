@@ -9856,6 +9856,7 @@ function rrListen() {
   const s = $('#dic-s'); s.oninput = () => { RR.dq = s.value; clearTimeout(rrListen._t); rrListen._t = setTimeout(() => { const pos = s.selectionStart; rrListen(); const n = $('#dic-s'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} }, 250); };
   scrollTo(0, 0);
 }
+let dcMiss = [];
 function rrDictation(st, dd) {
   const p = RR.data.find(x => x.n === st.n), tot = st.s.length;
   if (st.done) {
@@ -9881,12 +9882,13 @@ function rrDictation(st, dd) {
     if (e.target.closest('#dc-play')) return say();
     if (e.target.closest('#dc-slow')) return say(.6);
     if (e.target.closest('#dc-hint')) { const w = key.split(/\s+/); $('#dc-res').innerHTML = `<p class="dc-h">${w.map(x => esc(x.charAt(0)) + '·'.repeat(Math.max(0, x.replace(/[^A-Za-z']/g, '').length - 1))).join('&nbsp; ')}</p>`; return; }
+    if (e.target.closest('#dc-sv')) { const b = $('#dc-sv'); b.disabled = true; b.textContent = 'Đang lưu…'; Promise.all(dcMiss.map(async w => { try { const r = await rrMean(w); return r && r.vi ? w + '|' + r.vi : null; } catch (er) { return null; } })).then(items => { items = items.filter(Boolean); if (!items.length) { b.textContent = 'Chưa tra được nghĩa'; b.disabled = false; return; } if (S.profile) S.profile = { ...S.profile, rdwords: [...new Set([...(S.profile.rdwords || []), ...items])] }; api.updateMe({ rdwords: UNION(...items) }).catch(() => {}); b.textContent = 'Đã lưu ' + items.length + ' từ'; }); return; }
     if (e.target.closest('#dc-skip')) { st.sc.push(0); return next(); }
     if (e.target.closest('#dc-nx')) return next();
     if (e.target.closest('#dc-chk')) {
       if (checked) return next(); const v = inp.value.trim(); if (!v) { inp.focus(); return; }
       const r = dicDiff(v, key); st.sc.push(r.pct); checked = true; try { r.pct === 100 ? sfx.ok() : sfx.no(); } catch (er) {}
-      $('#dc-res').innerHTML = `<div class="dc-r"><b>${r.pct === 100 ? 'Chính xác!' : 'Đúng ' + r.pct + '%'}</b><p class="dc-line">${r.html}</p><p class="dc-key"><small>Đáp án:</small> ${esc(key)}</p></div>`;
+      $('#dc-res').innerHTML = `<div class="dc-r"><b>${r.pct === 100 ? 'Chính xác!' : 'Đúng ' + r.pct + '%'}</b><p class="dc-line">${r.html}</p><p class="dc-key"><small>Đáp án:</small> ${esc(key)}</p>${(() => { const have = new Set(dicNorm(v)); dcMiss = [...new Set(dicNorm(key).filter(w => w.length >= 3 && !have.has(w) && /^[a-z'-]+$/.test(w)))].slice(0, 6); return dcMiss.length ? `<p style="margin-top:8px"><small>Từ chưa nghe ra:</small> <b>${dcMiss.map(esc).join(', ')}</b> <button type="button" class="btn soft sm" id="dc-sv">＋ Lưu vào sổ từ</button></p>` : ''; })()}</div>`;
       $('#dc-chk').textContent = st.i + 1 >= tot ? 'Xem kết quả' : 'Câu tiếp →'; $('#dc-skip').hidden = true; inp.readOnly = true;
     }
   };

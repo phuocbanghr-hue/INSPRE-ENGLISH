@@ -9867,10 +9867,11 @@ function rrList() {
 /* ===== Thi thử Reading: đề đủ bài, bấm giờ, chấm điểm, quy đổi band, phân tích từng dạng câu ===== */
 const MK = { s: null, T: 0 };
 const mkHist = () => { try { return JSON.parse(localStorage.getItem('rr_mock') || '[]') || []; } catch (e) { return []; } };
-const mkBand = (sc, tot) => { const r = Math.round(sc / Math.max(1, tot) * 40); return r >= 39 ? 9 : r >= 37 ? 8.5 : r >= 35 ? 8 : r >= 33 ? 7.5 : r >= 30 ? 7 : r >= 27 ? 6.5 : r >= 23 ? 6 : r >= 19 ? 5.5 : r >= 15 ? 5 : r >= 13 ? 4.5 : r >= 10 ? 4 : r >= 6 ? 3.5 : 3; };
+const mkBand = (sc, tot, lis) => { const r = Math.round(sc / Math.max(1, tot) * 40); if (lis) return r >= 39 ? 9 : r >= 37 ? 8.5 : r >= 35 ? 8 : r >= 32 ? 7.5 : r >= 30 ? 7 : r >= 26 ? 6.5 : r >= 23 ? 6 : r >= 18 ? 5.5 : r >= 16 ? 5 : r >= 13 ? 4.5 : r >= 10 ? 4 : r >= 6 ? 3.5 : 3; return r >= 39 ? 9 : r >= 37 ? 8.5 : r >= 35 ? 8 : r >= 33 ? 7.5 : r >= 30 ? 7 : r >= 27 ? 6.5 : r >= 23 ? 6 : r >= 19 ? 5.5 : r >= 15 ? 5 : r >= 13 ? 4.5 : r >= 10 ? 4 : r >= 6 ? 3.5 : 3; };
 const mkSets = () => {
   const D = RR.data || [], out = [];
   for (let t = 1; t <= 8; t++) { const it = D.filter(x => x.g === 'IELTS Reading · Test ' + t && x.q.length); if (it.length) out.push({ id: 'ielts' + t, name: 'IELTS Reading · Test ' + t, sub: it.length + ' bài đọc · 60 phút · quy đổi band', min: 60, band: true, items: it }); }
+  for (let t = 1; t <= 4; t++) { const it = (RR.lis || []).filter(x => x.g === 'IELTS Listening · Test ' + t && x.q.length).sort((a, b) => a.n - b.n); if (it.length) out.push({ id: 'lis' + t, name: 'IELTS Listening · Test ' + t, sub: it.length + ' phần nghe · 30 phút · quy đổi band', min: 30, band: true, lis: true, items: it }); }
   const pick = (arr, n) => shuffle(arr).slice(0, n);
   const t10 = D.filter(x => x.g && /Vào 10/.test(x.g) && x.q.length), th = D.filter(x => x.g && /THPT/.test(x.g) && x.q.length), l9 = D.filter(x => x.g && /Lớp 9/.test(x.g) && x.q.length);
   if (t10.length >= 3) out.push({ id: 'g10', name: 'Đề luyện thi vào 10 (ngẫu nhiên)', sub: '3 bài ngẫu nhiên · 30 phút · thang 10', min: 30, items: pick(t10, 3), rnd: 1 });
@@ -9889,8 +9890,8 @@ function mkStart(set) {
 function mkOk(x, v) {
   const q = x.q; if (v === undefined || v === '' || v === -1) return false;
   if (q.o && q.o.length) return +v === q.a;
-  const s = String(v).trim().toLowerCase().replace(/[^a-z' -]/g, '').replace(/\s+/g, ' ');
-  if (q.f.includes(s)) return true;
+  const cp = z => String(z).toLowerCase().replace(/[^a-z0-9]/g, ''), s = String(v).trim().toLowerCase().replace(/[^a-z' -]/g, '').replace(/\s+/g, ' ');
+  if (q.f.includes(s) || (cp(v) && q.f.some(z => cp(z) === cp(v)))) return true;
   if (q.f.length > 1 && q.f.every(z => z.length === 1)) { const L = (s.match(/[a-z]/g) || []).sort().join(''); return L === q.f.slice().sort().join(''); }
   return false;
 }
@@ -9902,11 +9903,11 @@ function rrMockExam() {
   const Q = mine.map(({ x, i }) => { const q = x.q; let h = ''; if (x.lb.tag && x.lb.tag !== lastTag) { lastTag = x.lb.tag; h = `<div class="rr-grp"><b>${esc(x.lb.tag.replace(/^Q(\d+)-(\d+)/, 'Câu $1–$2'))}</b></div>`; }
     const v = m.ans[i], inp = q.o && q.o.length ? (q.o.length > 6 ? `<select class="mk-sel" data-mka="${i}"><option value="">Chọn…</option>${q.o.map((o, j) => `<option value="${j}" ${v === j ? 'selected' : ''}>${LET[j]}. ${esc(o)}</option>`).join('')}</select>` : q.o.map((o, j) => `<label class="mk-o"><input type="radio" name="mk${i}" data-mka="${i}" value="${j}" ${v === j ? 'checked' : ''}><span><b>${LET[j]}</b> ${esc(o)}</span></label>`).join('')) : `<input class="mk-fi" data-mka="${i}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Nhập đáp án" value="${esc(v || '')}">`;
     return h + `<div class="mk-q" id="mkq${i}"><div class="mk-qt"><span class="mk-no">${x.no}</span>${esc(x.lb.text)}</div>${inp}</div>`; }).join('');
-  const paras = it.p.filter(t => !/^[A-H]$/.test(String(t).trim())).map(t => `<p>${esc(t)}</p>`).join('');
+  const paras = it.au ? `<div class="rr-au"><audio controls preload="metadata" src="${esc(it.au)}"></audio></div><p class="muted" style="margin-top:12px">Nghe audio của phần này và trả lời các câu bên phải. Lời thoại (transcript) chỉ hiện sau khi nộp bài. Trong bài thi thật, audio chỉ phát một lần, em hãy tự giữ kỷ luật nhé.</p>` : it.p.filter(t => !/^[A-H]$/.test(String(t).trim())).map(t => `<p>${esc(t)}</p>`).join('');
   main.innerHTML = `<div class="mk-bar"><b>${esc(m.set.name)}</b><span class="mk-tm" id="mk-tm">--:--</span><button type="button" class="btn sm" id="mk-sub">Nộp bài</button></div>
-  <div class="mk-tabs">${m.items.map((x, pi) => `<button type="button" class="${pi === m.pi ? 'on' : ''}" data-mkpi="${pi}">Bài ${pi + 1}</button>`).join('')}<span class="muted" style="margin-left:auto;font-size:.8rem">Đáp án chỉ hiện sau khi nộp bài</span></div>
+  <div class="mk-tabs">${m.items.map((x, pi) => `<button type="button" class="${pi === m.pi ? 'on' : ''}" data-mkpi="${pi}">${m.set.lis ? 'Phần ' : 'Bài '}${pi + 1}</button>`).join('')}<span class="muted" style="margin-left:auto;font-size:.8rem">Đáp án chỉ hiện sau khi nộp bài</span></div>
   <div class="mk-pal">${pal}</div>
-  <div class="mk-wrap"><section class="card mk-psg"><small class="rr-ins">${esc((it.ins || '').replace(/ Tap any word to see its meaning\./, ''))}</small><h3 class="rr-title">${esc(it.t)}</h3>${paras}</section><section class="card mk-qs">${Q || '<p class="muted">Bài này không có câu chấm điểm.</p>'}</section></div>`;
+  <div class="mk-wrap"><section class="card mk-psg"><small class="rr-ins">${it.au ? '' : esc((it.ins || '').replace(/ Tap any word to see its meaning\./, ''))}</small><h3 class="rr-title">${esc(it.t)}</h3>${paras}</section><section class="card mk-qs">${Q || '<p class="muted">Bài này không có câu chấm điểm.</p>'}</section></div>`;
   const tick = () => { const el = $('#mk-tm'); if (!el || !MK.s || MK.s.done) { mkStop(); return; } const left = Math.max(0, MK.s.end - Date.now()), mm = Math.floor(left / 60000), ss = Math.floor(left % 60000 / 1000); el.textContent = String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); el.classList.toggle('warn', left < 300000); if (left <= 0) { mkStop(); toast('Hết giờ, bài được nộp tự động.', 'warn'); mkSubmit(); } };
   mkStop(); MK.T = setInterval(tick, 1000); tick();
   main.onclick = e => {
@@ -9921,7 +9922,7 @@ function rrMockExam() {
 function mkSubmit() {
   const m = MK.s; if (!m || m.done) return; m.done = true; mkStop();
   const res = m.qs.map((x, i) => ({ x, ok: mkOk(x, m.ans[i]), v: m.ans[i] })), sc = res.filter(r => r.ok).length, tot = res.length, used = Math.min(m.set.min * 60, Math.round((Date.now() - m.t0) / 1000));
-  const rec = { at: Date.now(), name: m.set.name, sc, tot, band: m.set.band ? mkBand(sc, tot) : null, sec: used };
+  const rec = { at: Date.now(), name: m.set.name, sc, tot, band: m.set.band ? mkBand(sc, tot, m.set.lis) : null, sec: used };
   try { const h = mkHist(); h.push(rec); localStorage.setItem('rr_mock', JSON.stringify(h.slice(-30))); } catch (e) {}
   m.res = res; m.rec = rec; rrMockResult();
 }
@@ -9935,11 +9936,12 @@ function rrMockResult() {
   const wrong = res.filter(z => !z.ok);
   const hist = mkHist().filter(h => h.name === rec.name).slice(-6);
   main.innerHTML = `<nav class="crumbs"><a href="#" data-mkback>Thi thử</a><span>›</span><b>Kết quả</b></nav>
-  <section class="card mk-score"><div class="mk-big"><b>${rec.sc}</b><span>/${rec.tot} câu đúng</span></div><div><h2 style="margin:0">${rec.band != null ? 'Ước lượng band ' + rec.band.toFixed(1) : (rec.sc / Math.max(1, rec.tot) * 10).toFixed(1) + ' / 10 điểm'}</h2><p class="muted" style="margin:4px 0">${esc(rec.name)} · ${pct}% · làm trong ${Math.floor(rec.sec / 60)} phút ${rec.sec % 60} giây${rec.band != null ? '<br>Band quy đổi theo thang IELTS Academic Reading (tham khảo).' : ''}</p>
+  <section class="card mk-score"><div class="mk-big"><b>${rec.sc}</b><span>/${rec.tot} câu đúng</span></div><div><h2 style="margin:0">${rec.band != null ? 'Ước lượng band ' + rec.band.toFixed(1) : (rec.sc / Math.max(1, rec.tot) * 10).toFixed(1) + ' / 10 điểm'}</h2><p class="muted" style="margin:4px 0">${esc(rec.name)} · ${pct}% · làm trong ${Math.floor(rec.sec / 60)} phút ${rec.sec % 60} giây${rec.band != null ? '<br>Band quy đổi theo thang IELTS Academic (tham khảo).' : ''}</p>
   <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" data-mkagain>Làm lại đề này</button><button class="btn soft" data-mkback>Chọn đề khác</button></div></div></section>
   <section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Kết quả từng bài đọc</h3>${byP.map(p => `<div class="mk-row"><span>${esc(p.t)}</span><b>${p.ok}/${p.n}</b>${bar(p.ok, p.n)}</div>`).join('')}</section>
   <section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Theo dạng câu hỏi</h3>${Object.keys(ty).map(k => `<div class="mk-row"><span>${esc(k)}</span><b>${ty[k].ok}/${ty[k].n}</b>${bar(ty[k].ok, ty[k].n, ty[k].ok / ty[k].n < .5 ? '#D6293E' : ty[k].ok / ty[k].n < .75 ? '#F59F00' : '#1F9D63')}</div>`).join('')}<p class="muted" style="margin:8px 0 0;font-size:.85rem">${(() => { const w = Object.keys(ty).filter(k => ty[k].n >= 2).sort((a, b) => ty[a].ok / ty[a].n - ty[b].ok / ty[b].n)[0]; return w && ty[w].ok < ty[w].n ? 'Dạng cần luyện thêm: <b>' + esc(w) + '</b>.' : 'Em làm đều các dạng, tiếp tục giữ phong độ!'; })()}</p></section>
   ${hist.length > 1 ? `<section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Tiến bộ qua các lần thi đề này</h3><div class="mk-hist">${hist.map(h => `<div><small>${h.sc}/${h.tot}</small><i style="height:${Math.max(4, Math.round(h.sc / h.tot * 70))}px"></i><small>${new Date(h.at).getDate()}/${new Date(h.at).getMonth() + 1}</small></div>`).join('')}</div></section>` : ''}
+  ${m.set.lis ? `<section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Lời thoại từng phần</h3>${m.items.map(it => `<details style="margin:6px 0"><summary><b>${esc(it.t)}</b></summary>${it.p.map(t => `<p style="line-height:1.6">${esc(t)}</p>`).join('')}</details>`).join('')}</section>` : ''}
   <section class="card" style="margin:14px 0 50px"><h3 style="margin:0 0 8px">Xem lại câu sai (${wrong.length})</h3>${wrong.length ? wrong.map(z => `<div class="mk-w"><div><span class="mk-no bad">${z.x.no}</span>${esc(z.x.lb.text).slice(0, 160)}</div><div>Em chọn: <b>${mine(z)}</b></div><div>Đáp án: <b style="color:#1B7F3B">${esc(ans(z))}</b></div>${z.x.q.e ? `<div class="muted">${esc(z.x.q.e)}</div>` : ''}</div>`).join('') : '<p>Em làm đúng tất cả. Xuất sắc!</p>'}</section>`;
   main.onclick = e => { if (e.target.closest('[data-mkback]')) { e.preventDefault(); MK.s = null; return rrMock(); } if (e.target.closest('[data-mkagain]')) { const s = mkSets().find(x => x.id === m.set.id) || m.set; return mkStart(s.rnd ? s : m.set); } };
   main.onchange = main.oninput = null; window.scrollTo(0, 0);
@@ -9947,7 +9949,7 @@ function rrMockResult() {
 function rrMock() {
   mkStop(); if (MK.s && !MK.s.done) return rrMockExam(); MK.s = null;
   const sets = mkSets(), H = mkHist().slice(-8).reverse();
-  main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero"><div><h2>Thi thử Reading</h2><p>Làm đề như thi thật: bấm giờ, đáp án chỉ hiện sau khi nộp. Cuối bài có điểm, band quy đổi, kết quả từng bài đọc và phân tích theo dạng câu hỏi để biết cần luyện gì.</p></div></section>
+  main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero"><div><h2>Thi thử Reading và Listening</h2><p>Làm đề như thi thật: bấm giờ, đáp án chỉ hiện sau khi nộp. Cuối bài có điểm, band quy đổi, kết quả từng bài đọc và phân tích theo dạng câu hỏi để biết cần luyện gì.</p></div></section>
   <div class="rr-grid" style="margin-top:14px">${sets.map(s => `<button type="button" class="rr-card" data-mkset="${s.id}"><span class="rr-ct"><b>${esc(s.name)}</b><small>${esc(s.sub)}</small></span></button>`).join('') || '<p class="muted">Đang tải đề…</p>'}</div>
   ${H.length ? `<section class="card" style="margin:16px 0 50px"><h3 style="margin:0 0 8px">Lịch sử thi thử</h3>${H.map(h => `<div class="mk-row"><span>${esc(h.name)} <small class="muted">· ${new Date(h.at).toLocaleDateString('vi-VN')}</small></span><b>${h.band != null ? 'Band ' + h.band.toFixed(1) + ' · ' : ''}${h.sc}/${h.tot}</b></div>`).join('')}</section>` : ''}`;
   main.onclick = e => { if (rrRoomClick(e)) return; const c = e.target.closest('[data-mkset]'); if (c) { const s = sets.find(x => x.id === c.dataset.mkset); if (s && confirm('Bắt đầu "' + s.name + '"? Đồng hồ ' + s.min + ' phút bắt đầu chạy ngay.')) mkStart(s); } };

@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>try{if(localStorage.getItem("inspire_theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}</script>
 <style>
 :root{
   --blue:#0B5CA8; --blue-d:#084A87; --blue-l:#EAF2FB; --link:#0F6CBF;
@@ -1537,6 +1538,9 @@ body:has(.ovl:not([hidden])) .bar .nav,body:has(.ovl:not([hidden])) .bar .menu,b
 .bar .nav .navb[data-go=exam],.bar .menu .mi[data-go=exam]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h6l1 2h3v16H5V5h3z'/%3E%3Cpath d='M9 13l2 2 4-4'/%3E%3C/svg%3E")}
 .bar .menu .mi[data-go=docs],.bar .nav .navb[data-go=docs]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E")}
 </style>
+<style id="dark-v1">html.dark{filter:invert(1) hue-rotate(180deg);background:#fff}
+html.dark img,html.dark video,html.dark iframe,html.dark canvas,html.dark .drv,html.dark [style*="background-image"],html.dark .cg-cv,html.dark .rr-lban,html.dark .tl-ban{filter:invert(1) hue-rotate(180deg)}
+html.dark .rm-paper{filter:invert(1) hue-rotate(180deg)}</style>
 </head>
 <body>
 <style id="intro-css">
@@ -9958,11 +9962,13 @@ function viewProfile() {
       <p style="margin-bottom:6px">Ảnh đại diện</p><div class="avup"><div class="avatar-btn" id="avprev">${avHTML({ avatar: av, name: p.name })}</div><div><label class="btn soft sm" for="avfile" style="cursor:pointer">Tải ảnh lên</label><input id="avfile" type="file" accept="image/*" hidden><p class="muted" style="font-size:.85rem;margin-top:6px">Ảnh được tự cắt vuông và nén nhỏ. Nhớ bấm Lưu thay đổi.</p></div></div><div class="avs">${AVATARS.map(a => `<button data-av="${a}" class="${a === av ? 'on' : ''}" aria-label="Chọn ${a}">${a}</button>`).join('')}</div>
       <div class="form2"><label class="field"><span>Tên hiển thị</span><input id="s-name" maxlength="40" value="${esc(p.name)}"></label><label class="field"><span>Lớp</span><input id="s-class" maxlength="30" value="${esc(p.className || '')}"></label></div>
       <label class="field" style="max-width:280px"><span>Mục tiêu mỗi ngày</span><select id="s-goal">${[30, 50, 80, 120].map(g => `<option value="${g}" ${(p.goal || 50) === g ? 'selected' : ''}>${g} XP${g === 30 ? ' (nhẹ nhàng)' : g === 50 ? ' (vừa sức)' : g === 80 ? ' (chăm chỉ)' : ' (thử thách)'}</option>`).join('')}</select></label>
+      <label class="field" style="max-width:280px"><span>Giao diện</span><select id="s-theme"><option value="light">Sáng</option><option value="dark">Tối</option></select></label>
       <div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn" id="s-save">Lưu thay đổi</button><button class="btn soft" id="s-pw">Gửi email đổi mật khẩu</button><button class="btn soft" id="s-out">Đăng xuất</button></div></section>`;
   $('#avfile').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { av = await resizeImg(f); $('#avprev').innerHTML = avHTML({ avatar: av, name: p.name }); toast('Đã chọn ảnh. Bấm Lưu thay đổi để áp dụng.', 'ok'); } catch (er) { toast(er.message, 'bad'); } };
   main.querySelector('.avs').onclick = e => { const b = e.target.closest('[data-av]'); if (!b) return; av = b.dataset.av; main.querySelectorAll('.avs button').forEach(x => x.classList.toggle('on', x === b)); main.querySelector('.avatar-btn').textContent = av; };
   $('#s-save').onclick = async () => { const name = $('#s-name').value.trim(); if (!name) return toast('Tên không được để trống.', 'bad'); try { await api.updateMe({ name, className: $('#s-class').value.trim(), avatar: av, goal: +$('#s-goal').value }); toast('Đã lưu.'); } catch (e) { toast(e.message, 'bad'); } };
   $('#s-pw').onclick = async () => { try { await api.reset(S.user.email); toast('Đã gửi email đổi mật khẩu.'); } catch (e) { toast(e.message, 'bad'); } };
+  { const th = $('#s-theme'); if (th) { try { th.value = localStorage.getItem('inspire_theme') === 'dark' ? 'dark' : 'light'; } catch {} th.onchange = () => { try { localStorage.setItem('inspire_theme', th.value); } catch {} document.documentElement.classList.toggle('dark', th.value === 'dark'); }; } }
   $('#s-out').onclick = () => api.signOut();
 }
 

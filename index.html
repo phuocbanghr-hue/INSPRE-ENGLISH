@@ -12990,16 +12990,21 @@ else {
       { id: 'lesson', t: 'Học một bài mới', d: nl.length ? nl[0].title : 'Em đã học hết các bài đang mở', btn: 'Học bài này', go: () => nl.length && I().open && I().open(nl[0].id) },
       { id: 'write', t: 'Viết một đoạn ngắn', d: 'Khoảng 3 câu về chủ đề hôm nay', btn: 'Viết ngay', go: () => { const b = panel.querySelector('[data-t="write"]'); if (b) b.click(); } }
     ];
+    try {
+      const sd = skillData(), w = sd.ax.filter(([n, v]) => v != null && ['Đọc', 'Nghe', 'Từ vựng'].includes(n)).sort((a, b) => a[1] - b[1])[0];
+      const T = w ? w[0] : 'Đọc', room = T === 'Nghe' ? 'listen' : 'read';
+      steps.push({ id: 'weak', t: w ? 'Luyện kỹ năng yếu: ' + T : 'Làm một bài ở Phòng đọc', d: w ? T + ' đang ở mức ' + Math.round(w[1]) + '/100, mỗi ngày luyện một chút sẽ lên nhanh' : 'Chọn một bài đọc ngắn và làm hết câu hỏi', btn: 'Luyện ngay', go: () => { RR.room = room; I().go && I().go('read'); } });
+    } catch (er) {}
     const done = steps.filter(s => st[s.id]).length;
-    body().innerHTML = `<div class="tl-sub">Lộ trình hôm nay: <b>${done}/3</b> việc đã xong${done === 3 ? ' · Hoàn thành hôm nay!' : ''}</div>
-      <div class="tl-meter"><i style="width:${done / 3 * 100}%"></i></div>
+    body().innerHTML = `<div class="tl-sub">Lộ trình hôm nay: <b>${done}/${steps.length}</b> việc đã xong${done === steps.length ? ' · Hoàn thành hôm nay!' : ''}</div>
+      <div class="tl-meter"><i style="width:${done / steps.length * 100}%"></i></div>
       ${steps.map(s => `<div class="tl-d"><span><b>${esc(s.t)}</b><small>${esc(s.d)}</small></span><span class="tl-row" style="margin:0">${!st[s.id] ? `<button class="tl-btn soft" data-go="${s.id}">${s.btn}</button>` : ''}<button class="tl-btn ${st[s.id] ? '' : 'soft'}" data-done="${s.id}" ${st[s.id] ? 'disabled' : ''}>${st[s.id] ? 'Xong' : 'Đánh dấu xong'}</button></span></div>`).join('')}`;
     body().querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const s = steps.find(x => x.id === b.dataset.go); if (s) s.go(); });
     body().querySelectorAll('[data-done]').forEach(b => b.onclick = () => {
       const id = b.dataset.done; if (st[id]) return;
       st[id] = 1; store.set(k, JSON.stringify(st));
       rewardXP(3);
-      if (Object.keys(st).filter(x => steps.some(s => s.id === x)).length === 3 && !st.bonus) { st.bonus = 1; store.set(k, JSON.stringify(st)); setTimeout(() => rewardXP(10), 700); }
+      if (Object.keys(st).filter(x => steps.some(s => s.id === x)).length === steps.length && !st.bonus) { st.bonus = 1; store.set(k, JSON.stringify(st)); setTimeout(() => rewardXP(10), 700); }
       drawPlan();
     });
   }
@@ -13016,7 +13021,7 @@ else {
     } catch (e) {}
   }, 6000);
   /* --- Linh vật Bông: lời nhắc và hiệu ứng khi nhận XP --- */
-  const TIPS = { scr: 'Xếp câu giúp em nhớ trật tự từ trong tiếng Anh. Nghe lại câu đúng nhé!', dict: 'Gặp từ lạ thì tra ngay, nhớ ghi lại vào Ghi chú.', plan: 'Làm đủ ba việc nhỏ mỗi ngày, học sẽ đều và nhớ lâu hơn. Xong cả ba em được thưởng thêm.', focus: 'Học 25 phút rồi nghỉ 5 phút. Nghỉ đúng giờ giúp nhớ lâu hơn!', sprint: 'Đừng lo sai. Nhớ nghĩa từ đúng lúc còn quan trọng hơn gõ nhanh.', write: 'Viết trước, sửa sau. Đừng xoá khi đang viết.', speak: 'Nói to và chậm, đừng sợ phát âm chưa đúng. Luyện nhiều sẽ hay lên.', read: 'Chạm vào từ lạ để xem nghĩa. Từ đã chạm sẽ được lưu để ôn.', listen: 'Nghe chậm trước, rồi tăng tốc dần. Đừng ngại nghe lại nhiều lần.', due: 'Làm bài sớm trước hạn để tránh dồn việc vào cuối tuần.' };
+  const TIPS = { scr: 'Xếp câu giúp em nhớ trật tự từ trong tiếng Anh. Nghe lại câu đúng nhé!', dict: 'Gặp từ lạ thì tra ngay, nhớ ghi lại vào Ghi chú.', plan: 'Làm đủ các việc nhỏ mỗi ngày, học sẽ đều và nhớ lâu hơn. Xong cả ba em được thưởng thêm.', focus: 'Học 25 phút rồi nghỉ 5 phút. Nghỉ đúng giờ giúp nhớ lâu hơn!', sprint: 'Đừng lo sai. Nhớ nghĩa từ đúng lúc còn quan trọng hơn gõ nhanh.', write: 'Viết trước, sửa sau. Đừng xoá khi đang viết.', speak: 'Nói to và chậm, đừng sợ phát âm chưa đúng. Luyện nhiều sẽ hay lên.', read: 'Chạm vào từ lạ để xem nghĩa. Từ đã chạm sẽ được lưu để ôn.', listen: 'Nghe chậm trước, rồi tăng tốc dần. Đừng ngại nghe lại nhiều lần.', due: 'Làm bài sớm trước hạn để tránh dồn việc vào cuối tuần.' };
   function bubble(t) { const b = document.getElementById('tl-bub'); if (b) b.textContent = t; }
   function rewardXP(x) {
     if (I().award) I().award(null, x, {}, 'tool');

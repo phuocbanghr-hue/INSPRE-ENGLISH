@@ -3686,6 +3686,8 @@ function TEACHER() { return S.role === 'teacher'; }
 function navList() { if (!TEACHER()) return NAV; const ic = k => (NAV.find(n => n[0] === k) || [])[1]; return [['cls', ic('cls'), 'Lớp của tôi'], ['tcourses', ic('courses'), 'Khoá học của tôi'], ...(can('lessons') ? [['content', ic('content'), 'Nội dung học tập']] : [])]; }
 const nid = p => p + Math.random().toString(36).slice(2, 7) + Date.now().toString(36).slice(-3);
 const normN = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+/* Trung tâm chỉ có 2 lớp: gom mọi cách ghi tên lớp về 2 tên chuẩn */
+const canonClass = raw => { const t = String(raw || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim(); if (!t) return ''; if (/unlock|\bul\s*7\b/.test(t)) return 'UNLOCK 7'; if (/9.*10|on\s*(luyen\s*)?thi|luyen\s*thi/.test(t)) return 'ÔN THI 9 LÊN 10'; return String(raw).trim(); };
 const okUrl = u => /^https:\/\/\S+$/i.test(u || '');
 const ITYPE = {
   text: { n: 'Ghi chú / văn bản', s: 'Ghi chú', d: '<path d="M4 6h16M4 12h16M4 18h10"/>' },
@@ -3704,7 +3706,7 @@ const cBanks = c => (S.banks || []).filter(b => b.classId === c.id).sort((a, b) 
 const myUid = () => (S.user && S.user.uid) || 'admin';
 const myName = () => (S.me && S.me.name) || (S.user && (S.user.displayName || S.user.email)) || 'Admin';
 const stuOf = (c, id) => S.users.find(u => u.id === id) || { id, name: (c.names || {})[id] || 'Học sinh' };
-function pending(c) { return S.users.filter(u => !u.disabled && u.className && normN(u.className) === normN(c.name) && !(c.members || []).includes(u.id)); }
+function pending(c) { return S.users.filter(u => !u.disabled && u.className && canonClass(u.className) === canonClass(c.name) && !(c.members || []).includes(u.id)); }
 const saveClass = (c, patch) => {
   try { api.add('audit', { at: Date.now(), by: (S.user && S.user.email) || '', action: 'Sửa lớp', target: c.name || c.id, keys: Object.keys(patch || {}).join(', ') }).catch(() => {}); } catch {}
   return api.update('classes', c.id, { ...patch, updatedAtMs: Date.now() });
@@ -3796,7 +3798,7 @@ function vClasses() {
         const have = new Set(S.classes.map(c => normN(c.name))), names = classList().filter(n => !have.has(normN(n)));
         if (!names.length) return toast('Mọi tên lớp học sinh đang có đều đã có trang lớp.', 'warn');
         if (!confirm('Tạo ' + names.length + ' lớp: ' + names.join(', ') + '?\nHọc sinh đang mang tên lớp đó sẽ được thêm làm thành viên.')) return;
-        for (const n of names) await createClass(n, { members: S.users.filter(u => u.className === n && !u.disabled) });
+        for (const n of names) await createClass(n, { members: S.users.filter(u => canonClass(u.className) === canonClass(n) && !u.disabled) });
         toast('Đã tạo ' + names.length + ' lớp.');
       }
     } catch (er) { toast(er.message, 'bad'); }
@@ -3816,7 +3818,7 @@ function classForm() {
     const name = $('#cf-n', ov).value.trim(); if (!name) return toast('Nhập tên lớp nhé.', 'bad');
     if (S.classes.some(c => normN(c.name) === normN(name))) return toast('Đã có lớp tên này.', 'bad');
     try {
-      const mem = $('#cf-m', ov).checked ? S.users.filter(u => !u.disabled && normN(u.className) === normN(name)) : [];
+      const mem = $('#cf-m', ov).checked ? S.users.filter(u => !u.disabled && canonClass(u.className) === canonClass(name)) : [];
       const id = await createClass(name, { desc: $('#cf-d', ov).value.trim(), chapters: Math.max(0, Math.min(30, +$('#cf-c', ov).value || 0)), teacherIds: [...ov.querySelectorAll('.cf-t:checked')].map(x => x.value), members: mem });
       close(); S.cx = { id, tab: 'content' }; toast('Đã tạo lớp ' + name + '.'); vClasses();
     } catch (er) { toast(er.message, 'bad'); }
@@ -6362,7 +6364,7 @@ function startData() {
       : api.watch('classes', l => { S.classes = l; refresh(); }, e => toast('Không đọc được lớp (cập nhật Firestore rules): ' + e.message, 'bad')),
     ...(TEACHER() ? [] : [api.watch('teachers', t => { S.teachers = t; refresh(); }, e => toast('Không đọc được giáo viên: ' + e.message, 'bad')), api.watch('audit', x => { S.audit = x; refresh(); }, () => { })]),
     api.watch('lessons', l => { S.lessons = l; refresh(); }, e => toast('Không đọc được bài học: ' + e.message, 'bad')),
-    api.watch('users', u => { S.users = u; refresh(); }, e => toast('Không đọc được học sinh: ' + e.message, 'bad')),
+    api.watch('users', u => { S.users = u.map(x => ({ ...x, className: canonClass(x.className) })); refresh(); }, e => toast('Không đọc được học sinh: ' + e.message, 'bad')),
     api.watch('assignments', a => { S.assignments = a; refresh(); }, e => toast('Không đọc được bài tập đã giao: ' + e.message, 'bad')),
     api.watch('arenaSets', l => { S.arenaSets = l; if (S.view === 'cls' && S.cx && S.cx.tab === 'arena') draw(); }, e => toast('Không đọc được bộ câu game: ' + e.message, 'bad')),
     api.watch('questions', l => { S.questions = l; if (S.view === 'cls' && S.cx && S.cx.tab === 'qa') draw(); }, e => toast('Không đọc được hỏi đáp: ' + e.message, 'bad')),

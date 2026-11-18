@@ -3826,11 +3826,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['kids', 'Bé học (Kids)'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['over', 'Tổng quan'], ['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['risk', 'Cảnh báo'], ['kids', 'Bé học (Kids)'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div><button class="btn soft sm" data-a="share-class">Chia sẻ lớp</button></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, kids: cxKids, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ over: cxOverview, content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, kids: cxKids, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -4601,6 +4601,20 @@ function cxKids(c, el) {
     <div class="card tbl-wrap">${rows.length ? `<table><thead><tr><th>Bé</th><th>Cấp bậc</th><th>Sticker (loại / lượt)</th><th>Lần cuối vào học</th></tr></thead><tbody>
     ${rows.map(r => `<tr><td>${avH(r.u, 26)}<b>${esc(r.u.name || 'Bé')}</b></td><td>${r.rk[1]} ${r.rk[2]}</td><td>${r.kinds} / ${r.total}</td><td>${r.days === null ? '<span class="muted">Chưa có</span>' : r.days === 0 ? 'Hôm nay' : r.days + ' ngày trước'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>`;
 }
+function cxOverview(c, el) {
+  const U = (c.members || []).map(id => stuOf(c, id)), N = 14, days = [];
+  for (let i = N - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const k = dayKey(d); days.push({ k, l: d.getDate() + '/' + (d.getMonth() + 1), a: U.filter(u => ((u.daily || {})[k] || 0) > 0).length, xp: U.reduce((s, u) => s + ((u.daily || {})[k] || 0), 0) }); }
+  const wkXp = u => days.slice(-7).reduce((s, d) => s + ((u.daily || {})[d.k] || 0), 0), wkDays = u => days.slice(-7).filter(d => ((u.daily || {})[d.k] || 0) > 0).length;
+  const rows = U.map(u => ({ u, xp: wkXp(u), d: wkDays(u) })).sort((a, b) => b.xp - a.xp);
+  const tot = rows.reduce((s, r) => s + r.xp, 0), act7 = rows.filter(r => r.d > 0).length, idle = rows.filter(r => !r.d), todayN = days[N - 1].a;
+  const mx = Math.max(1, ...days.map(d => d.a)), n = U.length || 1;
+  const K = (t, v) => `<div class="card"><small class="muted">${t}</small><h2 style="margin:4px 0 0">${v}</h2></div>`;
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+    ${K('Học hôm nay', todayN + '/' + U.length)}${K('Học trong 7 ngày', act7 + '/' + U.length + ' (' + Math.round(act7 / n * 100) + '%)')}${K('XP cả lớp 7 ngày', tot)}${K('Chưa học 7 ngày', idle.length)}</div>
+    <div class="card"><b>Số em học mỗi ngày (14 ngày)</b><div style="display:flex;gap:4px;align-items:flex-end;height:110px;margin-top:10px">${days.map(d => `<div style="flex:1;text-align:center;font-size:.7rem" title="${d.l}: ${d.a} em, ${d.xp} XP"><div>${d.a}</div><div style="height:${Math.max(3, Math.round(d.a / mx * 70))}px;background:#B10B32;opacity:${d.a ? 1 : .25};border-radius:3px 3px 0 0"></div><div class="muted">${d.l.split('/')[0]}</div></div>`).join('')}</div></div>
+    <div class="card tbl-wrap" style="margin-top:12px"><b>Xếp hạng chăm chỉ tuần này</b>${rows.length ? `<table><thead><tr><th>#</th><th>Học sinh</th><th>XP 7 ngày</th><th>Số ngày học</th><th>Chuỗi</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${avH(r.u, 26)}<b>${esc(r.u.name || 'Học sinh')}</b></td><td>${r.xp}</td><td>${r.d}/7</td><td>${+r.u.streak || 0}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>
+    ${idle.length ? `<p class="muted" style="margin-top:10px">Chưa học tuần này: ${idle.map(r => esc(r.u.name || 'Học sinh')).join(', ')}.</p>` : ''}`;
+}
 function cxRisk(c, el) {
   const B = cBanks(c), rows = clsRiskRows(c);
   const risky = rows.filter(r => r.reasons.length), active7 = rows.filter(r => r.days !== null && r.days < 7).length;
@@ -4629,7 +4643,7 @@ const PERMS = [
   ['lessons', 'Nội dung học tập 6–9', 'Thêm, sửa bài học và từ vựng của 4 khối']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { over: 'grades', arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; if (k === 'lessons') return !(S.me && S.me.perms) || S.me.perms.lessons !== false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;

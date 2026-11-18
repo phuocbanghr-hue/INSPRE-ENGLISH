@@ -9980,6 +9980,21 @@ function classRaceHTML(all) {
   const mx = rows[0].xp || 1, me = String((S.profile && S.profile.className) || '').trim();
   return `<div class="card cr-box" style="padding:12px 14px;margin-bottom:12px"><b style="font-size:1.05rem">🏁 Đua lớp</b><div class="muted" style="font-size:.82rem;margin:2px 0 8px">Tổng XP của các bạn trong Top 300. Lớp nào cũng có cơ hội, cố lên nhé!</div>${rows.map((r, i) => `<div class="cr-r${r.c === me ? ' me' : ''}"><span class="cr-i">${['🥇', '🥈', '🥉'][i] || i + 1}</span><div class="cr-m"><div class="cr-t"><b>${esc(r.c)}</b><small>${r.n} bạn · TB ${Math.round(r.xp / r.n)} XP</small></div><div class="cr-b"><i style="width:${Math.max(6, Math.round(r.xp / mx * 100))}%"></i><s class="cr-car" style="left:${Math.max(6, Math.round(r.xp / mx * 100))}%"><svg viewBox="0 0 48 24" width="40" height="20" aria-hidden="true"><path d="M3 15h2l2-5 8-2 6-4h8l5 5 8 2 4 2v4H3z" fill="#E0243A"/><path d="M17 8l5-3h7l4 4-16-1z" fill="#FFF3F4"/><path d="M3 15v3h42v-3z" fill="#9A0823"/><circle cx="13" cy="19" r="4.2" fill="#222"/><circle cx="13" cy="19" r="1.7" fill="#ccc"/><circle cx="36" cy="19" r="4.2" fill="#222"/><circle cx="36" cy="19" r="1.7" fill="#ccc"/><path d="M42 12h4" stroke="#FFC145" stroke-width="2" stroke-linecap="round"/></svg></s><u class="cr-fl">🏁</u></div></div><em>${r.xp}</em></div>`).join('')}</div>`;
 }
+function leagueHTML(all) {
+  const me = S.user && S.user.uid, mp = (all || []).find(p => (p.id || p.uid) === me), cls = S.profile && S.profile.className;
+  if (!mp || !cls) return '';
+  const grp = all.filter(p => norm(p.className || '') === norm(cls)).map(p => ({ id: p.id || p.uid, n: p.name || 'Học sinh', w: weekXp(p) })).sort((a, b) => b.w - a.w);
+  if (grp.length < 2) return '';
+  const lvl = levelInfo(mp.xp).lvl, T = ['Đồng', 'Bạc', 'Vàng', 'Bạch kim', 'Kim cương'][Math.min(4, Math.floor((lvl - 1) / 3))];
+  const k = Math.max(1, Math.min(3, Math.floor(grp.length / 4))), pos = grp.findIndex(r => r.id === me), left = Math.max(0, weekInfo().end - Date.now()), dd = Math.floor(left / 864e5), hh = Math.floor(left % 864e5 / 36e5);
+  const zone = i => i < k ? 'up' : (grp.length >= 6 && i >= grp.length - k) ? 'dn' : '';
+  const gap = pos > 0 ? grp[pos - 1].w - grp[pos].w + 1 : 0;
+  const msg = pos < k ? 'Em đang trong nhóm lên hạng. Giữ vững nhé!' : zone(pos) === 'dn' ? 'Em đang ở nhóm cuối. Làm thêm vài bài để thoát nhóm xuống hạng!' : 'Còn ' + gap + ' XP nữa để vượt bạn phía trên.';
+  const rows = grp.map((r, i) => ({ r, i })).filter(({ i }) => i < 5 || Math.abs(i - pos) <= 1 || i >= grp.length - 1);
+  let out = '', last = -1;
+  rows.forEach(({ r, i }) => { if (last >= 0 && i - last > 1) out += '<div class="lg-gap">···</div>'; last = i; const z = zone(i); out += `<div class="lg-r ${z} ${r.id === me ? 'me' : ''}"><span class="lg-n">${i + 1}</span><b>${esc(r.n)}</b><em>${r.w} XP</em>${z === 'up' ? '<i class="lg-t up">Lên hạng</i>' : z === 'dn' ? '<i class="lg-t dn">Xuống hạng</i>' : ''}</div>`; });
+  return `<div class="card lg-box" style="padding:14px 16px;margin-bottom:12px"><div class="lg-h"><b style="font-size:1.05rem">Giải đấu tuần · Hạng ${T}</b><span class="muted" style="font-size:.82rem">Còn ${dd} ngày ${hh} giờ</span></div><p class="muted" style="font-size:.84rem;margin:4px 0 8px">${msg}</p>${out}</div>`;
+}
 function viewRank() {
   main.innerHTML = `<h2 style="margin:26px 0 12px;font-size:2.2rem">Bảng xếp hạng</h2>
     <div class="rank-tabs"><button class="btn sm ${S.rankFilter === 'all' ? '' : 'soft'}" data-f="all">Toàn trường</button><button class="btn sm ${S.rankFilter === 'class' ? '' : 'soft'}" data-f="class">Lớp của em</button></div>
@@ -9996,7 +10011,7 @@ function viewRank() {
     const tally = {}; Object.values(hist).forEach(h => (h.winners || []).forEach(w => { const k = w.uid; (tally[k] ||= { n: w.name, c: w.className, k: 0 }).k++; }));
     const medal = Object.values(tally).sort((a, b) => b.k - a.k).slice(0, 5);
     const wr = w => `<div class="bb-r ${w.uid === S.user.uid ? 'me' : ''}"><span class="rank-av">${avHTML({ avatar: w.avatar, name: w.name })}</span><span class="bb-n"><b>${esc(w.name)}</b><small>${esc(w.className)}</small></span><em>${w.xp} XP</em>${BOBA}</div>`;
-    const crEl = $('#cr-slot'); if (crEl) crEl.innerHTML = classRaceHTML(all);
+    const crEl = $('#cr-slot'); if (crEl) crEl.innerHTML = leagueHTML(all) + classRaceHTML(all);
     el.innerHTML = `<b style="font-size:1.05rem">🧋 Top 1 tuần này của từng lớp</b><div class="bb-cd">⏳ Chốt tuần lúc 17:00 thứ Hai (còn ${dd} ngày ${hh} giờ). Sau đó XP tuần về 0 và người dẫn đầu được ghi vào bảng nhận trà sữa.</div>`
       + (rows.length ? rows.map(wr).join('') : '<div class="muted" style="margin:6px 0">Tuần này chưa ai nhận XP. Làm bài ngay để giành 🧋!</div>')
       + `<details class="bb-h" open><summary>🧋 Bảng tổng hợp bạn được tặng trà sữa</summary>`
@@ -14119,6 +14134,7 @@ document.addEventListener('click', e => {
 .cr-r{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:12px}.cr-r.me{background:#FFF1E8}
 .cr-i{width:28px;text-align:center;font-size:1.25rem;font-weight:800;color:#64748B}.cr-m{flex:1;min-width:0}
 .cr-t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.cr-t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cr-t small{color:#64748B;white-space:nowrap}
+.lg-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.lg-r{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;margin-top:4px}.lg-r.up{background:#EAF7EE}.lg-r.dn{background:#FDEEF1}.lg-r.me{outline:2px solid #E0243A;font-weight:700}.lg-n{width:24px;text-align:center;font-weight:800;color:#7A6B72}.lg-r b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lg-r em{font-style:normal;font-weight:800;color:#B10B32}.lg-t{font-style:normal;font-size:.7rem;font-weight:800;border-radius:99px;padding:2px 9px}.lg-t.up{background:#1F9D63;color:#fff}.lg-t.dn{background:#D6293E;color:#fff}.lg-gap{text-align:center;color:#aaa;line-height:1}
 .cr-b{height:9px;border-radius:99px;background:#E8EEF7;margin:16px 0 0;position:relative;overflow:visible}.cr-car{position:absolute;top:-15px;transform:translateX(-92%);text-decoration:none;line-height:0;filter:drop-shadow(0 2px 2px rgba(120,20,40,.3));animation:crbob .5s ease-in-out infinite alternate;pointer-events:none}.cr-r:first-of-type .cr-car,.cr-r.me .cr-car{filter:drop-shadow(0 0 6px rgba(255,193,69,.9))}.cr-fl{position:absolute;right:-12px;top:-14px;text-decoration:none;font-size:15px;line-height:1}@keyframes crbob{to{margin-top:-2px}}@media(prefers-reduced-motion:reduce){.cr-car{animation:none}}.cr-b i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F26B1D,#B10B32);transition:width .8s}
 .cr-r em{font-style:normal;font-weight:800;color:#B10B32;min-width:46px;text-align:right}
 .wod{margin:12px 0;padding:14px 16px;background:linear-gradient(135deg,#FFFBEA,#FFF1E8);border:1px solid #F7D9B5}

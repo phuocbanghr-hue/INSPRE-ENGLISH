@@ -9784,11 +9784,13 @@ function rrWordReview() {
 }
 function rrList() {
   if (RR.room === 'listen') return rrListen();
+  if (RR.room === 'mock') return rrMock();
   const D = RR.data, pg = rrProg(), done = D.filter(x => pg[x.n]).length, f = RR.filter, q = RR.q.trim().toLowerCase();
   const LV = rrLevels(), lf = RR.lvf, tc = {}; if (LV) D.forEach(x => { const t = rrTier(LV[x.n]); if (t) tc[t] = (tc[t] || 0) + 1; });
   const items = D.filter(x => (lf === 'all' || !LV || rrTier(LV[x.n]) === lf) && (f === 'all' || (f === 'cl' && x.cl && !x.g) || (f === 'rd' && !x.cl && !x.g) || (f === 'g10' && x.g) || (f === 'todo' && !pg[x.n])) && (!q || String(x.n) === q || x.t.toLowerCase().includes(q) || (x.p[0] || '').toLowerCase().includes(q)));
   const saved = rrWordsOf();
   if (RR.room === 'listen') return rrListen();
+  if (RR.room === 'mock') return rrMock();
   main.innerHTML = `${rrRoomBar()}<div class="rr-poster"><img src="img/reading-poster.webp" alt="Reading" width="1200" height="675" fetchpriority="high"></div><section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc, trong đó ${D.filter(x => x.g).length} bài luyện thi (vào 10, THPT, Anh 9, Cambridge 10, IELTS). Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
   <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['g10', 'Luyện thi'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div>${LV ? `<div class="rr-lvs"><span>Chọn cấp độ:</span>${[['all', 'Mọi cấp độ']].concat(RR_TIERS.map(t => [t[0], t[1]])).map(([k, n]) => `<button type="button" class="rr-lv ${lf === k ? 'on' : ''}" data-rrl="${k}" ${k !== 'all' ? `style="--cf:${CF_INFO[(RR_TIERS.find(t => t[0] === k) || [0, 0, ['B1']])[2][0]][1]}"` : ''}>${n}${k !== 'all' ? ` <small>${tc[k] || 0}</small>` : ''}</button>`).join('')}<button type="button" class="rr-pt" data-pt="1">Kiểm tra trình độ</button></div>` : ''}</section>
   ${saved.length ? `<section class="card rr-saved"><details><summary>Sổ từ của em (${saved.length})</summary>${saved.length >= 1 ? `<div style="margin:10px 0"><button type="button" class="btn sm" data-rrrv="1">Ôn sổ từ: nhìn nghĩa, gõ từ tiếng Anh</button></div>` : ''}<div class="rr-sw">${saved.map((w, i) => `<span class="rr-sc"><b>${esc(w.en)}</b> ${esc(w.vi)}<button type="button" data-rrs="${i}" aria-label="Nghe"><img class="rr-loa" src="img/loa.png" alt="" width="16" height="13"></button><button type="button" data-rrd="${i}" aria-label="Xoá">✕</button></span>`).join('')}</div></details></section>` : ''}
@@ -9806,10 +9808,100 @@ function rrList() {
   if (!LV) cfLoad().then(() => { if (rrLevels() && main.querySelector('.rr-grid') && document.activeElement !== $('#rr-s')) rrList(); });
   scrollTo(0, 0);
 }
+/* ===== Thi thử Reading: đề đủ bài, bấm giờ, chấm điểm, quy đổi band, phân tích từng dạng câu ===== */
+const MK = { s: null, T: 0 };
+const mkHist = () => { try { return JSON.parse(localStorage.getItem('rr_mock') || '[]') || []; } catch (e) { return []; } };
+const mkBand = (sc, tot) => { const r = Math.round(sc / Math.max(1, tot) * 40); return r >= 39 ? 9 : r >= 37 ? 8.5 : r >= 35 ? 8 : r >= 33 ? 7.5 : r >= 30 ? 7 : r >= 27 ? 6.5 : r >= 23 ? 6 : r >= 19 ? 5.5 : r >= 15 ? 5 : r >= 13 ? 4.5 : r >= 10 ? 4 : r >= 6 ? 3.5 : 3; };
+const mkSets = () => {
+  const D = RR.data || [], out = [];
+  for (let t = 1; t <= 8; t++) { const it = D.filter(x => x.g === 'IELTS Reading · Test ' + t && x.q.length); if (it.length) out.push({ id: 'ielts' + t, name: 'IELTS Reading · Test ' + t, sub: it.length + ' bài đọc · 60 phút · quy đổi band', min: 60, band: true, items: it }); }
+  const pick = (arr, n) => shuffle(arr).slice(0, n);
+  const t10 = D.filter(x => x.g && /Vào 10/.test(x.g) && x.q.length), th = D.filter(x => x.g && /THPT/.test(x.g) && x.q.length), l9 = D.filter(x => x.g && /Lớp 9/.test(x.g) && x.q.length);
+  if (t10.length >= 3) out.push({ id: 'g10', name: 'Đề luyện thi vào 10 (ngẫu nhiên)', sub: '3 bài ngẫu nhiên · 30 phút · thang 10', min: 30, items: pick(t10, 3), rnd: 1 });
+  if (th.length >= 3) out.push({ id: 'thpt', name: 'Đề luyện THPT (ngẫu nhiên)', sub: '3 bài đọc hiểu · 30 phút · thang 10', min: 30, items: pick(th, 3), rnd: 1 });
+  if (l9.length >= 3) out.push({ id: 'l9', name: 'Đề luyện Anh 9 (ngẫu nhiên)', sub: '3 bài ngẫu nhiên · 30 phút · thang 10', min: 30, items: pick(l9, 3), rnd: 1 });
+  return out;
+};
+function mkStop() { clearInterval(MK.T); MK.T = 0; }
+const mkLabel = (it, q) => { const m = /^\[([^\]]+)\]\s*/.exec(q.q || ''); return { tag: m ? m[1] : '', text: m ? q.q.slice(m[0].length) : (q.q || ''), type: m ? (m[1].split('·')[1] || m[1]).trim() : '' }; };
+function mkStart(set) {
+  const items = set.items, qs = []; let c = 0;
+  items.forEach((it, pi) => { let lt = null; it.q.forEach((q, k) => { if (q.a < 0) return; c++; let lb = mkLabel(it, q); if (lb.tag) lt = lb; else if (lt) lb = { tag: lt.tag, text: lb.text, type: lt.type }; qs.push({ pi, k, q, no: (it.g && /^IELTS/.test(it.g) && q.n) ? q.n : c, lb }); }); });
+  MK.s = { set, items, qs, ans: {}, pi: 0, t0: Date.now(), end: Date.now() + set.min * 60000, done: false };
+  rrMockExam();
+}
+function mkOk(x, v) {
+  const q = x.q; if (v === undefined || v === '' || v === -1) return false;
+  if (q.o && q.o.length) return +v === q.a;
+  const s = String(v).trim().toLowerCase().replace(/[^a-z' -]/g, '').replace(/\s+/g, ' ');
+  if (q.f.includes(s)) return true;
+  if (q.f.length > 1 && q.f.every(z => z.length === 1)) { const L = (s.match(/[a-z]/g) || []).sort().join(''); return L === q.f.slice().sort().join(''); }
+  return false;
+}
+function rrMockExam() {
+  const m = MK.s; if (!m) return rrMock(); const LET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', it = m.items[m.pi];
+  const pal = m.qs.map((x, i) => `<button type="button" class="mk-pb ${m.ans[i] !== undefined && m.ans[i] !== '' ? 'on' : ''} ${x.pi === m.pi ? 'cur' : ''}" data-mkp="${i}">${x.no}</button>`).join('');
+  const mine = m.qs.map((x, i) => ({ x, i })).filter(o => o.x.pi === m.pi);
+  let lastTag = '';
+  const Q = mine.map(({ x, i }) => { const q = x.q; let h = ''; if (x.lb.tag && x.lb.tag !== lastTag) { lastTag = x.lb.tag; h = `<div class="rr-grp"><b>${esc(x.lb.tag.replace(/^Q(\d+)-(\d+)/, 'Câu $1–$2'))}</b></div>`; }
+    const v = m.ans[i], inp = q.o && q.o.length ? (q.o.length > 6 ? `<select class="mk-sel" data-mka="${i}"><option value="">Chọn…</option>${q.o.map((o, j) => `<option value="${j}" ${v === j ? 'selected' : ''}>${LET[j]}. ${esc(o)}</option>`).join('')}</select>` : q.o.map((o, j) => `<label class="mk-o"><input type="radio" name="mk${i}" data-mka="${i}" value="${j}" ${v === j ? 'checked' : ''}><span><b>${LET[j]}</b> ${esc(o)}</span></label>`).join('')) : `<input class="mk-fi" data-mka="${i}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Nhập đáp án" value="${esc(v || '')}">`;
+    return h + `<div class="mk-q" id="mkq${i}"><div class="mk-qt"><span class="mk-no">${x.no}</span>${esc(x.lb.text)}</div>${inp}</div>`; }).join('');
+  const paras = it.p.filter(t => !/^[A-H]$/.test(String(t).trim())).map(t => `<p>${esc(t)}</p>`).join('');
+  main.innerHTML = `<div class="mk-bar"><b>${esc(m.set.name)}</b><span class="mk-tm" id="mk-tm">--:--</span><button type="button" class="btn sm" id="mk-sub">Nộp bài</button></div>
+  <div class="mk-tabs">${m.items.map((x, pi) => `<button type="button" class="${pi === m.pi ? 'on' : ''}" data-mkpi="${pi}">Bài ${pi + 1}</button>`).join('')}<span class="muted" style="margin-left:auto;font-size:.8rem">Đáp án chỉ hiện sau khi nộp bài</span></div>
+  <div class="mk-pal">${pal}</div>
+  <div class="mk-wrap"><section class="card mk-psg"><small class="rr-ins">${esc((it.ins || '').replace(/ Tap any word to see its meaning\./, ''))}</small><h3 class="rr-title">${esc(it.t)}</h3>${paras}</section><section class="card mk-qs">${Q || '<p class="muted">Bài này không có câu chấm điểm.</p>'}</section></div>`;
+  const tick = () => { const el = $('#mk-tm'); if (!el || !MK.s || MK.s.done) { mkStop(); return; } const left = Math.max(0, MK.s.end - Date.now()), mm = Math.floor(left / 60000), ss = Math.floor(left % 60000 / 1000); el.textContent = String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); el.classList.toggle('warn', left < 300000); if (left <= 0) { mkStop(); toast('Hết giờ, bài được nộp tự động.', 'warn'); mkSubmit(); } };
+  mkStop(); MK.T = setInterval(tick, 1000); tick();
+  main.onclick = e => {
+    const pi = e.target.closest('[data-mkpi]'); if (pi) { m.pi = +pi.dataset.mkpi; return rrMockExam(); }
+    const pb = e.target.closest('[data-mkp]'); if (pb) { const i = +pb.dataset.mkp; if (m.qs[i].pi !== m.pi) { m.pi = m.qs[i].pi; rrMockExam(); } const el = $('#mkq' + i); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('rr-flash'); setTimeout(() => el.classList.remove('rr-flash'), 1200); } return; }
+    if (e.target.closest('#mk-sub')) { const un = m.qs.filter((x, i) => m.ans[i] === undefined || m.ans[i] === '').length; if (confirm(un ? 'Còn ' + un + ' câu chưa làm. Nộp bài ngay?' : 'Nộp bài và xem kết quả?')) mkSubmit(); }
+  };
+  main.onchange = e => { const a = e.target.closest('[data-mka]'); if (!a) return; const i = +a.dataset.mka; m.ans[i] = a.tagName === 'SELECT' || a.type === 'radio' ? (a.value === '' ? undefined : +a.value) : a.value.trim(); const b = main.querySelector(`[data-mkp="${i}"]`); if (b) b.classList.toggle('on', m.ans[i] !== undefined && m.ans[i] !== ''); };
+  main.oninput = e => { const a = e.target.closest('.mk-fi'); if (a) { const i = +a.dataset.mka; m.ans[i] = a.value.trim(); const b = main.querySelector(`[data-mkp="${i}"]`); if (b) b.classList.toggle('on', !!m.ans[i]); } };
+  window.scrollTo(0, 0);
+}
+function mkSubmit() {
+  const m = MK.s; if (!m || m.done) return; m.done = true; mkStop();
+  const res = m.qs.map((x, i) => ({ x, ok: mkOk(x, m.ans[i]), v: m.ans[i] })), sc = res.filter(r => r.ok).length, tot = res.length, used = Math.min(m.set.min * 60, Math.round((Date.now() - m.t0) / 1000));
+  const rec = { at: Date.now(), name: m.set.name, sc, tot, band: m.set.band ? mkBand(sc, tot) : null, sec: used };
+  try { const h = mkHist(); h.push(rec); localStorage.setItem('rr_mock', JSON.stringify(h.slice(-30))); } catch (e) {}
+  m.res = res; m.rec = rec; rrMockResult();
+}
+function rrMockResult() {
+  const m = MK.s, res = m.res, rec = m.rec, LET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const pct = Math.round(rec.sc / Math.max(1, rec.tot) * 100);
+  const byP = m.items.map((it, pi) => { const r = res.filter(z => z.x.pi === pi); return { t: it.t, ok: r.filter(z => z.ok).length, n: r.length }; });
+  const ty = {}; res.forEach(z => { const k = z.x.lb.type || 'Khác'; (ty[k] = ty[k] || { ok: 0, n: 0 }); ty[k].n++; if (z.ok) ty[k].ok++; });
+  const ans = z => z.x.q.o && z.x.q.o.length ? (z.x.q.o[z.x.q.a] !== undefined ? LET[z.x.q.a] + '. ' + z.x.q.o[z.x.q.a] : '') : z.x.q.f.join(' / ');
+  const mine = z => z.v === undefined || z.v === '' ? '<i>chưa làm</i>' : (z.x.q.o && z.x.q.o.length ? esc((LET[z.v] || '') + '. ' + (z.x.q.o[z.v] || '')) : esc(z.v));
+  const bar = (a, b, col) => `<div class="mk-b"><i style="width:${b ? Math.round(a / b * 100) : 0}%;background:${col || '#E0243A'}"></i></div>`;
+  const wrong = res.filter(z => !z.ok);
+  const hist = mkHist().filter(h => h.name === rec.name).slice(-6);
+  main.innerHTML = `<nav class="crumbs"><a href="#" data-mkback>Thi thử</a><span>›</span><b>Kết quả</b></nav>
+  <section class="card mk-score"><div class="mk-big"><b>${rec.sc}</b><span>/${rec.tot} câu đúng</span></div><div><h2 style="margin:0">${rec.band != null ? 'Ước lượng band ' + rec.band.toFixed(1) : (rec.sc / Math.max(1, rec.tot) * 10).toFixed(1) + ' / 10 điểm'}</h2><p class="muted" style="margin:4px 0">${esc(rec.name)} · ${pct}% · làm trong ${Math.floor(rec.sec / 60)} phút ${rec.sec % 60} giây${rec.band != null ? '<br>Band quy đổi theo thang IELTS Academic Reading (tham khảo).' : ''}</p>
+  <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" data-mkagain>Làm lại đề này</button><button class="btn soft" data-mkback>Chọn đề khác</button></div></div></section>
+  <section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Kết quả từng bài đọc</h3>${byP.map(p => `<div class="mk-row"><span>${esc(p.t)}</span><b>${p.ok}/${p.n}</b>${bar(p.ok, p.n)}</div>`).join('')}</section>
+  <section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Theo dạng câu hỏi</h3>${Object.keys(ty).map(k => `<div class="mk-row"><span>${esc(k)}</span><b>${ty[k].ok}/${ty[k].n}</b>${bar(ty[k].ok, ty[k].n, ty[k].ok / ty[k].n < .5 ? '#D6293E' : ty[k].ok / ty[k].n < .75 ? '#F59F00' : '#1F9D63')}</div>`).join('')}<p class="muted" style="margin:8px 0 0;font-size:.85rem">${(() => { const w = Object.keys(ty).filter(k => ty[k].n >= 2).sort((a, b) => ty[a].ok / ty[a].n - ty[b].ok / ty[b].n)[0]; return w && ty[w].ok < ty[w].n ? 'Dạng cần luyện thêm: <b>' + esc(w) + '</b>.' : 'Em làm đều các dạng, tiếp tục giữ phong độ!'; })()}</p></section>
+  ${hist.length > 1 ? `<section class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">Tiến bộ qua các lần thi đề này</h3><div class="mk-hist">${hist.map(h => `<div><small>${h.sc}/${h.tot}</small><i style="height:${Math.max(4, Math.round(h.sc / h.tot * 70))}px"></i><small>${new Date(h.at).getDate()}/${new Date(h.at).getMonth() + 1}</small></div>`).join('')}</div></section>` : ''}
+  <section class="card" style="margin:14px 0 50px"><h3 style="margin:0 0 8px">Xem lại câu sai (${wrong.length})</h3>${wrong.length ? wrong.map(z => `<div class="mk-w"><div><span class="mk-no bad">${z.x.no}</span>${esc(z.x.lb.text).slice(0, 160)}</div><div>Em chọn: <b>${mine(z)}</b></div><div>Đáp án: <b style="color:#1B7F3B">${esc(ans(z))}</b></div>${z.x.q.e ? `<div class="muted">${esc(z.x.q.e)}</div>` : ''}</div>`).join('') : '<p>Em làm đúng tất cả. Xuất sắc!</p>'}</section>`;
+  main.onclick = e => { if (e.target.closest('[data-mkback]')) { e.preventDefault(); MK.s = null; return rrMock(); } if (e.target.closest('[data-mkagain]')) { const s = mkSets().find(x => x.id === m.set.id) || m.set; return mkStart(s.rnd ? s : m.set); } };
+  main.onchange = main.oninput = null; window.scrollTo(0, 0);
+}
+function rrMock() {
+  mkStop(); if (MK.s && !MK.s.done) return rrMockExam(); MK.s = null;
+  const sets = mkSets(), H = mkHist().slice(-8).reverse();
+  main.innerHTML = `${rrRoomBar()}<section class="card mt rr-hero"><div><h2>Thi thử Reading</h2><p>Làm đề như thi thật: bấm giờ, đáp án chỉ hiện sau khi nộp. Cuối bài có điểm, band quy đổi, kết quả từng bài đọc và phân tích theo dạng câu hỏi để biết cần luyện gì.</p></div></section>
+  <div class="rr-grid" style="margin-top:14px">${sets.map(s => `<button type="button" class="rr-card" data-mkset="${s.id}"><span class="rr-ct"><b>${esc(s.name)}</b><small>${esc(s.sub)}</small></span></button>`).join('') || '<p class="muted">Đang tải đề…</p>'}</div>
+  ${H.length ? `<section class="card" style="margin:16px 0 50px"><h3 style="margin:0 0 8px">Lịch sử thi thử</h3>${H.map(h => `<div class="mk-row"><span>${esc(h.name)} <small class="muted">· ${new Date(h.at).toLocaleDateString('vi-VN')}</small></span><b>${h.band != null ? 'Band ' + h.band.toFixed(1) + ' · ' : ''}${h.sc}/${h.tot}</b></div>`).join('')}</section>` : ''}`;
+  main.onclick = e => { if (rrRoomClick(e)) return; const c = e.target.closest('[data-mkset]'); if (c) { const s = sets.find(x => x.id === c.dataset.mkset); if (s && confirm('Bắt đầu "' + s.name + '"? Đồng hồ ' + s.min + ' phút bắt đầu chạy ngay.')) mkStart(s); } };
+  main.onchange = main.oninput = null; window.scrollTo(0, 0);
+}
+(() => { const st = document.createElement('style'); st.textContent = '.mk-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 8px}.mk-bar b{flex:1;min-width:140px}.mk-tm{font:800 1.4rem/1 ui-monospace,monospace;background:#fff;border:2px solid #E0243A;color:#B10B32;border-radius:12px;padding:6px 12px}.mk-tm.warn{background:#E0243A;color:#fff;animation:mkb 1s infinite}@keyframes mkb{50%{opacity:.6}}.mk-tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.mk-tabs button{border:1px solid #EAD3D7;background:#fff;border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer}.mk-tabs button.on{background:#E0243A;border-color:#E0243A;color:#fff}.mk-pal{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.mk-pb{width:34px;height:34px;border-radius:9px;border:1px solid #EAD3D7;background:#fff;font-weight:700;cursor:pointer}.mk-pb.on{background:#FFE3E7;border-color:#E0243A}.mk-pb.cur{box-shadow:0 0 0 2px #1B3A6B inset}.mk-wrap{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:50px}@media(min-width:1000px){.mk-wrap{grid-template-columns:1fr 1fr;align-items:start}.mk-psg,.mk-qs{max-height:calc(100vh - 230px);overflow:auto}.mk-bar,.mk-tabs,.mk-pal{position:sticky}}.mk-psg p{line-height:1.7;margin:0 0 .8em}.mk-q{padding:12px 0;border-bottom:1px solid #F1E3E6}.mk-qt{margin-bottom:8px;line-height:1.5}.mk-no{display:inline-block;min-width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;background:#E0243A;color:#fff;font-weight:800;font-size:.85rem;margin-right:8px}.mk-no.bad{background:#D6293E}.mk-o{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-radius:10px;cursor:pointer}.mk-o:hover{background:#FFF3F4}.mk-o input{margin-top:4px;accent-color:#E0243A}.mk-sel,.mk-fi{width:100%;padding:10px 14px;border:1px solid #EAD3D7;border-radius:12px;font:inherit}.mk-score{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:14px}.mk-big{background:linear-gradient(135deg,#E0243A,#FF6B7A);color:#fff;border-radius:20px;padding:18px 26px;text-align:center}.mk-big b{display:block;font-size:3rem;line-height:1}.mk-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:10px 0}.mk-b{grid-column:1/3;height:8px;border-radius:99px;background:#F1E3E6;overflow:hidden}.mk-b i{display:block;height:100%;border-radius:99px}.mk-w{padding:12px 0;border-bottom:1px solid #F1E3E6;line-height:1.55}.mk-hist{display:flex;gap:14px;align-items:flex-end;height:110px}.mk-hist div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px}.mk-hist i{width:26px;border-radius:6px 6px 0 0;background:#E0243A}'; document.head.appendChild(st); })();
 /* ===== Phòng nghe (trong Phòng đọc): nghe chép chính tả + gom toàn bộ đề nghe của web ===== */
 RR.room = RR.room || 'read'; RR.dic = null;
 function rrRoomBar() {
-  return `<div class="rm-tabs mt" role="tablist"><button type="button" role="tab" class="${RR.room === 'read' ? 'on' : ''}" data-rrroom="read">Phòng đọc</button><button type="button" role="tab" class="${RR.room === 'listen' ? 'on' : ''}" data-rrroom="listen">Phòng nghe</button></div>`;
+  return `<div class="rm-tabs mt" role="tablist"><button type="button" role="tab" class="${RR.room === 'read' ? 'on' : ''}" data-rrroom="read">Phòng đọc</button><button type="button" role="tab" class="${RR.room === 'listen' ? 'on' : ''}" data-rrroom="listen">Phòng nghe</button><button type="button" role="tab" class="${RR.room === 'mock' ? 'on' : ''}" data-rrroom="mock">Thi thử</button></div>`;
 }
 function rrRoomClick(e) { const b = e.target.closest('[data-rrroom]'); if (!b) return false; RR.room = b.dataset.rrroom; RR.dic = null; RR.open = 0; try { speechSynthesis.cancel(); } catch (er) {} viewRead(); return true; }
 const isLisLesson = l => /(^|_)lis/i.test(l.id || '') || !!l.lis || (l.audios && l.audios.length > 0) || (l.exs || []).some(x => x.k === 'lis');

@@ -807,7 +807,7 @@ h1,h2,h3,h4{font-family:'Be Vietnam Pro','Inter',system-ui,sans-serif;font-weigh
 .post h3{font-size:1.1rem;margin-bottom:6px}.post-b{margin-bottom:10px;word-break:break-word}
 .post footer{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:10px}
 .pt{font-size:.68rem;font-weight:700;border-radius:99px;padding:2px 9px;letter-spacing:.03em;display:inline-block}
-.pt-a{background:#FFF1D6;color:#9A6200}.pt-f{background:#E8F1FB;color:#0B5CA8}.pt-pin{background:var(--brand);color:#fff}.pt-c{background:var(--pink);color:var(--brand)}
+.pt-a{background:#FFF1D6;color:#9A6200}.pt-f{background:#E8F1FB;color:#0B5CA8}.pt-pin{background:var(--brand);color:#fff}.pt-co{background:var(--pink);color:var(--brand)}
 .thread{border-top:1px dashed var(--line);margin-top:12px;padding-top:12px}
 .cmt{padding:8px 12px;border-radius:12px;background:#F5F5F7;margin-bottom:8px}.cmt.ad{background:#FFF8F9;border:1px solid #F0B5C2}
 .cmt>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.88rem}.cmt small{color:var(--mute)}.cmt p{margin-top:2px;word-break:break-word}
@@ -11249,7 +11249,7 @@ const markSeen = (cid, t) => store.set(seenK(cid, t), String(Date.now()));
 const newIn = (cid, t) => { const s = +store.get(seenK(cid, t)) || 0; return (S.posts || []).filter(p => (!t || p.type === t) && (cid === 'feed' ? (p.courseId === 'all' || isEnrolled(p.courseId)) : (p.courseId === cid || p.courseId === 'all')) && postMs(p) > s).length; };
 function postCard(p, showCourse) {
   const t = POST_TAG[p.type] || POST_TAG.announce, open = PF.open === p.id, id = esc(p.id);
-  return `<article class="post ${p.pinned ? 'pin' : ''} ${p.type}" data-p="${id}"><header><span class="pt ${t[1]}">${t[0]}</span>${p.pinned ? '<span class="pt pt-pin">GHIM</span>' : ''}${showCourse ? `<span class="pt pt-c">${esc(cname(p.courseId))}</span>` : ''}<time>${dFmt(postMs(p))}</time></header>
+  return `<article class="post ${p.pinned ? 'pin' : ''} ${p.type}" data-p="${id}"><header><span class="pt ${t[1]}">${t[0]}</span>${p.pinned ? '<span class="pt pt-pin">GHIM</span>' : ''}${showCourse ? `<span class="pt pt-co">${esc(cname(p.courseId))}</span>` : ''}<time>${dFmt(postMs(p))}</time></header>
     <h3>${esc(p.title)}</h3><div class="post-b">${linkM(p.body || '')}</div>
     ${/^https?:\/\//.test(p.link || '') ? `<a class="btn soft sm" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${esc(p.linkText || 'Mở tài liệu / liên kết')}</a>` : ''}
     <footer><small class="muted">${esc(p.authorName || 'Thầy cô Inspire')}</small>${p.locked ? '<small class="muted">Đã khoá bình luận</small>' : `<button class="btn soft sm" data-open="${id}">${open ? 'Thu gọn' : 'Thảo luận'}</button>`}</footer>
@@ -11327,7 +11327,7 @@ function drawNewsStrip() {
   const el = $('#nws'); if (!el) return;
   const l = sortPosts(visiblePosts().filter(p => p.type === 'announce')).slice(0, 3), n = newIn('feed', '');
   if (!l.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<section class="nstrip"><div class="ns-h"><h3>Bảng tin mới${n ? ` <span class="bdg-n">${n}</span>` : ''}</h3><button class="btn soft sm" data-go="news">Xem tất cả</button></div>${l.map(p => `<button class="ns-i" data-npost="${esc(p.id)}"><span class="pt pt-c">${esc(cname(p.courseId))}</span><b>${esc(p.title)}</b><small>${dFmt(postMs(p))}</small></button>`).join('')}</section>`;
+  el.innerHTML = `<section class="nstrip"><div class="ns-h"><h3>Bảng tin mới${n ? ` <span class="bdg-n">${n}</span>` : ''}</h3><button class="btn soft sm" data-go="news">Xem tất cả</button></div>${l.map(p => `<button class="ns-i" data-npost="${esc(p.id)}"><span class="pt pt-co">${esc(cname(p.courseId))}</span><b>${esc(p.title)}</b><small>${dFmt(postMs(p))}</small></button>`).join('')}</section>`;
   el.onclick = e => { if (e.target.closest('[data-npost]')) { PF.open = null; go('news'); } else if (e.target.closest('[data-go]')) go('news'); };
 }
 function viewNews() {

@@ -7596,7 +7596,9 @@ function itemCard(c, it) {
 function cxlContent(c) {
   const secs = (c.sections || []).filter(s => !s.hidden), nx = nextTask(c);
   const head = nx ? `<div class="cl-next"><div class="cl-next-t"><small>LÀM TIẾP</small><b>${esc(nx.it.title || nx.b.title)}</b><span>${esc(nx.sec)}</span></div>${nx.it.type === 'test' ? `<button class="btn sm" data-test="${esc(nx.it.id)}">Làm bài</button>` : `<button class="btn sm" data-bank="${esc(nx.b.id)}">Luyện tập</button>`}</div>` : '';
-  return head + secs.map(s => `<section class="cxl-sec" id="sec-${esc(s.id)}"><h2>${esc(s.title)}</h2>${s.summary ? `<p class="cxl-sum">${linkM(s.summary)}</p>` : ''}<div>${(s.items || []).filter(i => !i.hidden).map(i => itemCard(c, i)).join('') || '<p class="muted">Chưa có nội dung.</p>'}</div></section>`).join('') || '<div class="card empty">Thầy cô chưa đăng nội dung cho lớp này.</div>';
+  const P0 = S.profile || {}, spg = s => { const L = (s.items || []).filter(i => !i.hidden && ['bank', 'test'].includes(i.type)).map(bankOfItem).filter(b => b && b.published !== false), d = L.filter(b => (P0.bankbest || {})[b.id] != null).length; return L.length ? `<span class="cxs-p ${d === L.length ? 'ok' : ''}"><span class="cxs-b"><i style="width:${Math.round(d / L.length * 100)}%"></i></span>${d}/${L.length}${d === L.length ? ' · Xong' : ''}</span>` : ''; };
+  const toc = secs.length > 2 ? `<nav class="cxs-toc" aria-label="Mục lục lớp">${secs.map(s => `<a href="#sec-${esc(s.id)}" data-sec="${esc(s.id)}">${esc(s.title)}</a>`).join('')}</nav>` : '';
+  return head + toc + secs.map(s => `<section class="cxl-sec" id="sec-${esc(s.id)}"><h2>${esc(s.title)}${spg(s)}</h2>${s.summary ? `<p class="cxl-sum">${linkM(s.summary)}</p>` : ''}<div>${(s.items || []).filter(i => !i.hidden).map(i => itemCard(c, i)).join('') || '<p class="muted">Chưa có nội dung.</p>'}</div></section>`).join('') || '<div class="card empty">Thầy cô chưa đăng nội dung cho lớp này.</div>';
 }
 const XP_TITLES = [[0, 'Tân binh'], [100, 'Chăm chỉ'], [300, 'Siêu sao'], [600, 'Huyền thoại'], [1000, 'Bậc thầy']];
 const xpTitle = xp => { let t = XP_TITLES[0][1]; XP_TITLES.forEach(([min, n]) => { if ((xp || 0) >= min) t = n; }); return t; };
@@ -9629,6 +9631,7 @@ async function placementTest() {
   intro();
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-pt]')) placementTest(); });
+document.addEventListener('click', e => { const t = e.target.closest('.cxs-toc a'); if (!t) return; e.preventDefault(); const x = document.getElementById('sec-' + t.dataset.sec); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 
 cfLoad();
 const RR = { data: null, lex: null, app: null, load: null, open: 0, filter: 'all', lvf: (() => { try { return localStorage.getItem('rr_lv') || 'all'; } catch (er) { return 'all'; } })(), lv: null, q: '', ans: {}, vi: false, tipEl: null, tipT: 0 };
@@ -12072,6 +12075,8 @@ else {
 .ls-b{display:flex;flex-direction:column}
 .ln-nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 0}.ln-b{text-align:left;background:#fff;border:1px solid #E6EBF1;border-radius:14px;padding:12px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}.ln-b.r{text-align:right}.ln-b:hover{border-color:#F26B1D;box-shadow:0 6px 16px rgba(242,107,29,.14);transform:translateY(-1px)}.ln-b small{display:block;color:#F26B1D;font-weight:800;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}.ln-b b{display:block;color:#1F2937;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:600px){.ln-nav{grid-template-columns:1fr}}
+.cxs-toc{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none}.cxs-toc::-webkit-scrollbar{display:none}.cxs-toc a{flex:none;text-decoration:none;font-size:.78rem;font-weight:700;color:#D85A10;background:#FFF4EC;border:1px solid #FBD9C3;border-radius:99px;padding:6px 14px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cxs-toc a:hover{background:#F26B1D;border-color:#F26B1D;color:#fff}
+.cxs-p{display:inline-flex;align-items:center;gap:8px;margin-left:12px;vertical-align:middle;font-size:.78rem;font-weight:800;color:#D85A10;letter-spacing:0}.cxs-p.ok{color:#15803D}.cxs-b{width:64px;height:6px;border-radius:99px;background:#F1E4E7;overflow:hidden;display:inline-block}.cxs-b i{display:block;height:100%;background:#F26B1D;border-radius:99px}.cxs-p.ok .cxs-b i{background:#22C55E}
 .ls-nav{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px;margin:0 0 6px;scrollbar-width:none}.ls-nav::-webkit-scrollbar{display:none}
 .ls-nav a{flex:none;text-decoration:none;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#D85A10;background:#FFF4EC;border:1px solid #FBD9C3;border-radius:99px;padding:7px 14px;transition:background .15s,color .15s}
 .ls-nav a:hover{background:#F26B1D;border-color:#F26B1D;color:#fff}

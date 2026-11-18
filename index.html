@@ -9985,7 +9985,20 @@ function leagueHTML(all) {
   if (!mp || !cls) return '';
   const grp = all.filter(p => norm(p.className || '') === norm(cls)).map(p => ({ id: p.id || p.uid, n: p.name || 'Học sinh', w: weekXp(p) })).sort((a, b) => b.w - a.w);
   if (grp.length < 2) return '';
-  const lvl = levelInfo(mp.xp).lvl, T = ['Đồng', 'Bạc', 'Vàng', 'Bạch kim', 'Kim cương'][Math.min(4, Math.floor((lvl - 1) / 3))];
+  const NM = ['Đồng', 'Bạc', 'Vàng', 'Bạch kim', 'Kim cương'], prevW = weekInfo(weekInfo().start - 1).id, pf = S.profile || {};
+  let tier = Number.isInteger(pf.league) ? pf.league : 0;
+  if (pf.leagueW !== prevW && !S._lgBusy) {
+    S._lgBusy = 1;
+    const pg = all.filter(p => norm(p.className || '') === norm(cls)).map(p => ({ id: p.id || p.uid, w: weekXp(p, prevW) })).sort((a, b) => b.w - a.w), pp = pg.findIndex(r => r.id === me), kk = Math.max(1, Math.min(3, Math.floor(pg.length / 4)));
+    let nt = tier, note = '';
+    if (pf.leagueW && pg.length >= 2 && pp >= 0) {
+      if (pp < kk && pg[pp].w > 0 && tier < 4) { nt = tier + 1; note = 'Chúc mừng! Em lên hạng ' + NM[nt] + ' nhờ top ' + (pp + 1) + ' tuần trước.'; }
+      else if (pg.length >= 6 && pp >= pg.length - kk && tier > 0) { nt = tier - 1; note = 'Tuần trước em ở nhóm cuối nên xuống hạng ' + NM[nt] + '. Tuần này lấy lại nhé!'; }
+    }
+    Promise.resolve(api.updateMe({ league: nt, leagueW: prevW })).then(() => { if (note) toast(note, nt > tier ? 'ok' : 'warn'); }).catch(() => {}).finally(() => { S._lgBusy = 0; });
+    tier = nt;
+  }
+  const T = NM[Math.max(0, Math.min(4, tier))];
   const k = Math.max(1, Math.min(3, Math.floor(grp.length / 4))), pos = grp.findIndex(r => r.id === me), left = Math.max(0, weekInfo().end - Date.now()), dd = Math.floor(left / 864e5), hh = Math.floor(left % 864e5 / 36e5);
   const zone = i => i < k ? 'up' : (grp.length >= 6 && i >= grp.length - k) ? 'dn' : '';
   const gap = pos > 0 ? grp[pos - 1].w - grp[pos].w + 1 : 0;

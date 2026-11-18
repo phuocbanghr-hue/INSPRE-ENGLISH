@@ -3788,7 +3788,7 @@ function vClasses() {
       <span class="cxmeta"><span>${(c.members || []).length} học sinh</span><span>${(c.sections || []).length} phần</span><span>${cnt(c)} nội dung</span></span>${p ? `<span class="tag">${p} chờ duyệt</span>` : ''}</button>`; }).join('')}</div>`
     : `<div class="card empty">${TEACHER() ? 'Admin chưa gán lớp nào cho thầy cô. Nhờ admin vào Lớp học, mở lớp, tab Thiết lập để gán giáo viên.' : 'Chưa có lớp nào. Bấm “Tạo lớp mới”, hoặc “Tạo lớp từ tên lớp học sinh đang có” để chuyển các lớp cũ sang trang lớp mới.'}</div>`}`;
   $('#content').onclick = async e => {
-    const o = e.target.closest('[data-open]'); if (o) { S.cx = { id: o.dataset.open, tab: 'content' }; return vClasses(); }
+    const o = e.target.closest('[data-open]'); if (o) { S.cx = { id: o.dataset.open, tab: 'over' }; return vClasses(); }
     try {
       if (e.target.closest('#c-new')) return classForm();
       if (e.target.closest('#c-merge, #c-merge2')) return mergeForm();
@@ -4068,6 +4068,16 @@ async function cxClick(e) {
       case 'bk-edit': return cbankForm((S.banks || []).find(b => b.id === x.dataset.b), c);
       case 'bk-del': { const b = (S.banks || []).find(y => y.id === x.dataset.b); if (b && confirm('Xoá đề “' + b.title + '”? Các mục dùng đề này trong Nội dung sẽ báo không tìm thấy đề.')) { await api.del('banks', b.id); toast('Đã xoá đề.'); } return; }
       case 'gr-csv': return gradesCsv(c);
+      case 'ov-csv': { const R = ovRows(c); return dlFile('bao-cao-tuan-' + c.name.replace(/\W+/g, '-') + '.csv', '\ufeff' + [['Học sinh', 'Email', 'XP 7 ngày', 'Số ngày học', 'Chuỗi', 'Điểm TB'].map(csvQ).join(','), ...R.map(r => [r.u.name, r.u.email, r.xp, r.d, r.streak, r.avg == null ? '' : r.avg + '%'].map(csvQ).join(','))].join('\n'), 'text/csv;charset=utf-8'); }
+      case 'ov-copy': { try { await navigator.clipboard.writeText(ovText(c)); toast('Đã sao chép báo cáo, dán vào Zalo hoặc tin nhắn.'); } catch { prompt('Sao chép báo cáo:', ovText(c)); } return; }
+      case 'ov-nudge': {
+        const ids = ovRows(c).filter(r => !r.d).map(r => r.u.id);
+        if (!ids.length) return toast('Em nào cũng đã học tuần này.', 'warn');
+        if (!confirm('Gửi lời nhắc tới ' + ids.length + ' em chưa học tuần này?')) return;
+        const text = 'Em ơi, tuần này em chưa vào học. Vào làm vài bài luyện tập của lớp ' + c.name + ' nhé, cô chờ em!';
+        await Promise.all(ids.map(id => api.update('users', id, { teacherNote: { text, at: Date.now() } }))); audit('Nhắc học sinh chưa học', c.name + ' (' + ids.length + ' bạn)');
+        return toast('Đã nhắc ' + ids.length + ' em.');
+      }
       case 'risk-nudge': {
         const ids = clsRiskRows(c).filter(r => r.reasons.length).map(r => r.u.id);
         if (!ids.length) return toast('Không có bạn nào cần nhắc.', 'warn');
@@ -4601,6 +4611,16 @@ function cxKids(c, el) {
     <div class="card tbl-wrap">${rows.length ? `<table><thead><tr><th>Bé</th><th>Cấp bậc</th><th>Sticker (loại / lượt)</th><th>Lần cuối vào học</th></tr></thead><tbody>
     ${rows.map(r => `<tr><td>${avH(r.u, 26)}<b>${esc(r.u.name || 'Bé')}</b></td><td>${r.rk[1]} ${r.rk[2]}</td><td>${r.kinds} / ${r.total}</td><td>${r.days === null ? '<span class="muted">Chưa có</span>' : r.days === 0 ? 'Hôm nay' : r.days + ' ngày trước'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>`;
 }
+function ovRows(c) {
+  const U = (c.members || []).map(id => stuOf(c, id)), days = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(dayKey(d)); }
+  const rk = clsRiskRows(c).reduce((m, r) => (m[r.u.id] = r, m), {});
+  return U.map(u => ({ u, xp: days.reduce((a, k) => a + ((u.daily || {})[k] || 0), 0), d: days.filter(k => ((u.daily || {})[k] || 0) > 0).length, avg: (rk[u.id] || {}).avg, streak: +u.streak || 0 })).sort((a, b) => b.xp - a.xp);
+}
+function ovText(c) {
+  const R = ovRows(c), tot = R.reduce((a, r) => a + r.xp, 0), act = R.filter(r => r.d).length;
+  return 'BÁO CÁO TUẦN – ' + c.name + '\nTuần đến ' + todayStr(new Date()) + '\nCó ' + act + '/' + R.length + ' em học trong tuần, tổng ' + tot + ' XP.\n\n' + R.map((r, i) => (i + 1) + '. ' + (r.u.name || 'Học sinh') + ': ' + r.xp + ' XP, học ' + r.d + '/7 ngày' + (r.avg != null ? ', điểm TB ' + r.avg + '%' : '')).join('\n');
+}
 function cxOverview(c, el) {
   const U = (c.members || []).map(id => stuOf(c, id)), N = 14, days = [];
   for (let i = N - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const k = dayKey(d); days.push({ k, l: d.getDate() + '/' + (d.getMonth() + 1), a: U.filter(u => ((u.daily || {})[k] || 0) > 0).length, xp: U.reduce((s, u) => s + ((u.daily || {})[k] || 0), 0) }); }
@@ -4613,6 +4633,7 @@ function cxOverview(c, el) {
     ${K('Học hôm nay', todayN + '/' + U.length)}${K('Học trong 7 ngày', act7 + '/' + U.length + ' (' + Math.round(act7 / n * 100) + '%)')}${K('XP cả lớp 7 ngày', tot)}${K('Chưa học 7 ngày', idle.length)}</div>
     <div class="card"><b>Số em học mỗi ngày (14 ngày)</b><div style="display:flex;gap:4px;align-items:flex-end;height:110px;margin-top:10px">${days.map(d => `<div style="flex:1;text-align:center;font-size:.7rem" title="${d.l}: ${d.a} em, ${d.xp} XP"><div>${d.a}</div><div style="height:${Math.max(3, Math.round(d.a / mx * 70))}px;background:#B10B32;opacity:${d.a ? 1 : .25};border-radius:3px 3px 0 0"></div><div class="muted">${d.l.split('/')[0]}</div></div>`).join('')}</div></div>
     <div class="card tbl-wrap" style="margin-top:12px"><b>Xếp hạng chăm chỉ tuần này</b>${rows.length ? `<table><thead><tr><th>#</th><th>Học sinh</th><th>XP 7 ngày</th><th>Số ngày học</th><th>Chuỗi</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${avH(r.u, 26)}<b>${esc(r.u.name || 'Học sinh')}</b></td><td>${r.xp}</td><td>${r.d}/7</td><td>${+r.u.streak || 0}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap"><button class="btn soft" data-a="ov-csv">Tải báo cáo tuần (CSV)</button><button class="btn soft" data-a="ov-copy">Sao chép báo cáo gửi phụ huynh</button><button class="btn" data-a="ov-nudge" ${idle.length ? '' : 'disabled'}>Nhắc ${idle.length} em chưa học</button></div>
     ${idle.length ? `<p class="muted" style="margin-top:10px">Chưa học tuần này: ${idle.map(r => esc(r.u.name || 'Học sinh')).join(', ')}.</p>` : ''}`;
 }
 function cxRisk(c, el) {
@@ -4646,7 +4667,7 @@ const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat']
 const TABMAP = { over: 'grades', arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', risk: 'notes', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; if (k === 'lessons') return !(S.me && S.me.perms) || S.me.perms.lessons !== false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
-const permOf = A => A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
+const permOf = A => A === 'ov-nudge' ? 'notes' : A === 'ov-csv' || A === 'ov-copy' ? 'grades' : A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;
 const audit = (action, detail = '') => { try { return api.add('audit', { uid: myUid(), name: myName(), role: S.role, action, detail, atMs: Date.now() }).catch(() => { }); } catch { } };
 function openPerms(t) {
   const cur = t.perms ? { ...t.perms } : Object.fromEntries(PERMS.map(p => [p[0], true]));

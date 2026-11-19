@@ -10167,6 +10167,7 @@ function rrList() {
   if (RR.room === 'mock') return rrMock();
   main.innerHTML = `${rrRoomBar()}<div class="rr-poster"><img src="img/reading-poster.webp" alt="Reading" width="1200" height="675" fetchpriority="high"></div><section class="card mt rr-hero"><div><h2>Phòng đọc</h2><p>${D.length} bài đọc, trong đó ${D.filter(x => x.g).length} bài luyện thi (vào 10, THPT, Anh 9, Cambridge 10, IELTS). Bôi đen hoặc chạm vào từ bất kỳ để xem nghĩa ngay.</p></div><div class="rr-st"><b>${done}/${D.length}</b><span>bài đã làm</span></div></section>
   <section class="card rr-tools"><input id="rr-s" type="search" placeholder="Tìm bài đọc (số bài hoặc từ khoá)" value="${esc(RR.q)}" aria-label="Tìm bài đọc"><div class="rr-chips">${[['all', 'Tất cả'], ['rd', 'Đọc hiểu'], ['cl', 'Điền từ'], ['g10', 'Luyện thi'], ['todo', 'Chưa làm']].map(([k, n]) => `<button type="button" class="rr-chip ${f === k ? 'on' : ''}" data-rrf="${k}">${n}</button>`).join('')}</div>${LV ? `<div class="rr-lvs"><span>Chọn cấp độ:</span>${[['all', 'Mọi cấp độ']].concat(RR_TIERS.map(t => [t[0], t[1]])).map(([k, n]) => `<button type="button" class="rr-lv ${lf === k ? 'on' : ''}" data-rrl="${k}" ${k !== 'all' ? `style="--cf:${CF_INFO[(RR_TIERS.find(t => t[0] === k) || [0, 0, ['B1']])[2][0]][1]}"` : ''}>${n}${k !== 'all' ? ` <small>${tc[k] || 0}</small>` : ''}</button>`).join('')}<button type="button" class="rr-pt" data-pt="1">Kiểm tra trình độ</button></div>` : ''}</section>
+  ${(() => { const b = rrBm().map(n => D.find(x => x.n === n)).filter(Boolean); return b.length ? `<section class="card" style="margin-top:12px"><b>Bài đã đánh dấu (${b.length})</b><div class="rr-chips" style="margin-top:8px">${b.map(x => `<button type="button" class="chip" data-rro="${x.n}">Reading ${x.n}${x.t ? ' · ' + esc(x.t.slice(0, 28)) : ''}</button>`).join('')}</div></section>` : ''; })()}
   ${saved.length ? `<section class="card rr-saved"><details><summary>Sổ từ của em (${saved.length})</summary>${saved.length >= 1 ? `<div style="margin:10px 0"><button type="button" class="btn sm" data-rrrv="1">Ôn sổ từ: nhìn nghĩa, gõ từ tiếng Anh</button></div>` : ''}<div class="rr-sw">${saved.map((w, i) => `<span class="rr-sc"><b>${esc(w.en)}</b> ${esc(w.vi)}<button type="button" data-rrs="${i}" aria-label="Nghe"><img class="rr-loa" src="img/loa.png" alt="" width="16" height="13"></button><button type="button" data-rrd="${i}" aria-label="Xoá">✕</button></span>`).join('')}</div></details></section>` : ''}
   <div class="rr-grid">${items.map(x => { const p = pg[x.n], pc = p ? Math.round(p.c / p.t * 100) : -1; return `<button type="button" class="rr-card ${p ? 'did' : ''}" data-rro="${x.n}"><span class="rr-n">${x.n}</span><span class="rr-ct"><b>Reading ${x.n}${x.t && !/^Reading\s*\d*$/i.test(x.t) ? `<span class="rr-tp"> · ${esc(x.t)}</span>` : ''}</b><small>${LV && LV[x.n] ? `<span class="cf-b" style="--cf:${CF_INFO[LV[x.n]][1]}">${LV[x.n]}</span> ` : ''}${esc(x.g || (x.cl ? 'Điền từ' : 'Đọc hiểu'))} · ${x.q.length ? x.q.length + ' câu' : 'đọc + từ vựng'}${x.vi.length ? ' · có bản dịch' : ''}</small></span>${p ? `<em class="${pc >= 80 ? 'g' : pc >= 50 ? 'o' : 'r'}">${pc}%</em>` : ''}</button>`; }).join('') || '<p class="muted" style="padding:20px">Không có bài nào phù hợp.</p>'}</div>`;
   main.onclick = e => {
@@ -10364,6 +10365,64 @@ function rrDictation(st, dd) {
   inp.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#dc-chk').click(); } };
   scrollTo(0, 0);
 }
+/* ===== Bộ công cụ đọc: tìm từ, đổi nền, đọc to, ghi chú, đánh dấu bài, căn cứ đáp án, nhảy đoạn, tốc độ đọc, làm lại câu sai, lưu từ khó ===== */
+const rrBm = () => { try { return JSON.parse(localStorage.getItem('rr_bm') || '[]') || []; } catch (e) { return []; } };
+function rrExtras(p, A) {
+  const psg = main.querySelector('.rr-psg'); if (!psg || psg.querySelector('.rr-x')) return;
+  const note = () => { try { return localStorage.getItem('rr_note_' + p.n) || ''; } catch (e) { return ''; } };
+  const bm = () => rrBm().includes(p.n), th0 = +(localStorage.getItem('rr_th') || 0) || 0;
+  const labs = [...psg.querySelectorAll('.rr-pl')].map(e => e.textContent.trim()).filter(Boolean);
+  psg.querySelector('.rr-ins').insertAdjacentHTML('afterend', `<div class="rr-x"><div class="rr-xb"><button type="button" data-x="find">Tìm từ</button><button type="button" data-x="theme">Đổi nền</button>${p.au ? '' : '<button type="button" data-x="tts">Đọc to bài</button>'}<button type="button" data-x="bm" class="${bm() ? 'on' : ''}">${bm() ? 'Đã đánh dấu' : 'Đánh dấu bài'}</button><button type="button" data-x="note" class="${note() ? 'on' : ''}">Ghi chú</button></div>
+    <div class="rr-xp" id="rr-xf" hidden><input type="search" id="rr-fi" placeholder="Gõ một từ để tìm trong bài" autocomplete="off"><span id="rr-fc" class="muted"></span><button type="button" class="btn soft sm" id="rr-fn">Từ kế</button></div>
+    <div class="rr-xp" id="rr-xn" hidden><textarea id="rr-nt" rows="3" placeholder="Ghi chú của em về bài này (tự lưu)…">${esc(note())}</textarea></div>
+    ${labs.length > 1 ? `<div class="rr-xj"><small>Nhảy tới đoạn:</small>${labs.map(l => `<button type="button" data-j="${esc(l)}">${esc(l)}</button>`).join('')}</div>` : ''}</div>`);
+  let th = th0; const applyTh = () => { psg.classList.remove('rr-th1', 'rr-th2'); if (th) psg.classList.add('rr-th' + th); };
+  applyTh();
+  let hits = [], hi = -1; const clearHits = () => { psg.querySelectorAll('.rr-sm').forEach(e => e.classList.remove('rr-sm', 'rr-sc')); hits = []; hi = -1; };
+  const doFind = () => { clearHits(); const v = ($('#rr-fi').value || '').trim().toLowerCase().split(/\s+/)[0]; const c = $('#rr-fc'); if (v.length < 2) { c.textContent = ''; return; } psg.querySelectorAll('.rw').forEach(e => { if (e.textContent.toLowerCase().replace(/[^a-z0-9'-]/g, '').startsWith(v)) { e.classList.add('rr-sm'); hits.push(e); } }); c.textContent = hits.length ? hits.length + ' chỗ' : 'Không thấy'; if (hits.length) goHit(0); };
+  const goHit = i => { if (!hits.length) return; hi = (i + hits.length) % hits.length; hits.forEach(e => e.classList.remove('rr-sc')); hits[hi].classList.add('rr-sc'); hits[hi].scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#rr-fc').textContent = (hi + 1) + '/' + hits.length; };
+  let spk = false; const stopTts = () => { try { speechSynthesis.cancel(); } catch (e) {} spk = false; const b = psg.querySelector('[data-x=tts]'); if (b) b.textContent = 'Đọc to bài'; };
+  psg.addEventListener('click', e => {
+    const b = e.target.closest('[data-x]'), j = e.target.closest('[data-j]');
+    if (j) { const t = [...psg.querySelectorAll('.rr-pl')].find(x => x.textContent.trim() === j.dataset.j); if (t) { const pp = t.closest('.rr-pp') || t; pp.scrollIntoView({ behavior: 'smooth', block: 'center' }); pp.classList.add('rr-flash'); setTimeout(() => pp.classList.remove('rr-flash'), 1300); } return; }
+    if (e.target.closest('#rr-fn')) return goHit(hi + 1);
+    if (!b) return; const k = b.dataset.x;
+    if (k === 'find') { const x = $('#rr-xf'); x.hidden = !x.hidden; if (!x.hidden) $('#rr-fi').focus(); else clearHits(); }
+    else if (k === 'note') { const x = $('#rr-xn'); x.hidden = !x.hidden; if (!x.hidden) $('#rr-nt').focus(); }
+    else if (k === 'theme') { th = (th + 1) % 3; try { localStorage.setItem('rr_th', th); } catch (er) {} applyTh(); toast(['Nền trắng', 'Nền giấy (dịu mắt)', 'Nền tối'][th]); }
+    else if (k === 'bm') { let a = rrBm(); a = a.includes(p.n) ? a.filter(x => x !== p.n) : a.concat(p.n); try { localStorage.setItem('rr_bm', JSON.stringify(a)); } catch (er) {} b.classList.toggle('on', a.includes(p.n)); b.textContent = a.includes(p.n) ? 'Đã đánh dấu' : 'Đánh dấu bài'; }
+    else if (k === 'tts') { if (spk) return stopTts(); spk = true; b.textContent = 'Dừng đọc'; const voices = speechSynthesis.getVoices(), v = voices.find(x => /en[-_](US|GB)/i.test(x.lang)) || null, chunks = p.p.map(t => t.replace(/^[A-H]\s+(?=[A-Z])/, '')).filter(Boolean); chunks.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = .92; if (v) u.voice = v; if (i === chunks.length - 1) u.onend = () => stopTts(); speechSynthesis.speak(u); }); }
+  });
+  psg.addEventListener('input', e => { if (e.target.id === 'rr-fi') { clearTimeout(rrExtras._t); rrExtras._t = setTimeout(doFind, 200); } if (e.target.id === 'rr-nt') { try { const v = e.target.value; if (v.trim()) localStorage.setItem('rr_note_' + p.n, v); else localStorage.removeItem('rr_note_' + p.n); } catch (er) {} const nb = psg.querySelector('[data-x=note]'); if (nb) nb.classList.toggle('on', !!e.target.value.trim()); } });
+  psg.addEventListener('keydown', e => { if (e.target.id === 'rr-fi' && e.key === 'Enter') { e.preventDefault(); goHit(hi + 1); } });
+  window.addEventListener('pagehide', stopTts, { once: true });
+  /* Căn cứ đáp án: tô câu trong bài khớp nhất với câu hỏi */
+  const STOP = new Set('the a an of to in on at for and or is are was were be been it this that with as by from which what who why how when does did do not no yes true false given information passage paragraph writer author according'.split(' '));
+  const toks = t => (String(t).toLowerCase().match(/[a-z0-9']{3,}/g) || []).filter(w => !STOP.has(w));
+  const evid = k => {
+    const q = p.q[k]; const qt = (q.q || '').replace(/^\[[^\]]+\]\s*/, ''); let ans = ''; if (q.f && q.f.length) ans = q.f[0]; else if (q.o && q.o[q.a]) ans = q.o[q.a];
+    const kw = new Set(toks(qt + ' ' + ans)), ak = new Set(toks(ans)); if (!kw.size) return toast('Câu này không có từ khoá để tìm căn cứ.', 'warn');
+    let best = null, bs = 0; psg.querySelectorAll('.rr-pp,.rr-psg p').forEach(par => { if (par.closest('.rr-x,.rr-hint,.rr-an')) return; const txt = par.textContent, sents = txt.match(/[^.!?]+[.!?]*/g) || [txt]; sents.forEach(se => { const w = toks(se); let sc = 0; w.forEach(x => { if (kw.has(x)) sc += ak.has(x) ? 2 : 1; }); sc = sc / Math.sqrt(Math.max(8, w.length)); if (sc > bs) { bs = sc; best = { par, se: se.trim() }; } }); });
+    if (!best || bs < .3) return toast('Chưa tìm thấy câu nào khớp rõ trong bài.', 'warn');
+    psg.querySelectorAll('mark.rr-ev').forEach(m => { const pa = m.parentNode; while (m.firstChild) pa.insertBefore(m.firstChild, m); pa.removeChild(m); pa.normalize && pa.normalize(); });
+    const first = best.se.slice(0, 18).toLowerCase(), words = [...best.par.querySelectorAll('.rw')]; let st = -1; const norm = w => w.textContent.toLowerCase().replace(/[^a-z0-9']/g, '');
+    const target = best.se.toLowerCase().match(/[a-z0-9']+/g) || []; for (let i = 0; i + target.length <= words.length && st < 0; i++) { let ok = true; for (let j = 0; j < Math.min(3, target.length); j++) if (norm(words[i + j]) !== target[j]) { ok = false; break; } if (ok) st = i; }
+    if (st < 0) { best.par.scrollIntoView({ behavior: 'smooth', block: 'center' }); best.par.classList.add('rr-flash'); setTimeout(() => best.par.classList.remove('rr-flash'), 1800); return; }
+    const sel = words.slice(st, st + target.length); psg.querySelectorAll('.rr-evw').forEach(x => x.classList.remove('rr-evw')); sel.forEach(x => x.classList.add('rr-evw')); sel[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => sel.forEach(x => x.classList.remove('rr-evw')), 6000);
+  };
+  const addEv = () => main.querySelectorAll('.rr-q.done').forEach(box => { const ex = box.querySelector('.rr-ex'); if (!ex || ex.querySelector('.rr-evb') || ex.hidden) return; const k = +box.dataset.k, q = p.q[k]; if (!q || q.a < 0 || (q.o && q.o.length > 6) || /heading/i.test(q.q || '')) return; ex.insertAdjacentHTML('beforeend', `<button type="button" class="btn soft sm rr-evb" data-ev="${k}">Xem căn cứ trong bài</button>`); });
+  main.addEventListener('click', e => { const b = e.target.closest('[data-ev]'); if (b) return evid(+b.dataset.ev); setTimeout(addEv, 60); });
+  addEv(); rrExtras._t0 = Date.now();
+}
+function rrFinishX(p, A) {
+  const res = $('#rr-res'); if (!res || res.querySelector('.rr-fx')) return;
+  const wrong = p.q.map((q, k) => ({ q, k })).filter(({ q, k }) => q.a >= 0 && A[k] !== q.a), words = p.p.join(' ').split(/\s+/).length, mins = Math.max(.5, (Date.now() - (rrExtras._t0 || Date.now())) / 60000);
+  const hard = (main.querySelector('.rr-ac') ? [...main.querySelectorAll('.rr-ac')].length : 0);
+  res.querySelector('.rr-result').insertAdjacentHTML('beforeend', `<div class="rr-fx"><p class="muted" style="margin:10px 0 0">Tốc độ: khoảng <b>${Math.round(words / mins)} từ/phút</b> (tính cả thời gian trả lời, ${Math.round(mins)} phút cho ${words} từ). ${words / mins >= 200 ? 'Tốc độ rất tốt!' : 'Mục tiêu IELTS thường là 200 từ/phút trở lên.'}</p><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">${wrong.length ? `<button type="button" class="btn" id="rr-rw">Làm lại ${wrong.length} câu sai</button>` : ''}${hard ? `<button type="button" class="btn soft" id="rr-sv">Lưu ${hard} từ nâng cao vào sổ từ</button>` : ''}</div></div>`);
+  const rw = $('#rr-rw'); if (rw) rw.onclick = () => { wrong.forEach(({ k }) => { A[k] = -1; }); rrPassage(); toast('Đã mở lại các câu sai. Đọc kỹ rồi trả lời lại nhé.', 'ok'); setTimeout(() => { const f = main.querySelector('.rr-q:not(.done)'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 400); };
+  const sv = $('#rr-sv'); if (sv) sv.onclick = async () => { sv.disabled = true; sv.textContent = 'Đang lưu…'; const ws = [...main.querySelectorAll('.rr-ac')].map(b => b.dataset.aw), items = []; for (const w of ws) { try { const r = await rrMean(w); if (r && r.vi) items.push(w + '|' + r.vi); } catch (er) {} } if (!items.length) { sv.textContent = 'Chưa tra được nghĩa'; sv.disabled = false; return; } if (S.profile) S.profile = { ...S.profile, rdwords: [...new Set([...(S.profile.rdwords || []), ...items])] }; api.updateMe({ rdwords: UNION(...items) }).catch(() => {}); sv.textContent = 'Đã lưu ' + items.length + ' từ'; };
+}
+(() => { const st = document.createElement('style'); st.textContent = '.rr-x{margin:8px 0 12px}.rr-xb{display:flex;flex-wrap:wrap;gap:6px}.rr-xb button,.rr-xj button{border:1px solid #F1CBD1;background:#fff;color:#B10B32;border-radius:99px;padding:5px 13px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .12s}.rr-xb button:hover,.rr-xj button:hover{background:#FFE9EC}.rr-xb button.on{background:#E0243A;border-color:#E0243A;color:#fff}.rr-xp{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}.rr-xp input,.rr-xp textarea{flex:1;min-width:160px;border:1px solid #EAD3D7;border-radius:12px;padding:8px 12px;font:inherit}.rr-xj{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:8px}.rr-xj small{color:#7A6B72;font-weight:700}.rr-xj button{padding:3px 11px;min-width:30px}.rw.rr-sm{background:#FFF0A8;border-radius:3px}.rw.rr-sm.rr-sc{background:#FFC145;box-shadow:0 0 0 2px #FFC145}.rw.rr-evw{background:#CFF2DB;border-radius:3px;box-shadow:0 0 0 1px #8CD3A6}.rr-psg.rr-th1{background:#F6EEDC!important;color:#3B2F1C!important}.rr-psg.rr-th2{background:#1E2430!important;color:#E4E8F1!important}.rr-psg.rr-th2 .rr-title,.rr-psg.rr-th2 h3{color:#fff!important}.rr-psg.rr-th2 .rr-xb button,.rr-psg.rr-th2 .rr-xj button{background:#2B3342;color:#FFD0D6;border-color:#47506A}.rr-psg.rr-th2 .rr-xp input,.rr-psg.rr-th2 .rr-xp textarea{background:#2B3342;color:#fff;border-color:#47506A}.rr-evb{margin-top:8px}'; document.head.appendChild(st); })();
 function rrPassage() {
   const D = RR.data.concat(RR.lis || []), i = D.findIndex(x => x.n === RR.open), p = D[i]; if (!p) { RR.open = 0; return rrList(); }
   const A = RR.ans[p.n] || (RR.ans[p.n] = p.q.map(() => -1)), LET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', graded = p.q.filter(q => q.a >= 0).length;
@@ -10390,6 +10449,7 @@ function rrPassage() {
     let xp = 0; const key = 'rr_' + p.n; if (!claimed(key) && ok > 0) { markClaim(key); xp = ok * 2; award(null, xp, {}, 'reading'); }
     if (pc >= 80) { try { sfx.win(); confetti(); } catch (er) {} }
     $('#rr-res').innerHTML = `<section class="card result rr-result"><h3>Đúng ${ok}/${graded} câu (${pc}%)${xp ? ' · +' + xp + ' XP' : ''}</h3><p class="cheer">${esc(cheer(pc))}</p><div class="row"><button type="button" class="btn soft" id="rr-again">Làm lại bài này</button><button type="button" class="btn" id="rr-next2">Bài tiếp theo →</button></div></section>`;
+    try { rrFinishX(p, A); } catch (er) {}
     $('#rr-res').scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
   A.forEach((a, k) => { if (a >= 0) reveal(k, a); }); upd();
@@ -10437,6 +10497,7 @@ function rrPassage() {
     dv.ondblclick = () => { cur = set(54); save(); };
     dv.onkeydown = e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); cur = set(cur + (e.key === 'ArrowLeft' ? -2 : 2)); save(); } else if (e.key === 'Home') { cur = set(54); save(); } };
   } }
+  try { rrExtras(p, A); } catch (er) { console.warn(er); }
   { const fs = +(localStorage.getItem('rr_fs') || 0) || 0, ap = v => { const el = main.querySelector('.rr-psg'); if (el) el.style.fontSize = (1.1 + v * 0.1) + 'rem'; }; let cur = Math.max(-2, Math.min(4, fs)); ap(cur);
     main.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => { cur = Math.max(-2, Math.min(4, cur + +b.dataset.fs)); try { localStorage.setItem('rr_fs', String(cur)); } catch (er) {} ap(cur); });
     main.querySelectorAll('.rr-pb').forEach(b => b.onclick = () => { const q = main.querySelector(`.rr-q[data-k="${b.dataset.pk}"]`); if (q) { q.scrollIntoView({ behavior: 'smooth', block: 'start' }); q.classList.add('rr-flash'); setTimeout(() => q.classList.remove('rr-flash'), 1200); } }); }

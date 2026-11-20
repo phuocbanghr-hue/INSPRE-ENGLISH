@@ -1917,7 +1917,7 @@ const TOAST_IC = { ok: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/
 function toast(msg, kind = '', o = {}) {
   const box = $('#toasts'); if (!box || !msg) return; const k = TOAST_IC[kind] ? kind : 'info', text = String(msg);
   for (const e of box.children) if (e.dataset.m === text) { e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); e._restart && e._restart(); return; }
-  while (box.children.length >= 4) box.firstElementChild.remove();
+  while (box.querySelectorAll('.toast').length >= 3) box.querySelector('.toast').remove();
   const dur = o.ms || (k === 'bad' ? 6500 : k === 'warn' ? 5500 : 3800), t = document.createElement('div');
   t.className = 'toast ' + k; t.dataset.m = text; t.setAttribute('role', k === 'bad' || k === 'warn' ? 'alert' : 'status');
   t.innerHTML = `<span class="t-ic">${TOAST_IC[k]}</span><span class="t-tx"></span><button type="button" class="t-x" aria-label="Đóng">×</button><i class="t-bar"></i>`;
@@ -1925,7 +1925,17 @@ function toast(msg, kind = '', o = {}) {
   const rm = () => { clearTimeout(to); if (!t.isConnected) return; t.classList.add('out'); setTimeout(() => t.remove(), 220); };
   const run = () => { clearTimeout(to); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = `tbar ${dur}ms linear forwards`; to = setTimeout(rm, dur); };
   t._restart = run; t.querySelector('.t-x').onclick = rm; t.onmouseenter = () => { clearTimeout(to); bar.style.animationPlayState = 'paused'; }; t.onmouseleave = run;
-  box.appendChild(t); run();
+  let x0 = null; t.addEventListener('pointerdown', e => { if (e.target.closest('.t-x')) return; x0 = e.clientX; });
+  t.addEventListener('pointermove', e => { if (x0 === null) return; const dx = e.clientX - x0; if (Math.abs(dx) > 6) { t.style.transform = `translateX(${dx}px)`; t.style.opacity = String(Math.max(.2, 1 - Math.abs(dx) / 220)); } });
+  const up = e => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 70) { t.style.transform = `translateX(${dx > 0 ? 400 : -400}px)`; t.style.opacity = '0'; setTimeout(rm, 120); } else { t.classList.add('swp'); t.style.transform = ''; t.style.opacity = ''; setTimeout(() => t.classList.remove('swp'), 220); } };
+  t.addEventListener('pointerup', up); t.addEventListener('pointercancel', up);
+  box.appendChild(t); run(); toastAll(box);
+}
+function toastAll(box) {
+  let b = box.querySelector('.t-all'); const n = box.querySelectorAll('.toast').length;
+  if (n < 2) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 't-all'; b.textContent = 'Xoá tất cả'; b.onclick = () => { box.querySelectorAll('.toast .t-x').forEach(x => x.click()); b.remove(); }; }
+  box.appendChild(b);
 }
 function askBox(msg, o = {}) {
   return new Promise(res => {
@@ -10381,6 +10391,44 @@ function rrWordReview() {
   main.onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'rr-wi') { e.preventDefault(); const b = main.querySelector('[data-rrchk]'); if (b) b.click(); } };
   draw();
 }
+/* Đợt 3: ôn câu gắn cờ + xếp đoạn văn */
+function rrOverlay(html) {
+  document.querySelectorAll('.rr-rs.rr-ov').forEach(x => x.remove());
+  const ov = document.createElement('div'); ov.className = 'rr-rs rr-ov'; ov.innerHTML = '<div class="rr-rsb rr-ovb" style="max-height:90vh;overflow:auto"><button type="button" class="rr-rsx">Đóng</button>' + html + '</div>';
+  ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.rr-rsx')) ov.remove(); }); document.body.appendChild(ov); return ov;
+}
+function rrFlagReview() {
+  let fl; try { fl = JSON.parse(localStorage.getItem('rr_flag') || '[]') || []; } catch (e) { fl = []; }
+  const D = (RR.data || []).concat(RR.lis || []);
+  const L = fl.map(id => { const [n, k] = id.split(':').map(Number), p = D.find(x => x.n === n); return p && p.q[k] ? { id, n, k, q: p.q[k] } : null; }).filter(Boolean);
+  if (!L.length) return toast('Chưa có câu nào gắn cờ. Trong bài đọc, bấm "Gắn cờ" ở câu khó nhé.');
+  let i = 0, ok = 0;
+  const ov = rrOverlay('<div id="fr"></div>'), box = ov.querySelector('#fr');
+  const draw = () => {
+    if (i >= L.length) { box.innerHTML = `<h3 style="margin:0 0 8px">Xong rồi!</h3><p>Em làm đúng <b>${ok}/${L.length}</b> câu gắn cờ.</p><p class="muted">Câu đã đúng sẽ được bỏ cờ.</p>`; return; }
+    const c = L[i], q = c.q, fill = !(q.o && q.o.length);
+    box.innerHTML = `<small class="muted">Câu ${i + 1}/${L.length} · Reading ${c.n} · câu ${q.n || c.k + 1}</small><p style="font-weight:700;margin:6px 0 10px;line-height:1.5">${esc(q.q)}</p>${fill ? '<input class="inp" id="fra" placeholder="Nhập đáp án" style="width:100%"><button type="button" class="btn" id="frc" style="margin-top:8px">Kiểm tra</button>' : q.o.map((o, j) => `<button type="button" class="rr-i2b" data-j="${j}" style="width:100%;margin-bottom:6px">${esc(o)}</button>`).join('')}<div id="frx"></div>`;
+    const done = good => { if (good) ok++; box.querySelectorAll('button[data-j]').forEach((b, j) => { b.disabled = true; if (j === q.a) b.style.background = '#D8F5E0'; }); let fl2; try { fl2 = JSON.parse(localStorage.getItem('rr_flag') || '[]') || []; } catch (e) { fl2 = []; } if (good) { try { localStorage.setItem('rr_flag', JSON.stringify(fl2.filter(x => x !== c.id))); } catch (e) {} } $('#frx').innerHTML = `<p style="margin:10px 0"><b>${good ? 'Đúng!' : 'Chưa đúng.'}</b> ${fill ? 'Đáp án: ' + esc((q.f || []).join(' / ')) : ''} ${q.e ? esc(q.e) : ''}</p><button type="button" class="btn" id="frn">${i + 1 >= L.length ? 'Xem kết quả' : 'Câu tiếp'}</button>`; $('#frn').onclick = () => { i++; draw(); }; };
+    if (fill) $('#frc').onclick = () => { const v = ($('#fra').value || '').toLowerCase().replace(/[^a-z0-9]/g, ''); done((q.f || []).some(a => String(a).toLowerCase().replace(/[^a-z0-9]/g, '') === v && v)); };
+    else box.querySelectorAll('button[data-j]').forEach(b => b.onclick = () => { const good = +b.dataset.j === q.a; if (!good) b.style.background = '#FFD9DE'; done(good); });
+  };
+  draw();
+}
+function rrOrderGame() {
+  const D = (RR.data || []).filter(x => !x.cl && x.p && x.p.length >= 5 && x.p.length <= 9);
+  if (!D.length) return toast('Chưa có bài phù hợp.');
+  const p = D[Math.floor(Math.random() * D.length)], paras = p.p.map(t => t.replace(/^[A-H]\s+(?=[A-Z])/, '').trim()), first = paras[0], rest = paras.slice(1, 6).map((t, i) => ({ t, i }));
+  const mix = rest.slice().sort(() => Math.random() - .5); let pick = [];
+  const ov = rrOverlay('<div id="og"></div>'), box = ov.querySelector('#og');
+  const draw = (res) => {
+    box.innerHTML = `<h3 style="margin:0 0 4px">Xếp đoạn văn</h3><small class="muted">Reading ${p.n}${p.t ? ' · ' + esc(p.t) : ''} · bấm các đoạn theo đúng thứ tự trong bài</small><div style="margin:10px 0;padding:10px;background:#FFF5F6;border-radius:12px"><b>Đoạn mở đầu:</b> ${esc(first.slice(0, 220))}${first.length > 220 ? '…' : ''}</div>${mix.map((o, j) => { const at = pick.indexOf(o.i); return `<button type="button" class="rr-i2b" data-o="${o.i}" style="width:100%;margin-bottom:6px;${at >= 0 ? 'opacity:.55' : ''}${res ? (at === o.i ? ';background:#D8F5E0' : ';background:#FFD9DE') : ''}"><b>${at >= 0 ? (at + 1) + '. ' : ''}</b>${esc(o.t.slice(0, 160))}…</button>`; }).join('')}<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn soft" id="ogu">Làm lại</button><button type="button" class="btn" id="ogc">${res ? 'Chơi bài khác' : 'Kiểm tra'}</button></div><p id="ogm" style="margin:10px 0 0"></p>`;
+    box.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { if (res) return; const v = +b.dataset.o; pick = pick.includes(v) ? pick.filter(x => x !== v) : pick.concat(v); draw(); });
+    $('#ogu').onclick = () => { pick = []; draw(); };
+    $('#ogc').onclick = () => { if (res) { ov.remove(); return rrOrderGame(); } if (pick.length < rest.length) return ($('#ogm').textContent = 'Em xếp đủ ' + rest.length + ' đoạn rồi hãy kiểm tra nhé.'); const good = pick.filter((v, k) => v === k).length; draw(true); $('#ogm').innerHTML = `Đúng vị trí <b>${good}/${rest.length}</b> đoạn. Mẹo: tìm từ nối (However, This, Another…) và từ lặp ở đầu mỗi đoạn.`; };
+  };
+  draw();
+}
+if (!window.__rrOv) { window.__rrOv = 1; document.addEventListener('click', e => { if (e.target.closest('[data-rrfr]')) rrFlagReview(); else if (e.target.closest('[data-rrog]')) rrOrderGame(); }); }
 function rrInsights(D, pg) {
   let lg; try { lg = JSON.parse(localStorage.getItem('rr_log') || '[]') || []; } catch (e) { lg = []; }
   const wk = Date.now() - 7 * 864e5, L = lg.filter(x => x.at >= wk), n = L.length, ok = L.reduce((a, x) => a + x.ok, 0), tt = L.reduce((a, x) => a + x.t, 0), wpm = n ? Math.round(L.reduce((a, x) => a + x.w, 0) / n) : 0;
@@ -10394,8 +10442,8 @@ function rrInsights(D, pg) {
   add(undone.find(hasBand), 'Bài IELTS chưa làm'); add(undone[0], 'Bài chưa làm');
   let fl; try { fl = JSON.parse(localStorage.getItem('rr_flag') || '[]') || []; } catch (e) { fl = []; }
   const fn = [...new Set(fl.map(x => +x.split(':')[0]))].map(k => D.find(x => x.n === k)).filter(Boolean);
-  if (!n && !rec.length && !fn.length) return '';
-  return `<section class="card rr-ins2" style="margin-top:12px"><div class="rr-i2g">${n ? `<div class="rr-i2s"><b>Tuần này</b><div class="rr-i2n"><span><em>${n}</em>bài đã làm</span><span><em>${tt ? Math.round(ok / tt * 100) : 0}%</em>đúng</span><span><em>${wpm}</em>từ/phút</span><span><em>${days}/7</em>ngày đọc</span></div></div>` : ''}${rec.length ? `<div class="rr-i2r"><b>Gợi ý cho em</b>${rec.slice(0, 3).map(r => `<button type="button" class="rr-i2b" data-rro="${r.x.n}"><span>Reading ${r.x.n}${r.x.t ? ' · ' + esc(r.x.t.slice(0, 30)) : ''}</span><small>${esc(r.why)}</small></button>`).join('')}</div>` : ''}</div>${fn.length ? `<div style="margin-top:10px"><b>Có câu đã gắn cờ trong ${fn.length} bài</b><div class="rr-chips" style="margin-top:6px">${fn.slice(0, 8).map(x => `<button type="button" class="chip" data-rro="${x.n}">Reading ${x.n}</button>`).join('')}</div></div>` : ''}</section>`;
+  const tools = `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn soft" data-rrog="1">Xếp đoạn văn</button>${fn.length ? '<button type="button" class="btn" data-rrfr="1">Ôn câu gắn cờ</button>' : ''}</div>`;
+  return `<section class="card rr-ins2" style="margin-top:12px"><div class="rr-i2g">${n ? `<div class="rr-i2s"><b>Tuần này</b><div class="rr-i2n"><span><em>${n}</em>bài đã làm</span><span><em>${tt ? Math.round(ok / tt * 100) : 0}%</em>đúng</span><span><em>${wpm}</em>từ/phút</span><span><em>${days}/7</em>ngày đọc</span></div></div>` : ''}${rec.length ? `<div class="rr-i2r"><b>Gợi ý cho em</b>${rec.slice(0, 3).map(r => `<button type="button" class="rr-i2b" data-rro="${r.x.n}"><span>Reading ${r.x.n}${r.x.t ? ' · ' + esc(r.x.t.slice(0, 30)) : ''}</span><small>${esc(r.why)}</small></button>`).join('')}</div>` : ''}</div>${fn.length ? `<div style="margin-top:10px"><b>Có câu đã gắn cờ trong ${fn.length} bài</b><div class="rr-chips" style="margin-top:6px">${fn.slice(0, 8).map(x => `<button type="button" class="chip" data-rro="${x.n}">Reading ${x.n}</button>`).join('')}</div></div>` : ''}${tools}</section>`;
 }
 function rrList() {
   if (RR.room === 'write') return viewWriting();
@@ -15244,6 +15292,17 @@ body:has(.rm-tabs [data-rrroom="listen"].on) .chat-fab,body:has(.rr-au) .chat-fa
 .toast.pop{animation:tpop .3s!important}.toast.out{animation:tup .22s forwards!important}
 @keyframes tdrop{from{transform:translateY(-18px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 @keyframes tup{to{transform:translateY(-14px);opacity:0}}
+/* toast v6: góc dưới phải (không che thanh menu), nhóm gọn, vuốt để đóng */
+@media(min-width:721px){.toasts{top:auto!important;bottom:calc(18px + env(safe-area-inset-bottom,0px))!important;left:auto!important;right:18px!important;translate:none!important;width:min(380px,92vw)!important;flex-direction:column-reverse!important}.toast{animation:tright .35s cubic-bezier(.2,.9,.3,1.1)!important}.toast.out{animation:tleft .22s forwards!important}}
+@keyframes tright{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes tleft{to{transform:translateX(40px);opacity:0}}
+.toast{border-left:4px solid var(--tc)!important;touch-action:pan-y;cursor:default;box-shadow:0 14px 34px -12px rgba(20,38,63,.4),0 2px 6px rgba(20,38,63,.08)!important;background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 7%,#fff),#fff 40%)!important}
+.toast .t-tx{text-wrap:pretty}
+.toast .t-bar{opacity:.6!important;height:3px!important}
+.toast .t-ic{box-shadow:0 4px 10px -3px var(--tc),0 0 0 4px color-mix(in srgb,var(--tc) 16%,transparent)}
+.toast.swp{transition:transform .2s,opacity .2s}
+.t-all{pointer-events:auto;align-self:flex-end;border:0;border-radius:99px;background:rgba(29,36,51,.82);color:#fff;font:inherit;font-size:.74rem;font-weight:700;padding:4px 12px;cursor:pointer;backdrop-filter:blur(6px)}
+@media(max-width:720px){.toasts{top:calc(8px + env(safe-area-inset-top,0px))!important;width:min(94vw,420px)!important}}
 /* học tư duy */
 .th-tabs{flex-wrap:wrap}.th-sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .th-q{font-size:1.2rem;font-weight:700;margin:8px 0 12px;color:#1d2433;line-height:1.4}

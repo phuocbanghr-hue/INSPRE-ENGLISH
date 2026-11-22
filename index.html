@@ -8112,7 +8112,7 @@ function camDLInit(p, A) {
   const inR = (x, y, r) => x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3];
   const spotAt = (x, y) => D.s.find(s => inR(x, y, s.r));
   let pend = null, drag = null, tmp = null;
-  const stat = () => names.forEach(({ i }) => { const el = main.querySelector(`[data-dli="${i}"]`); if (!el) return; const v = A[i]; el.innerHTML = v ? `Đã nối: <b>${esc(String(v).replace(/^\?.*$/, 'một nhân vật khác'))}</b> <button type="button" class="cmb-dlx" data-dlx="${i}">Xoá</button>` : (pend === i ? 'Chạm vào nhân vật trong tranh để nối.' : 'Kéo từ tên này tới nhân vật trong tranh.'); });
+  const stat = () => names.forEach(({ i }) => { const el = main.querySelector(`[data-dli="${i}"]`); if (!el) return; const v = A[i]; el.innerHTML = v ? `<b>Đã nối</b> <button type="button" class="cmb-dlx" data-dlx="${i}">Xoá</button>` : (pend === i ? 'Chạm vào nhân vật trong tranh để nối.' : 'Kéo từ tên này tới nhân vật trong tranh.'); });
   const draw = () => {
     svg.querySelectorAll('.dl').forEach(e => e.remove());
     names.forEach(({ i, nm }) => { if (!nm) return; const v = A[i], c = LN[i];

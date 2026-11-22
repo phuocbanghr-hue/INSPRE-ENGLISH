@@ -14099,6 +14099,7 @@ else {
     if (bn && body() && !body().querySelector('.tl-ban')) body().insertAdjacentHTML('afterbegin', '<img class="tl-ban" src="img/' + bn + '.webp" alt="" loading="lazy">');
   });
   panel.querySelector('.tl-x').onclick = () => panel.classList.remove('open');
+  { const tabs = panel.querySelector('.tl-tabs'); if (tabs) { const lb = document.createElement('button'); lb.type = 'button'; lb.textContent = 'Luyện nhanh'; lb.style.cssText = 'background:#B10B32;border-color:#B10B32;color:#fff'; lb.onclick = () => { panel.classList.remove('open'); if (window.INSLab) return window.INSLab.open(); const sc = document.createElement('script'); sc.src = 'lab.js?v=1'; sc.onload = () => window.INSLab && window.INSLab.open(); sc.onerror = () => toast('Chưa tải được bài luyện, em kiểm tra mạng nhé.', 'bad'); document.head.appendChild(sc); }; tabs.insertBefore(lb, tabs.firstChild); } }
   /* --- Linh vật Bông 3D: mô hình WebGL nhẹ, tải khi mở bảng; lỗi thì giữ hình SVG --- */
   const pointer = { x: 0, y: 0 };
   window.addEventListener('pointermove', e => { pointer.x = (e.clientX / innerWidth - .5) * 2; pointer.y = (e.clientY / innerHeight - .5) * 2; }, { passive: true });

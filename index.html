@@ -8330,15 +8330,15 @@ async function camSpkSend(lv, R, secs, btn, redraw) {
   CAM.spkLoading = 0; await camSpkLoad(); btn.disabled = false; btn.textContent = 'Send recordings again';
 }
 function camSpeaking() {
-  camStop(); camFs(false); const lv = camLv(), of = lv.tests[0], pr = lv.tests.find(x => !x.official) || lv.tests[0], cards = of.official && of.speaking[0] && !of.speaking[0][2] ? of.speaking[0][1] : [];
+  camStop(); camFs(false); const lv = camLv(), of = lv.tests[0], pr = lv.tests.find(x => !x.official) || lv.tests[0], allCards = of.official && of.speaking[0] && !of.speaking[0][2] ? of.speaking[0][1] : [], mapped = pr.speaking.some(x => x[3]);
   const secs = pr.speaking.map((s, i) => ({ s, i })).filter(x => x.s[2]), done = camJ('cam_sp_' + lv.id, {}), R = (CAM.spr = CAM.spr || {}), S2 = (CAM.sp = CAM.sp && CAM.sp.lv === lv.id ? CAM.sp : { lv: lv.id, p: 0, q: 0, auto: true, busy: false });
   const total = secs.reduce((a, x) => a + x.s[2].length, 0), nDone = () => secs.reduce((a, x) => a + x.s[2].filter((_, k) => done[x.i + '-' + k]).length, 0);
   const draw = () => {
-    const sc = secs[S2.p], q = sc.s[2][S2.q], key = sc.i + '-' + S2.q, r = R[lv.id + key], pc = Math.round(nDone() / Math.max(1, total) * 100);
+    const sc = secs[S2.p], q = sc.s[2][S2.q], cards = mapped ? ((sc.s[3] || [])[S2.q] || []) : allCards, key = sc.i + '-' + S2.q, r = R[lv.id + key], pc = Math.round(nDone() / Math.max(1, total) * 100);
     main.innerHTML = `<div class="cmb-wrap" style="--c:${lv.color};--d:${lv.dark}"><div class="cmb-tab">${esc(lv.name)} <span>Speaking</span></div>
     <section class="cmb-spx"><div class="cmb-sph"><img src="${CAM_LOGO}" alt="" width="38" height="38"><div><small>Cambridge English · ${esc(lv.fam || 'Young Learners')}</small><h2>${esc(lv.name)} · Speaking</h2></div><div class="cmb-spp"><b>${nDone()}/${total}</b><span>answered</span><i><u style="width:${pc}%"></u></i></div></div>
     <div class="cmb-spt">${secs.map((x, i) => `<button type="button" data-spp="${i}" class="${i === S2.p ? 'on' : ''}">${esc(x.s[0].split(' · ')[0])}<small>${esc((x.s[0].split(' · ')[1] || ''))}</small></button>`).join('')}</div>
-    <div class="cmb-spg ${cards.length ? '' : 'one'}">${cards.length ? `<div class="cmb-spc"><h4>Picture cards</h4>${cards.map(n => `<a href="${CAM_PG(n)}" target="_blank" rel="noopener"><img src="${CAM_PG(n)}" alt="Speaking card" loading="lazy"></a>`).join('')}<p class="cmb-fine">${esc(CAM_CR)}</p></div>` : ''}
+    <div class="cmb-spg ${cards.length ? '' : 'one'}">${cards.length ? `<div class="cmb-spc"><h4>Picture</h4>${cards.map(n => `<a href="${CAM_PG(n)}" target="_blank" rel="noopener"><img src="${CAM_PG(n)}" alt="Speaking card" loading="lazy"></a>`).join('')}<p class="cmb-fine">${esc(CAM_CR)}</p></div>` : ''}
     <div class="cmb-spe"><div class="cmb-spq"><div class="cmb-ava" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="${lv.color}"/><circle cx="24" cy="19" r="8" fill="#fff"/><path d="M8 42c2-9 9-13 16-13s14 4 16 13z" fill="#fff"/></svg></div><div><b>Examiner</b><small>${esc(sc.s[0])}</small></div></div>
     <p class="cmb-spd">${esc(sc.s[1])}</p>
     <div class="cmb-bub"><small>Question ${S2.q + 1} of ${sc.s[2].length}</small><p>${esc(q)}</p></div>

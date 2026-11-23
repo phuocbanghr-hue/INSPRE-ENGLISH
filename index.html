@@ -7063,8 +7063,8 @@ const splN = t => String(t).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a
 function splSay(t, rate, cb) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t), L = localStorage.getItem('spl_voice') || 'en-US'; u.lang = L; const v = speechSynthesis.getVoices().find(x => x.lang === L); if (v) u.voice = v; u.rate = rate || .9; u.onend = u.onerror = () => cb && cb(); speechSynthesis.speak(u); } catch { cb && cb(); } }
 async function splRec(max) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition; let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { toast('Chưa cho phép micro. Hãy bật quyền micro rồi thử lại.', 'bad'); return null; } if (!window.MediaRecorder) { toast('Trình duyệt này chưa hỗ trợ ghi âm.', 'bad'); stream.getTracks().forEach(t => t.stop()); return null; }
-  const chunks = [], rec = new MediaRecorder(stream); rec.ondataavailable = e => chunks.push(e.data); let fin = '', itr = '', sr = null, done = false, timer = 0; const t0 = Date.now(), ctl = { hasSR: !!SR, onText: null, onMax: null };
-  ctl.stop = () => new Promise(res => { if (done) return res({ text: '', url: '', secs: 0 }); done = true; clearTimeout(timer); try { if (sr) { sr.onend = null; sr.stop(); } } catch {} rec.onstop = () => { stream.getTracks().forEach(t => t.stop()); setTimeout(() => res({ text: (fin + itr).trim(), url: URL.createObjectURL(new Blob(chunks, { type: rec.mimeType || 'audio/webm' })), secs: Math.max(1, Math.round((Date.now() - t0) / 1000)) }), 300); }; try { rec.stop(); } catch { res({ text: '', url: '', secs: 0 }); } });
+  const chunks = []; let rec; try { rec = new MediaRecorder(stream, { audioBitsPerSecond: 24000 }); } catch { rec = new MediaRecorder(stream); } rec.ondataavailable = e => chunks.push(e.data); let fin = '', itr = '', sr = null, done = false, timer = 0; const t0 = Date.now(), ctl = { hasSR: !!SR, onText: null, onMax: null };
+  ctl.stop = () => new Promise(res => { if (done) return res({ text: '', url: '', secs: 0 }); done = true; clearTimeout(timer); try { if (sr) { sr.onend = null; sr.stop(); } } catch {} let bl; rec.onstop = () => { stream.getTracks().forEach(t => t.stop()); setTimeout(() => res({ text: (fin + itr).trim(), blob: (bl = new Blob(chunks, { type: rec.mimeType || 'audio/webm' })), url: URL.createObjectURL(bl), secs: Math.max(1, Math.round((Date.now() - t0) / 1000)) }), 300); }; try { rec.stop(); } catch { res({ text: '', url: '', secs: 0 }); } });
   rec.start(); if (SR) { sr = new SR(); sr.lang = 'en-US'; sr.continuous = true; sr.interimResults = true; sr.onresult = e => { itr = ''; for (let k = e.resultIndex; k < e.results.length; k++) { if (e.results[k].isFinal) fin += e.results[k][0].transcript + ' '; else itr += e.results[k][0].transcript; } ctl.onText && ctl.onText((fin + itr).trim()); }; sr.onend = () => { if (!done) { try { sr.start(); } catch {} } }; try { sr.start(); } catch {} } if (max) timer = setTimeout(() => ctl.onMax && ctl.onMax(), max * 1000); return ctl;
 }
 function splDay(n) { const d = wlJ('spl_days', {}), k = todayStr(new Date()); d[k] = (d[k] || 0) + (n || 1); const ks = Object.keys(d).sort().slice(-90), o = {}; ks.forEach(x => o[x] = d[x]); wlS('spl_days', o); }
@@ -7913,6 +7913,8 @@ if (MODE === 'firebase' && FB) {
     watchQA: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'questions'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('qa', e); cb([]); }),
     askQA: (c, text) => FB.addDoc(FB.collection(db, 'questions'), { classId: c.id, uid: S.user.uid, name: myName(), text, atMs: Date.now(), at: FB.serverTimestamp() }),
     watchArt: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'artworks'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('art', e); cb([]); }),
+    submitSpk: (id, d) => FB.setDoc(FB.doc(db, 'artworks', id), { kind: 'speaking', uid: S.user.uid, atMs: Date.now(), ...d }),
+    mySpk: () => FB.getDocs(FB.query(FB.collection(db, 'artworks'), FB.where('uid', '==', S.user.uid), FB.where('kind', '==', 'speaking'))).then(q => q.docs.map(d => ({ id: d.id, ...d.data() }))),
     submitArt: (cid, bid, qi, d) => FB.setDoc(FB.doc(db, 'artworks', cid + '_' + bid + '_' + qi + '_' + S.user.uid), { classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }),
     watchKudos: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'kudos'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => d.data())), e => { console.error('kudos', e); cb([]); }),
     giveKudos: (c, to) => FB.setDoc(FB.doc(db, 'kudos', S.user.uid + '_' + to + '_' + todayStr()), { from: S.user.uid, to, classId: c.id, day: todayStr(), atMs: Date.now() }),
@@ -7970,6 +7972,8 @@ if (MODE === 'firebase' && FB) {
     watchKudos: (c, cb) => { KUD_L.push(cb); setTimeout(() => cb(cpy(KUDOS_D)), 0); return () => { const i = KUD_L.indexOf(cb); if (i >= 0) KUD_L.splice(i, 1); }; },
     giveKudos: async (c, to) => { const me = S.user.uid, day = todayStr(); if (KUDOS_D.some(k => k.from === me && k.to === to && k.day === day)) { const er = new Error('dup'); er.code = 'permission-denied'; throw er; } KUDOS_D.push({ from: me, to, classId: c.id, day, atMs: Date.now() }); fireK(); },
     watchArt: (c, cb) => { ART_L.push(cb); setTimeout(() => cb(cpy(ART_D)), 0); return () => { const i = ART_L.indexOf(cb); if (i >= 0) ART_L.splice(i, 1); }; },
+    submitSpk: async (id, d) => { const r = { id, kind: 'speaking', uid: S.user.uid, atMs: Date.now(), ...d }, k = ART_D.findIndex(v => v.id === id); if (k >= 0) ART_D[k] = r; else ART_D.push(r); ART_L.forEach(f => f(cpy(ART_D))); },
+    mySpk: async () => cpy(ART_D.filter(a => a.kind === 'speaking' && a.uid === S.user.uid)),
     submitArt: async (cid, bid, qi, d) => { const id = cid + '_' + bid + '_' + qi + '_' + S.user.uid, r = { id, classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }, k = ART_D.findIndex(v => v.id === id); if (k >= 0) ART_D[k] = r; else ART_D.push(r); ART_L.forEach(f => f(cpy(ART_D))); },
     watchClassmates: (c, cb) => { setTimeout(() => cb([{ id: S.user.uid, name: myName(), xp: (S.profile || {}).xp || 0, streak: (S.profile || {}).streak || 0 }, { id: 'm1', name: 'Kelvin', xp: 320, streak: 4 }, { id: 'm2', name: 'Nick', xp: 540, streak: 1 }]), 0); return () => { }; },
     unsendMsg: async segs => { const m = demoMsg(segs); if (!m) return; m.text = ''; m.unsent = true; demoRefire(segs); },
@@ -8308,6 +8312,23 @@ async function camSubmit() {
   <p class="cmb-fine">${t.official ? esc(CAM_CR) : ''}</p><div class="cmb-act" style="justify-content:center"><button type="button" class="btn soft" id="cmb-hb">Về trang Cambridge</button><button type="button" class="btn" id="cmb-rt">Làm lại</button></div></div>`;
   $('#cmb-hb').onclick = () => viewCam(); $('#cmb-rt').onclick = () => camCover(); main.onclick = camClick; scrollTo(0, 0);
 }
+/* Speaking: gửi bản ghi cho giáo viên (collection artworks, kind:'speaking') và xem điểm/nhận xét */
+const camSpkFbHTML = () => { const L = CAM.spkFb || []; if (!L.length) return ''; const g = {}; L.forEach(d => { (g[d.sid] = g[d.sid] || []).push(d); }); const rows = Object.keys(g).sort((a, b) => (g[b][0].atMs || 0) - (g[a][0].atMs || 0)).map(k => { const A = g[k], gd = A.find(d => d.score !== undefined && d.score !== null); return `<div class="cmb-mk ${gd ? 'ok' : ''}"><span>${A.length}</span><div><p><b>${esc(A[0].levelName || '')}</b> · ${new Date(A[0].atMs || 0).toLocaleDateString('en-GB')} · ${A.length} answer(s)</p>${gd ? camShieldsHTML(+gd.score) + (gd.fb ? `<p>${esc(gd.fb)}</p>` : '') : '<small>Sent. Waiting for your teacher to grade.</small>'}</div></div>`; }).join(''); return '<h4 style="margin:14px 0 6px">Your sent speaking tests</h4>' + rows; };
+async function camSpkLoad(redraw) { if (CAM.spkLoading) return; CAM.spkLoading = 1; try { const L = await api.mySpk(); CAM.spkFb = L; const el = $('#cmb-spk-fb'); if (el) el.innerHTML = camSpkFbHTML(); } catch (e) { console.warn('mySpk', e); } CAM.spkLoading = 0; }
+async function camSpkSend(lv, R, secs, btn, redraw) {
+  const items = []; secs.forEach(x => x.s[2].forEach((q, k) => { const r = R[lv.id + x.i + '-' + k]; if (r && r.blob) items.push({ i: x.i + '-' + k, sec: x.s[0], q, r }); }));
+  if (!items.length) return toast('Record at least one answer first.', 'warn');
+  btn.disabled = true; btn.textContent = 'Sending…'; const sid = Date.now().toString(36), cx = (typeof cxClass === 'function' && cxClass()) || null; let okN = 0, big = 0, fail = null;
+  for (const it of items) {
+    const du = await new Promise(res => { const f = new FileReader(); f.onload = () => res(f.result); f.readAsDataURL(it.r.blob); });
+    if (du.length > 900000) { big++; continue; }
+    try { await api.submitSpk('spk_' + S.user.uid + '_' + sid + '_' + it.i, { classId: 'spk', className: cx ? cx.name : '', bankId: 'cam_' + lv.id, qi: it.i, sid, level: lv.id, levelName: lv.name, section: it.sec, prompt: it.q, heard: it.r.text || '', audio: du, secs: it.r.secs || 0, name: myName() }); okN++; } catch (er) { fail = er; break; }
+  }
+  const fb = $('#cmb-spk-fb');
+  if (fail) { console.warn(fail); toast('Could not send to your teacher (' + (fail.code || fail.message || 'error') + '). Download your recordings and send them by email or Zalo.', 'bad'); if (fb) fb.innerHTML = '<h4 style="margin:12px 0 6px">Download your recordings</h4>' + items.map((it, n) => `<p><a class="btn soft sm" href="${it.r.url}" download="speaking-${lv.id}-${n + 1}.webm">Answer ${n + 1}</a> <small>${esc(it.q)}</small></p>`).join(''); btn.disabled = false; btn.textContent = 'Try sending again'; return; }
+  toast(okN + ' recording(s) sent to your teacher.' + (big ? ' ' + big + ' too long to send, please re-record shorter.' : ''), okN ? 'ok' : 'warn'); try { award(null, okN, {}, 'cambridge'); } catch (e) {}
+  CAM.spkLoading = 0; await camSpkLoad(); btn.disabled = false; btn.textContent = 'Send recordings again';
+}
 function camSpeaking() {
   camStop(); camFs(false); const lv = camLv(), of = lv.tests[0], pr = lv.tests.find(x => !x.official) || lv.tests[0], cards = of.official && of.speaking[0] && !of.speaking[0][2] ? of.speaking[0][1] : [];
   const secs = pr.speaking.map((s, i) => ({ s, i })).filter(x => x.s[2]), done = camJ('cam_sp_' + lv.id, {}), R = (CAM.spr = CAM.spr || {}), S2 = (CAM.sp = CAM.sp && CAM.sp.lv === lv.id ? CAM.sp : { lv: lv.id, p: 0, q: 0, auto: true, busy: false });
@@ -8326,6 +8347,7 @@ function camSpeaking() {
     <div id="cmb-r-${key}" class="cmb-spr">${r ? (r.url ? `<audio controls src="${r.url}" style="width:100%"></audio>` : '') + (r.text ? `<p class="muted">Heard by the computer: “${esc(r.text)}”</p>` : '<p class="muted">The computer could not recognise your speech. Listen to your recording to check it yourself.</p>') : ''}</div>
     <div class="cmb-spn"><button type="button" class="btn soft" data-nav="-1">← Previous</button><button type="button" class="btn" data-nav="1">Next →</button></div></div></div></section>
     <section class="cmb-box"><h3>Speaking tips</h3><ul class="cmb-tp"><li>Answer in full sentences and add one more detail, for example: “I like football. It’s fun to play with friends.”</li><li>If you don’t understand, say: “Sorry, could you say that again, please?”</li><li>Speak clearly. You don’t need to speak fast.</li><li>When you talk with a partner, listen and react: “I agree” or “I’m not sure about that.”</li></ul></section>
+    <section class="cmb-box" id="cmb-snd"><h3>Send to your teacher</h3><p class="muted" style="margin:0 0 10px">Record your answers, then send them. Your teacher listens, gives you a score and writes feedback. You can re-record before sending.</p><div class="cmb-act" style="justify-content:flex-start"><button type="button" class="btn" id="cmb-sendspk" ${Object.keys(R).filter(k => k.indexOf(lv.id) === 0 && R[k].blob).length ? '' : 'disabled'}>Send ${Object.keys(R).filter(k => k.indexOf(lv.id) === 0 && R[k].blob).length} recording(s) to my teacher</button></div><div id="cmb-spk-fb">${camSpkFbHTML()}</div></section>
     <div class="cmb-act" style="justify-content:center"><button type="button" class="btn soft" id="cmb-hb">Về trang Cambridge</button></div></div>`;
     $('#cmb-hb').onclick = () => viewCam();
     if (S2.pending) { S2.pending = false; if (S2.auto) setTimeout(() => { try { camTalk([['Teacher', q]], .85); } catch (er) {} }, 250); }
@@ -8336,12 +8358,13 @@ function camSpeaking() {
     const sp = e.target.closest('[data-spp]'); if (sp) return go(+sp.dataset.spp, 0);
     const sq = e.target.closest('[data-spq]'); if (sq) return go(S2.p, +sq.dataset.spq);
     const nv = e.target.closest('[data-nav]'); if (nv) { let p = S2.p, q = S2.q + +nv.dataset.nav; if (q < 0) { p = Math.max(0, p - 1); q = secs[p].s[2].length - 1; if (S2.p === 0) q = 0; } else if (q >= secs[p].s[2].length) { if (p < secs.length - 1) { p++; q = 0; } else { q = secs[p].s[2].length - 1; toast('That was the last question. Well done!', 'ok'); } } return go(p, q); }
+    const sd = e.target.closest('#cmb-sendspk'); if (sd) return camSpkSend(lv, R, secs, sd, draw);
     const x = e.target.closest('[data-ex]'); if (x) return camTalk([['Teacher', x.dataset.ex]], .85);
     const au = e.target.closest('[data-auto]'); if (au) { S2.auto = au.checked; return; }
     const rc = e.target.closest('[data-rc]');
-    if (rc) { const key = rc.dataset.rc, box = $('#cmb-r-' + key); S2.busy = true; rc.disabled = true; camStop(); splRecorder(box, { max: 60, label: 'Tap to speak', onDone: res => { S2.busy = false; R[lv.id + key] = { url: res.url, text: res.text }; done[key] = true; camS('cam_sp_' + lv.id, done); try { award(null, 1, {}, 'cambridge'); } catch (er) {} draw(); } }); const g = $('#sr-go', box); if (g) g.click(); }
+    if (rc) { const key = rc.dataset.rc, box = $('#cmb-r-' + key); S2.busy = true; rc.disabled = true; camStop(); splRecorder(box, { max: 60, label: 'Tap to speak', onDone: res => { S2.busy = false; R[lv.id + key] = { url: res.url, text: res.text, blob: res.blob, secs: res.secs }; done[key] = true; camS('cam_sp_' + lv.id, done); try { award(null, 1, {}, 'cambridge'); } catch (er) {} draw(); } }); const g = $('#sr-go', box); if (g) g.click(); }
   };
-  S2.pending = true; draw();
+  S2.pending = true; draw(); camSpkLoad(draw);
 }
 function viewCourses() {
   const nm = String((S.profile && S.profile.name) || (S.user && S.user.displayName) || '').trim().split(/\s+/).pop();
@@ -8808,7 +8831,7 @@ function mountArt(c) {
   if (CX.artCid === c.id && CX.artUn) return;
   if (CX.artUn) CX.artUn();
   CX.artCid = c.id;
-  CX.artUn = api.watchArt(c, list => { const el = $('#art-body'); if (el && CX.tab === 'art') el.innerHTML = artHTML([...list].sort((p, q) => (q.atMs || 0) - (p.atMs || 0))); });
+  CX.artUn = api.watchArt(c, list => { const el = $('#art-body'); if (el && CX.tab === 'art') el.innerHTML = artHTML([...list].filter(a => a.kind !== 'speaking').sort((p, q) => (q.atMs || 0) - (p.atMs || 0))); });
 }
 function recordQStats(b, items) {
   const up = {};

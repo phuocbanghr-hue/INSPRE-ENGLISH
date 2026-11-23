@@ -5490,12 +5490,20 @@ function vCalendar() {
 
 /* ----- Phòng tranh: xem và xoá tranh học sinh nộp ----- */
 function vArt() {
-  const A = [...(S.artworks || [])].sort((a, b) => (b.atMs || 0) - (a.atMs || 0));
-  $('#content').innerHTML = `<h2>Phòng tranh</h2>
-    <div class="hint">Tranh học sinh nộp từ bài tô màu. Cô có thể xoá tranh không phù hợp, học sinh sẽ không còn thấy tranh đó.</div>
+  const ALL = [...(S.artworks || [])].sort((a, b) => (b.atMs || 0) - (a.atMs || 0)), A = ALL.filter(a => a.kind !== 'speaking'), SP = ALL.filter(a => a.kind === 'speaking');
+  const G = {}; SP.forEach(d => { const k = d.uid + '_' + d.sid; (G[k] = G[k] || []).push(d); });
+  const spk = Object.keys(G).map(k => ({ k, L: G[k].sort((a, b) => String(a.qi).localeCompare(String(b.qi), 'en', { numeric: true })) })).sort((a, b) => (b.L[0].atMs || 0) - (a.L[0].atMs || 0));
+  const spkHTML = spk.length ? `<h3 style="margin:18px 0 8px">Bài nói Cambridge (${spk.length} bài nộp, ${spk.filter(g => g.L.some(d => d.score !== undefined && d.score !== null)).length} đã chấm)</h3>` + spk.map(({ k, L }) => { const f = L[0], gd = L.find(d => d.score !== undefined && d.score !== null); return `<div class="card" style="margin-bottom:12px" data-spg="${esc(k)}"><div class="row"><b>${esc(f.name || 'Học sinh')}</b><span class="muted">${esc(f.levelName || '')}${f.className ? ' · ' + esc(f.className) : ''} · ${dtShortA(f.atMs)} · ${L.length} câu</span><span class="grow"></span>${gd ? '<span class="pill ok">Đã chấm: ' + gd.score + '/5</span>' : '<span class="pill">Chưa chấm</span>'}</div>${L.map(d => `<div style="margin:10px 0"><small class="muted">${esc(d.section || '')}</small><div><b>${esc(d.prompt || '')}</b></div><audio controls preload="none" src="${esc(d.audio || '')}" style="width:100%;margin-top:4px"></audio>${d.heard ? `<small class="muted">Máy nghe được: “${esc(d.heard)}”</small>` : ''}</div>`).join('')}<div class="row" style="gap:8px;align-items:flex-start;flex-wrap:wrap"><label>Điểm (khiên)<select data-spsc>${[0, 1, 2, 3, 4, 5].map(n => `<option value="${n}" ${gd && +gd.score === n ? 'selected' : ''}>${n} khiên</option>`).join('')}</select></label><label class="grow" style="min-width:220px">Nhận xét<textarea data-spfb rows="2" style="width:100%">${esc((gd && gd.fb) || '')}</textarea></label><button class="btn" data-spsave="${esc(k)}">Lưu điểm</button><button class="btn soft" data-spdel="${esc(k)}">Xoá bài</button></div></div>`; }).join('') : '';
+  $('#content').innerHTML = `<h2>Phòng tranh và bài nói</h2>
+    <div class="hint">Tranh học sinh nộp từ bài tô màu và bài nói Cambridge (ghi âm). Cô nghe, chấm 0–5 khiên và nhận xét, học sinh sẽ thấy ngay. Tranh: Cô có thể xoá tranh không phù hợp, học sinh sẽ không còn thấy tranh đó.</div>
     <div class="stats"><div class="card stat a"><b>${A.length}</b>Tranh đã nộp</div><div class="card stat b"><b>${new Set(A.map(a => a.uid)).size}</b>Học sinh tham gia</div></div>
-    ${A.length ? `<div class="art-grid">${A.map(a => `<figure class="art-card"><div class="art-stage"><img src="${esc(a.base)}" alt=""><img class="art-png" src="${esc(a.png)}" alt=""></div><figcaption><b>${esc(a.name || 'Học sinh')}</b><small>${esc(a.prompt || '')} · ${dtShortA(a.atMs)}</small><button class="btn soft sm" data-artdel="${esc(a.id)}">Xoá tranh</button></figcaption></figure>`).join('')}</div>` : '<div class="empty">Chưa có tranh nào được nộp.</div>'}`;
+    ${A.length ? `<div class="art-grid">${A.map(a => `<figure class="art-card"><div class="art-stage"><img src="${esc(a.base)}" alt=""><img class="art-png" src="${esc(a.png)}" alt=""></div><figcaption><b>${esc(a.name || 'Học sinh')}</b><small>${esc(a.prompt || '')} · ${dtShortA(a.atMs)}</small><button class="btn soft sm" data-artdel="${esc(a.id)}">Xoá tranh</button></figcaption></figure>`).join('')}</div>` : '<div class="empty">Chưa có tranh nào được nộp.</div>'}${spkHTML}`;
   $('#content').onclick = async e => {
+    const sv = e.target.closest('[data-spsave]'), sd = e.target.closest('[data-spdel]');
+    if (sv || sd) { const k = (sv || sd).dataset.spsave || (sv || sd).dataset.spdel, L = G[k]; if (!L) return;
+      if (sd) { if (!confirm('Xoá bài nói này của học sinh?')) return; try { await Promise.all(L.map(d => api.del('artworks', d.id))); toast('Đã xoá bài nói.'); } catch (er) { toast(er.message, 'bad'); } return; }
+      const card = sv.closest('[data-spg]'), score = +card.querySelector('[data-spsc]').value, fb = card.querySelector('[data-spfb]').value.trim();
+      try { await Promise.all(L.map(d => api.update('artworks', d.id, { score, fb, gradedAt: Date.now() }))); toast('Đã lưu điểm cho ' + (L[0].name || 'học sinh') + '.'); } catch (er) { toast(er.message, 'bad'); } return; }
     const b = e.target.closest('[data-artdel]'); if (!b) return;
     if (!confirm('Xoá tranh này? Học sinh sẽ không còn thấy tranh.')) return;
     try { await api.del('artworks', b.dataset.artdel); toast('Đã xoá tranh.'); } catch (er) { toast(er.message, 'bad'); }

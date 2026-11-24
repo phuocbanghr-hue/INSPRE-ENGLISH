@@ -8286,12 +8286,12 @@ function camWrRes(p, x, k) {
   <h4>Kiểm tra tự động</h4><ul class="cmb-wr-ck">${chk.map(c => `<li class="${c.g ? 'ok' : 'no'}">${c.g ? '✓' : '!'} ${esc(c.m)}</li>`).join('')}</ul>
   <details class="cmb-ts"><summary>Tự chấm theo 4 tiêu chí của Cambridge</summary><div class="cmb-rub">${rub.map(([a, q]) => `<label><input type="checkbox"><span><b>${a}</b><small>${q}</small></span></label>`).join('')}</div><p class="muted" style="font-size:.82rem">Bài viết không được chấm tự động như câu trắc nghiệm. Nên nhờ giáo viên chấm theo 4 tiêu chí này.</p></details></div>`;
 }
-const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=20').then(r => r.json()).then(d => (CAM.d = d));
+const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=21').then(r => r.json()).then(d => (CAM.d = d));
 const camLv = () => CAM.d.levels.find(x => x.id === CAM.lv), camTest = () => camLv().tests[CAM.ti];
 const camScored = p => p.t !== 'self';
 const camCount = (t, sk) => t[sk].parts.reduce((a, p) => a + (camScored(p) ? p.items.length : 0), 0);
 function camFs(on) { document.body.classList.toggle('rr-full', on); try { if (on && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {} }
-function camStop() { CAM.auOn = 0; if (CAM.auNode) { CAM.auNode.pause(); CAM.auNode = null; } clearInterval(CAM.tid); CAM.talk = 0; try { speechSynthesis.cancel(); } catch (e) {} }
+function camStop() { camGuardOff(); CAM.auOn = 0; if (CAM.auNode) { CAM.auNode.pause(); CAM.auNode = null; } clearInterval(CAM.tid); CAM.talk = 0; try { speechSynthesis.cancel(); } catch (e) {} }
 function camTalk(lines, rate, done) {
   const id = ++CAM.talk; let i = 0; const P = { Man: .75, Dad: .75, Woman: 1.1, Mum: 1.1, Boy: 1.35, Girl: 1.5, Teacher: 1, Ben: 1.35, Anna: 1.5, Tom: 1.35, Lisa: 1.5, Jim: 1.3, Sam: 1.3 };
   const next = () => { if (id !== CAM.talk) return; if (i >= lines.length) { CAM.talk = 0; return done && done(); } const [sp, tx] = lines[i++], u = new SpeechSynthesisUtterance(tx); u.lang = 'en-GB'; u.rate = rate; u.pitch = P[sp] || 1; u.onend = () => setTimeout(next, 500); u.onerror = () => setTimeout(next, 100); speechSynthesis.speak(u); };
@@ -8324,16 +8324,49 @@ function camCover() {
   CAM.name = CAM.name || String((S.profile && S.profile.name) || (S.user && S.user.displayName) || '');
   main.innerHTML = `<div class="cmb-wrap" style="--c:${lv.color};--d:${lv.dark}"><div class="cmb-tab">${esc(lv.name)} <span>${camSK(lv, sk)}</span></div><section class="cmb-cover"><div class="cmb-lg"><img src="${CAM_LOGO}" alt="" width="40" height="40"><span>Cambridge English · ${esc(lv.fam || 'Young Learners')}</span></div><div class="cmb-id"><span>Centre</span><b>Inspire English</b><span>Candidate</span><b>${esc(CAM.name || '…')}</b></div><h1>${esc(lv.name)}</h1><h2>${camSK(lv, sk)}</h2><div class="cmb-info"><p>There are ${n} questions.</p><p>You have ${sec.min} minutes.</p><p>You will need a pen or pencil.</p></div><label class="cmb-nm">My name is: <input id="cmb-nm" value="${esc(CAM.name)}" placeholder="Viết tên của em" autocomplete="off"></label><p class="cmb-note">${t.official ? (sk === 'listening' ? 'Em xem đề ở bên trái, ghi đáp án vào phiếu bên phải. ' + (t.listening.audio ? 'File nghe chính thức được phát ngay trong bài.' : 'Hãy tải file nghe chính thức từ Cambridge rồi chọn file đó ngay trong bài.') : 'Em đọc đề ở bên trái, ghi đáp án vào phiếu bên phải. Các phần viết tự do không tính điểm tự động.') : (sk === 'listening' ? 'Mỗi Part được phát 2 lần (giọng máy tạo).' : 'Em làm lần lượt từng Part, có thể quay lại sửa.')}</p><div class="cmb-act"><button type="button" class="btn soft" id="cmb-bk">Quay lại</button><button type="button" class="btn" id="cmb-go">Bắt đầu làm bài</button></div><p class="cmb-fine">${t.official ? esc(CAM_CR) : 'Bài luyện do trung tâm biên soạn theo cấu trúc đề Cambridge.'}</p></section></div>`;
   $('#cmb-bk').onclick = () => viewCam();
+  $('.cmb-act').insertAdjacentHTML('beforebegin', '<p class="cmb-hint"><b>Exam mode.</b> Once you start, do not leave this tab or window. Leaving twice cancels the test and sends a report to your teacher. To exit early you need the teacher\'s password.</p>');
   const sv = sk !== 'writing' ? camSaved() : null;
   if (sv) { const m = Math.max(1, Math.round(sv.left / 60)); $('.cmb-act').insertAdjacentHTML('beforebegin', `<div class="cmb-resume"><div><b>Unfinished attempt found</b><span>${sv.n} question(s) answered · about ${m} min left</span></div><button type="button" class="btn" id="cmb-rs">Continue</button></div>`); $('#cmb-rs').onclick = () => { CAM.name = $('#cmb-nm').value.trim() || 'Học sinh'; camStart(sv); }; }
   $('#cmb-go').onclick = () => { CAM.name = $('#cmb-nm').value.trim() || 'Học sinh'; camClearSave(); camStart(); };
+}
+/* Chế độ thi Cambridge: rời tab 2 lần thì huỷ bài và báo giáo viên; muốn thoát giữa chừng phải nhập mật khẩu giáo viên */
+const CAM_PIN_H = '7f45974d811b3f070965056e5f067489723ac554b80536740bb3a05577ea65f5';
+const camSha = async x => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('inspire-cam:' + x)); return [...new Uint8Array(b)].map(v => v.toString(16).padStart(2, '0')).join(''); };
+const camOvOff = () => document.querySelectorAll('.cmb-lkov').forEach(z => z.remove());
+function camAway() { if (!CAM.lock || CAM.away) return; CAM.away = 1; CAM.leaves = (CAM.leaves || 0) + 1; if (CAM.leaves >= 2) camAbort(); }
+function camBack() {
+  if (!CAM.lock || document.hidden) return; CAM.away = 0;
+  if (CAM.leaves === 1 && !document.querySelector('.cmb-lkov')) { const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov'; o.innerHTML = '<div><div class="rm-wx">!</div><h2>CẢNH BÁO LẦN 1/2</h2><p>Em vừa rời khỏi màn hình làm bài.</p><p><b>Nếu rời khỏi màn hình thêm 1 lần nữa, bài thi sẽ bị huỷ ngay và báo cáo được gửi cho giáo viên.</b></p><button class="btn" type="button">Tôi đã hiểu, quay lại làm bài</button></div>'; document.body.appendChild(o); o.querySelector('button').onclick = () => o.remove(); }
+}
+const camVis = () => document.hidden ? camAway() : camBack();
+const camBlur = () => setTimeout(() => { if (CAM.lock && !document.hasFocus() && !document.querySelector('#cmb-pw')) camAway(); }, 300);
+function camGuardOn() { camGuardOff(); CAM.lock = 1; CAM.leaves = 0; CAM.away = 0; document.addEventListener('visibilitychange', camVis); window.addEventListener('blur', camBlur); window.addEventListener('focus', camBack); window.onbeforeunload = () => 'Em đang làm bài thi.'; }
+function camGuardOff() { CAM.lock = 0; document.removeEventListener('visibilitychange', camVis); window.removeEventListener('blur', camBlur); window.removeEventListener('focus', camBack); window.onbeforeunload = null; camOvOff(); }
+function camLeave(v) {
+  if (document.querySelector('#cmb-pw')) return; const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov';
+  o.innerHTML = '<div><div class="rm-wx">!</div><h2>Đang trong giờ làm bài</h2><p>Em cần làm xong và nộp bài mới được thoát. Nếu thật sự cần thoát giữa chừng, nhờ giáo viên nhập mật khẩu.</p><input id="cmb-pw" type="password" autocomplete="off" placeholder="Mật khẩu giáo viên" style="padding:10px 14px;border-radius:10px;border:0;font-size:1rem;width:min(280px,80%)"><p id="cmb-pe" style="min-height:1.4em;font-size:.95rem"></p><button class="btn" type="button" id="cmb-po">Thoát bài</button> <button class="btn" type="button" id="cmb-pc">Tiếp tục làm bài</button></div>';
+  document.body.appendChild(o); const i = o.querySelector('#cmb-pw'); i.focus();
+  o.querySelector('#cmb-pc').onclick = () => o.remove();
+  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === CAM_PIN_H) { try { camSave(); } catch (e) {} camStop(); o.remove(); go(v); } else { o.querySelector('#cmb-pe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
+  o.querySelector('#cmb-po').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
+}
+async function camAbort() {
+  if (!CAM.lock) return; const lv = camLv(), t = camTest(), sk = CAM.sk, n = camAnsN(), ans = CAM.ans || {}, when = new Date().toLocaleString('vi-VN'), who = (S.profile && S.profile.name) || CAM.name || 'Học sinh';
+  camStop(); camFs(false); camClearSave(); try { localStorage.removeItem(camDraftK()); } catch (e) {}
+  main.onclick = null; main.oninput = null; main.onchange = null;
+  main.innerHTML = `<section class="card rm-kill"><div class="rm-kx">!</div><h2>Bài thi đã bị huỷ</h2><p>Em đã rời khỏi màn hình làm bài 2 lần nên hệ thống dừng bài này. Kết quả đã được gửi cho giáo viên.</p><p class="muted">Em liên hệ giáo viên nếu cần làm lại.</p><button class="btn" id="cmb-kb" type="button">Về trang Cambridge</button></section>`;
+  $('#cmb-kb').onclick = () => viewCam(); scrollTo(0, 0);
+  let sc = ''; try { const KY = (await camKeys())[t.id]; let ok = 0, tot = 0; t[sk].parts.forEach(p => { if (!camScored(p)) return; const a = ans[p.n] || {}; p.items.forEach((it, k) => { const key = KY[sk[0] + p.n][k], g = (p.t === 'sel' || p.t === 'mc') ? (key === '*' ? !!a[k] : a[k] === key) : camMatch(a[k], key); tot++; if (g) ok++; }); }); sc = ' Điểm tạm tính: ' + ok + '/' + tot + '.'; } catch (e) {}
+  let wr = ''; if (sk === 'writing') { const w = x => String(x || '').trim().split(/\s+/).filter(Boolean).length; wr = ' Số từ đã viết: ' + Object.values(ans).reduce((a, o) => a + Object.values(o).reduce((b, x) => b + w(x), 0), 0) + '.'; }
+  const msg = '[CẢNH BÁO CAMBRIDGE] ' + who + ' đã rời khỏi màn hình làm bài 2 lần nên bài bị huỷ tự động. Đề: ' + lv.name + ' · ' + t.title + ' · ' + camSK(lv, sk) + '. Đã làm ' + n.a + '/' + n.t + ' câu.' + sc + wr + ' Lúc ' + when + '.';
+  try { await api.sendChat(msg); } catch (e) { toast('Chưa gửi được báo cáo cho giáo viên, em hãy báo trực tiếp nhé.', 'bad'); }
 }
 function camStart(sv, only) {
   const t = camTest(), sk = CAM.sk, sec = t[sk], P = sec.parts; CAM.only = only || null; CAM.ans = {};
   if (!only && !sv && sk === 'writing') { try { const dr = JSON.parse(localStorage.getItem(camDraftK()) || 'null'); if (dr && Object.values(dr).some(o => Object.values(o).some(x => String(x).trim()))) { CAM.ans = dr; setTimeout(() => toast('Your saved draft was restored.', 'ok'), 300); } } catch (er) {} }
   CAM.part = only ? Math.max(0, P.findIndex(x => x.n === only[0])) : 0; CAM.plays = {}; CAM.left = sec.min * 60; CAM.t0 = Date.now();
   if (sv) { CAM.ans = sv.ans || {}; CAM.left = sv.left; CAM.part = Math.min(sv.part || 0, P.length - 1); CAM.t0 = Date.now() - (sec.min * 60 - sv.left) * 1000; setTimeout(() => toast('Welcome back. Your answers were restored.', 'ok'), 300); }
-  if (t.official) camFs(true); camPaper(); clearInterval(CAM.tid);
+  if (!only) camGuardOn(); if (t.official) camFs(true); camPaper(); clearInterval(CAM.tid);
   CAM.tid = setInterval(() => { if (!document.getElementById('cmb-tm')) return clearInterval(CAM.tid); CAM.left--; camTick(); if (CAM.left % 5 === 0) camSave(); if (CAM.left <= 0 && sk !== 'listening') { clearInterval(CAM.tid); toast('Time is up. Your answers were submitted automatically.', 'warn'); camSubmit(); } }, 1000);
 }
 const camPK = () => 'cam_prog_' + CAM.lv + '_' + CAM.ti + '_' + CAM.sk;
@@ -9057,6 +9090,7 @@ function viewSrs() {
 
 const isLocked = () => !!(S.user && S.profile && S.enrolReady && !S.enrol.length);
 function go(v) {
+  if (CAM.lock) return camLeave(v);
   if (v !== 'auth' && v !== 'loading' && isLocked() && !['courses', 'profile', 'cam'].includes(v)) { v = 'courses'; if (!S._lockToast) { S._lockToast = 1; toast('Tài khoản mới: em ghi danh một khoá học để mở khoá các tính năng khác nhé.', 'warn'); } }
   closeThread(); S.view = v; if (v !== 'lesson') { S.lesson = null; S.tab = null; } stopRank();
   renderTop(); renderFoot(); renderChat();

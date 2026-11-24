@@ -8286,7 +8286,7 @@ function camWrRes(p, x, k) {
   <h4>Kiểm tra tự động</h4><ul class="cmb-wr-ck">${chk.map(c => `<li class="${c.g ? 'ok' : 'no'}">${c.g ? '✓' : '!'} ${esc(c.m)}</li>`).join('')}</ul>
   <details class="cmb-ts"><summary>Tự chấm theo 4 tiêu chí của Cambridge</summary><div class="cmb-rub">${rub.map(([a, q]) => `<label><input type="checkbox"><span><b>${a}</b><small>${q}</small></span></label>`).join('')}</div><p class="muted" style="font-size:.82rem">Bài viết không được chấm tự động như câu trắc nghiệm. Nên nhờ giáo viên chấm theo 4 tiêu chí này.</p></details></div>`;
 }
-const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=19').then(r => r.json()).then(d => (CAM.d = d));
+const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=20').then(r => r.json()).then(d => (CAM.d = d));
 const camLv = () => CAM.d.levels.find(x => x.id === CAM.lv), camTest = () => camLv().tests[CAM.ti];
 const camScored = p => p.t !== 'self';
 const camCount = (t, sk) => t[sk].parts.reduce((a, p) => a + (camScored(p) ? p.items.length : 0), 0);

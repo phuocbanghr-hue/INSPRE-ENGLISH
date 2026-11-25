@@ -5252,6 +5252,12 @@ function vAssign() {
     if (d && confirm('Xoá bài tập đã giao này?')) { try { await api.del('assignments', d.dataset.del); toast('Đã xoá.'); } catch (er) { toast(er.message, 'bad'); } }
   };
 }
+let CAMD = null; fetch('docs/cambridge/yle.json').then(r => r.json()).then(d => { CAMD = d; }).catch(() => {});
+function camOpts(opt) {
+  if (!CAMD) return '';
+  const VN = { listening: 'Nghe', reading: 'Đọc', writing: 'Viết' };
+  return CAMD.levels.map(l => `<optgroup label="Cambridge ${esc(l.name)}">${l.tests.flatMap((t, i) => ['listening', 'reading', 'writing'].filter(k => t[k]).map(k => opt('cam:' + l.id + '|' + k + '|' + i, l.name + ' · ' + t.title + ' · ' + VN[k]))).join('')}</optgroup>`).join('');
+}
 function assignForm(a) {
   a = a && a.id ? a : null;
   const L = sortedLessons(), banks = (S.banks || []).slice().sort((x, y) => (x.order ?? 0) - (y.order ?? 0)), cds = cdNames();
@@ -5260,20 +5266,21 @@ function assignForm(a) {
   const opt = (v, t) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(t)}</option>`;
   const { ov, close } = modal(`<h3>${a ? 'Sửa bài giao' : 'Giao bài tập'}</h3>
     <label class="field"><span>Tiêu đề *</span><input id="g-title" value="${esc(a ? a.title : '')}" placeholder="VD: Ôn bài Fruits trước thứ Sáu"></label>
-    <div class="g2b"><label class="field"><span>Nội dung giao</span><select id="g-lesson">${banks.length ? `<optgroup label="Ngân hàng đề">${banks.map(b => opt('bk:' + b.id, b.title + ' (' + (b.count || (b.qs || []).length) + ' câu)')).join('')}</optgroup>` : ''}${L.length ? `<optgroup label="Bài học">${L.map(l => opt(l.id, 'Bài ' + (l.order ?? '') + ': ' + l.title)).join('')}</optgroup>` : ''}${cds.length ? `<optgroup label="Chuyên đề">${cds.map((t, i) => opt('cd:' + (i + 1), 'Chuyên đề ' + (i + 1) + ': ' + t)).join('')}</optgroup>` : ''}</select></label>
+    <div class="g2b"><label class="field"><span>Nội dung giao</span><select id="g-lesson">${banks.length ? `<optgroup label="Ngân hàng đề">${banks.map(b => opt('bk:' + b.id, b.title + ' (' + (b.count || (b.qs || []).length) + ' câu)')).join('')}</optgroup>` : ''}${L.length ? `<optgroup label="Bài học">${L.map(l => opt(l.id, 'Bài ' + (l.order ?? '') + ': ' + l.title)).join('')}</optgroup>` : ''}${camOpts(opt)}${cds.length ? `<optgroup label="Chuyên đề">${cds.map((t, i) => opt('cd:' + (i + 1), 'Chuyên đề ' + (i + 1) + ': ' + t)).join('')}</optgroup>` : ''}</select></label>
       <label class="field" id="g-actw"><span>Dạng bài tập</span><select id="g-act"><option value="any">Bất kỳ trò nào</option>${Object.entries(ACTS).map(([k, n]) => `<option value="${k}" ${a && a.activity === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
     <div class="g2b"><label class="field"><span>Giao cho lớp</span><select id="g-class"><option value="">Tất cả học sinh</option>${classList().map(c => `<option ${a && a.className === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
       <label class="field"><span>Hạn nộp</span><input id="g-due" type="date" value="${a ? esc(a.due || '') : todayStr(due)}"></label></div>
     <label class="field"><span>Giao riêng cho từng bạn (giữ Ctrl/Cmd để chọn nhiều; để trống = theo lớp ở trên)</span><select id="g-stu" multiple size="6">${[...S.users].sort((x, y) => (x.name || '').localeCompare(y.name || '')).map(u => `<option value="${u.id}" ${a && (a.studentIds || []).includes(u.id) ? 'selected' : ''}>${esc(u.name || 'Học sinh')}${u.className ? ' · ' + esc(u.className) : ''}</option>`).join('')}</select></label>
     <label class="field"><span>Lời nhắn (không bắt buộc)</span><input id="g-note" maxlength="120" value="${esc(a ? a.note || '' : '')}"></label>
     <div class="row" style="justify-content:flex-end;margin:6px 0 0"><button class="btn soft" id="g-cancel">Huỷ</button><button class="btn" id="g-save">${a ? 'Lưu' : 'Giao bài'}</button></div>`);
-  const sync = () => { const v = $('#g-lesson', ov).value; $('#g-actw', ov).style.display = /^(bk|cd):/.test(v) ? 'none' : ''; };
+  const sync = () => { const v = $('#g-lesson', ov).value; $('#g-actw', ov).style.display = /^(bk|cd|cam):/.test(v) ? 'none' : ''; };
   $('#g-lesson', ov).onchange = sync; sync();
   $('#g-cancel', ov).onclick = close; $('#g-title', ov).focus();
   $('#g-save', ov).onclick = async () => {
     const title = $('#g-title', ov).value.trim(); if (!title) return toast('Nhập tiêu đề nhé.', 'bad');
     const lid = $('#g-lesson', ov).value, l = S.lessons.find(x => x.id === lid), cdn = lid.startsWith('cd:') ? +lid.slice(3) : 0, bkd = lid.startsWith('bk:') ? (S.banks || []).find(x => x.id === lid.slice(3)) : null, stu = [...$('#g-stu', ov).selectedOptions].map(o => o.value);
-    const d = { title, lessonId: lid, lessonTitle: bkd ? 'Đề: ' + bkd.title : cdn ? 'Chuyên đề ' + cdn + ': ' + (cdNames()[cdn - 1] || '') : l?.title || '', studentIds: stu, activity: bkd || cdn ? 'any' : $('#g-act', ov).value, className: $('#g-class', ov).value, due: $('#g-due', ov).value, note: $('#g-note', ov).value.trim() };
+    const cam = lid.startsWith('cam:') ? $('#g-lesson', ov).selectedOptions[0].textContent : '';
+    const d = { title, lessonId: lid, lessonTitle: cam ? 'Cambridge: ' + cam : bkd ? 'Đề: ' + bkd.title : cdn ? 'Chuyên đề ' + cdn + ': ' + (cdNames()[cdn - 1] || '') : l?.title || '', studentIds: stu, activity: bkd || cdn || cam ? 'any' : $('#g-act', ov).value, className: $('#g-class', ov).value, due: $('#g-due', ov).value, note: $('#g-note', ov).value.trim() };
     try { if (a) await api.update('assignments', a.id, d); else await api.add('assignments', { ...d, createdAtMs: Date.now(), createdAt: NOW() }); toast(a ? 'Đã lưu.' : 'Đã giao bài.'); close(); if (S.view === 'assign') vAssign(); }
     catch (er) { toast(er.message, 'bad'); }
   };

@@ -8322,6 +8322,7 @@ async function viewCam() {
   <section class="cmb-box cmb-cr"><h3>Bản quyền và tài liệu gốc</h3><p>${esc(D.copyright || CAM_CR)}</p><div class="cmb-lk">${D.links.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join('')}</div></section>`;
   if (innerWidth <= 700) main.querySelectorAll('.cmb-card').forEach((c, i) => { if (D.levels[i].id !== CAM.lv) c.classList.add('cl'); });
   main.onclick = e => { if (camClick(e)) return; const h = e.target.closest('.cmb-ch'); if (h && innerWidth <= 700) return h.parentNode.classList.toggle('cl'); const b = e.target.closest('[data-cam]'); if (b) { const [l, k, ti] = b.dataset.cam.split('|'); CAM.lv = l; CAM.sk = k; CAM.ti = +ti || 0; k === 'speaking' ? camSpeaking() : camCover(); } };
+  if (CAM.pend) { const pd = CAM.pend; CAM.pend = null; if (D.levels.some(l => l.id === pd[0])) { CAM.lv = pd[0]; CAM.sk = pd[1]; CAM.ti = +pd[2] || 0; camCover(); return; } }
 }
 function camProgHTML(D) {
   const H = camJ('cam_hist', []).filter(h => h.tot > 0); if (!H.length) return '';
@@ -10433,6 +10434,7 @@ function asgStatus(a) {
   const p = prog(a.lessonId), since = a.createdAtMs || 0, acts = a.activity === 'any' ? Object.keys(ACTS) : [a.activity];
   let done = acts.some(k => isDone(p, k) && (p[k + 'At'] || 0) >= since);
   if (String(a.lessonId).startsWith('cd:')) { const n = a.lessonId.slice(3), P = S.profile || {}; done = [(P.cdp || {})[n], (P.cdq || {})[n]].filter(Boolean).some(x => (x.at || 0) >= since) || ((P.cd || {})[n] || 0) >= since; }
+  if (String(a.lessonId).startsWith('cam:')) { const [cl, ck, ct] = a.lessonId.slice(4).split('|'), cr = camJ('cam_res', {}), rr = cr[cl] && cr[cl][ck + '_' + ct]; done = !!rr && (rr.when || 0) >= since; }
   if (String(a.lessonId).startsWith('bk:')) done = ((S.profile?.bankat || {})[a.lessonId.slice(3)] || 0) >= since;
   const end = a.due ? new Date(a.due + 'T23:59:59') : null;
   return { done, overdue: !done && !!end && end < new Date(), days: end ? Math.ceil((end - new Date()) / 864e5) : null };
@@ -10484,7 +10486,7 @@ function viewHome() {
   };
   $('#dash').onclick = e => {
     if (dashExtra(e)) return;
-    const a = e.target.closest('[data-asg]'); if (a) { const x = S.assignments.find(y => y.id === a.dataset.asg); if (x && String(x.lessonId).startsWith('bk:')) { const bb = (S.banks || []).find(y => y.id === x.lessonId.slice(3)), cc = bb && COURSES.find(y => y.id === bb.course); if (cc && isEnrolled(cc.id)) { S.bank = bb.id; go('bank'); } else toast('Em cần ghi danh khoá của đề này trước nhé.', 'bad'); } else if (x && String(x.lessonId).startsWith('cd:')) { S.cd = +x.lessonId.slice(3); S.cdTab = null; go('cd'); } else if (x) openLesson(x.lessonId, x.activity === 'any' ? null : x.activity); return; }
+    const a = e.target.closest('[data-asg]'); if (a) { const x = S.assignments.find(y => y.id === a.dataset.asg); if (x && String(x.lessonId).startsWith('bk:')) { const bb = (S.banks || []).find(y => y.id === x.lessonId.slice(3)), cc = bb && COURSES.find(y => y.id === bb.course); if (cc && isEnrolled(cc.id)) { S.bank = bb.id; go('bank'); } else toast('Em cần ghi danh khoá của đề này trước nhé.', 'bad'); } else if (x && String(x.lessonId).startsWith('cd:')) { S.cd = +x.lessonId.slice(3); S.cdTab = null; go('cd'); } else if (x && String(x.lessonId).startsWith('cam:')) { CAM.pend = x.lessonId.slice(4).split('|'); go('cam'); } else if (x) openLesson(x.lessonId, x.activity === 'any' ? null : x.activity); return; }
     const c = e.target.closest('[data-cont]'); if (c) { try { const [id, act] = JSON.parse(store.get('last_' + S.user.uid)); openLesson(id, act); } catch {} return; }
     if (e.target.closest('[data-go]')) go(e.target.closest('[data-go]').dataset.go);
   };

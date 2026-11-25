@@ -8402,8 +8402,8 @@ async function camCamOn() {
     CAM.cti = setInterval(async () => {
       if (!CAM.lock) return clearInterval(CAM.cti); if (CAM.cbusy || !CAM.cv || CAM.cv.readyState < 2 || document.hidden) return; CAM.cbusy = 1;
       try {
-        const r = await (CAM.mockDet ? CAM.mockDet() : ml.detect(CAM.cv, 8, 0.4)), ph = r.some(o => o.class === 'cell phone' && o.score >= 0.45), pc = r.filter(o => o.class === 'person' && o.score >= 0.5).length, dv = r.some(o => (o.class === 'laptop' || o.class === 'tv' || o.class === 'book') && o.score >= 0.55), im = camImg();
-        CAM.ph = ph ? CAM.ph + 1 : 0; CAM.pn = pc >= 2 ? CAM.pn + 1 : 0; CAM.pa = pc === 0 ? CAM.pa + 1 : 0; CAM.dv = dv ? (CAM.dv || 0) + 1 : 0;
+        const r = await (CAM.mockDet ? CAM.mockDet() : ml.detect(CAM.cv, 8, 0.4)), ph = r.some(o => (o.class === 'cell phone' && o.score >= 0.3) || (o.class === 'remote' && o.score >= 0.4)), pc = r.filter(o => o.class === 'person' && o.score >= 0.5).length, dv = r.some(o => (o.class === 'laptop' || o.class === 'tv' || o.class === 'book') && o.score >= 0.55), im = camImg();
+        CAM.phw = (CAM.phw || []).concat(ph ? 1 : 0).slice(-5); CAM.ph = CAM.phw.reduce((x, y) => x + y, 0); CAM.pn = pc >= 2 ? CAM.pn + 1 : 0; CAM.pa = pc === 0 ? CAM.pa + 1 : 0; CAM.dv = dv ? (CAM.dv || 0) + 1 : 0;
         camBadge(CAM.dk > 2 ? ['bad', 'Camera bị che'] : CAM.ph || CAM.phL ? ['bad', 'Có điện thoại'] : CAM.dv ? ['warn', 'Có thiết bị/sách'] : pc > 1 ? ['warn', 'Nhiều người'] : pc === 0 ? ['warn', 'Không thấy mặt'] : ['ok', 'Đang giám sát']);
         if (im) { CAM.dk = im.m < 14 ? (CAM.dk || 0) + 1 : 0; CAM.fz = CAM.pm !== undefined && Math.abs(im.m - CAM.pm) < 0.05 && im.d < 0.4 ? (CAM.fz || 0) + 1 : 0; CAM.pm = im.m; }
         if (CAM.dk === 6) { camLog('camera bị che'); toast('Camera đang bị che. Hãy bỏ vật che ngay, nếu không bài sẽ bị huỷ.', 'warn'); }
@@ -8413,8 +8413,8 @@ async function camCamOn() {
         if (CAM.dv === 3) { camLog('thiết bị/sách trong camera'); toast('Có laptop, TV hoặc sách trong khung hình. Hãy dọn đi.', 'warn'); }
         if (CAM.dv >= 8) { camLog('thiết bị/sách trong camera'); camRed('PHÁT HIỆN THIẾT BỊ / SÁCH TRƯỚC CAMERA'); return camAbort('thiết bị hoặc sách trong khung hình', true); }
         if (CAM.pa >= 60) { camLog('vắng mặt quá lâu'); camRed('KHÔNG THẤY HỌC SINH TRONG KHUNG HÌNH'); return camAbort('rời khỏi khung hình quá lâu', true); }
-        if (CAM.ph >= 2 && !CAM.phL) { camLog('điện thoại trong camera'); CAM.phL = 1; CAM.phN = (CAM.phN || 0) + 1; if (CAM.phN >= 2) { camRed('PHÁT HIỆN ĐIỆN THOẠI LẦN 2'); return camAbort('phát hiện điện thoại trước camera 2 lần', true); } camWarnRed('CẢNH BÁO LẦN 1/2', 'Phát hiện điện thoại trước camera. Hãy cất điện thoại ngay. Thêm 1 lần nữa bài sẽ bị huỷ.'); }
-        else if (!ph && CAM.phL) { CAM.phQ = (CAM.phQ || 0) + 1; if (CAM.phQ >= 3) { CAM.phL = 0; CAM.phQ = 0; } } else if (ph) CAM.phQ = 0;
+        if (CAM.ph >= 2 && !CAM.phL) { camLog('điện thoại trong camera'); CAM.phL = 1; CAM.phT = Date.now(); CAM.phN = (CAM.phN || 0) + 1; if (CAM.phN >= 2) { camRed('PHÁT HIỆN ĐIỆN THOẠI LẦN 2'); return camAbort('phát hiện điện thoại trước camera 2 lần', true); } camWarnRed('CẢNH BÁO LẦN 1/2', 'Phát hiện điện thoại trước camera. Hãy cất điện thoại ngay. Thêm 1 lần nữa bài sẽ bị huỷ.'); }
+        else if (!CAM.ph && CAM.phL) { CAM.phL = 0; CAM.phw = []; } else if (CAM.phL && CAM.ph && Date.now() - CAM.phT > 20000) { camLog('điện thoại trong camera'); camRed('VẪN CẦM ĐIỆN THOẠI SAU CẢNH BÁO'); return camAbort('vẫn cầm điện thoại sau cảnh báo', true); }
         else if (CAM.pn === 3) { camLog('nhiều người trong camera'); toast('Có nhiều người trong khung hình. Chỉ mình em được làm bài.', 'warn'); }
         else if (CAM.pa === 20) { camLog('rời khỏi khung hình'); toast('Em hãy ngồi vào khung hình camera.', 'warn'); }
       } catch (e) {} CAM.cbusy = 0;

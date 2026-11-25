@@ -8397,7 +8397,7 @@ async function camCamOn() {
     if (!CAM.lock) { st.getTracks().forEach(t => t.stop()); return; }
     CAM.cs = st; const w = document.createElement('div'); w.className = 'cmb-cam'; w.innerHTML = '<video autoplay muted playsinline></video><span>● Camera</span>'; const v = w.querySelector('video'); v.srcObject = st; document.body.appendChild(w); CAM.cw = w; CAM.cv = v;
     st.getVideoTracks().forEach(t => { t.onended = () => { if (CAM.lock) { camLog('tắt camera'); camNeedCam(go); } }; });
-    let ml; try { ml = await camMl(); } catch (e) { camLog('không tải được AI camera'); return; }
+    camBadge(['warn', 'Đang tải AI camera…']); let ml; try { ml = await camMl(); } catch (e) { camLog('không tải được AI camera'); camBadge(['bad', 'AI camera lỗi, chưa giám sát được']); toast('Chưa tải được AI camera. Hãy kiểm tra mạng, bài vẫn tiếp tục nhưng giáo viên sẽ nhận ghi chú.', 'warn'); return; }
     CAM.ph = 0; CAM.pn = 0; CAM.pa = 0; clearInterval(CAM.cti);
     CAM.cti = setInterval(async () => {
       if (!CAM.lock) return clearInterval(CAM.cti); if (CAM.cbusy || !CAM.cv || CAM.cv.readyState < 2 || document.hidden) return; CAM.cbusy = 1;

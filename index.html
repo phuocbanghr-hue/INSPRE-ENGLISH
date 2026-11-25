@@ -8385,6 +8385,7 @@ function camNeedCam(retry) {
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Cần bật camera để làm bài thi</h2><p>Camera chỉ chạy trên máy của em để kiểm tra có điện thoại hay người khác trong khung hình. Không có hình ảnh nào được gửi đi hay lưu lại.</p><p>Em hãy bấm <b>Cho phép</b> khi trình duyệt hỏi.</p><button class="btn" type="button" id="cmb-cy">Bật camera</button> <button class="btn" type="button" id="cmb-cn">Không thi nữa</button></div>';
   document.body.appendChild(o); o.querySelector('#cmb-cy').onclick = () => { o.remove(); retry(); }; o.querySelector('#cmb-cn').onclick = () => { o.remove(); camStop(); camFs(false); camClearSave(); viewCam(); };
 }
+function camImg() { try { const v = CAM.cv; if (!v || !v.videoWidth) return null; const c = CAM.cc || (CAM.cc = document.createElement('canvas')); c.width = 32; c.height = 24; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(v, 0, 0, 32, 24); const d = g.getImageData(0, 0, 32, 24).data, n = d.length / 4; let sum = 0, df = 0; const pv = CAM.pf; const cur = new Uint8Array(n); for (let i = 0; i < n; i++) { const y = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3; cur[i] = y; sum += y; if (pv) df += Math.abs(y - pv[i]); } CAM.pf = cur; return { m: sum / n, d: pv ? df / n : 99 }; } catch (e) { return null; } }
 async function camCamOn() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camLog('không hỗ trợ camera'); return; }
   const go = async () => {
@@ -8399,8 +8400,16 @@ async function camCamOn() {
     CAM.cti = setInterval(async () => {
       if (!CAM.lock) return clearInterval(CAM.cti); if (CAM.cbusy || !CAM.cv || CAM.cv.readyState < 2 || document.hidden) return; CAM.cbusy = 1;
       try {
-        const r = await (CAM.mockDet ? CAM.mockDet() : ml.detect(CAM.cv, 8, 0.4)), ph = r.some(o => o.class === 'cell phone' && o.score >= 0.45), pc = r.filter(o => o.class === 'person' && o.score >= 0.5).length;
-        CAM.ph = ph ? CAM.ph + 1 : 0; CAM.pn = pc >= 2 ? CAM.pn + 1 : 0; CAM.pa = pc === 0 ? CAM.pa + 1 : 0;
+        const r = await (CAM.mockDet ? CAM.mockDet() : ml.detect(CAM.cv, 8, 0.4)), ph = r.some(o => o.class === 'cell phone' && o.score >= 0.45), pc = r.filter(o => o.class === 'person' && o.score >= 0.5).length, dv = r.some(o => (o.class === 'laptop' || o.class === 'tv' || o.class === 'book') && o.score >= 0.55), im = camImg();
+        CAM.ph = ph ? CAM.ph + 1 : 0; CAM.pn = pc >= 2 ? CAM.pn + 1 : 0; CAM.pa = pc === 0 ? CAM.pa + 1 : 0; CAM.dv = dv ? (CAM.dv || 0) + 1 : 0;
+        if (im) { CAM.dk = im.m < 14 ? (CAM.dk || 0) + 1 : 0; CAM.fz = CAM.pm !== undefined && Math.abs(im.m - CAM.pm) < 0.05 && im.d < 0.4 ? (CAM.fz || 0) + 1 : 0; CAM.pm = im.m; }
+        if (CAM.dk === 6) { camLog('camera bị che'); toast('Camera đang bị che. Hãy bỏ vật che ngay, nếu không bài sẽ bị huỷ.', 'warn'); }
+        if (CAM.dk >= 14) { camLog('camera bị che'); camRed('CAMERA BỊ CHE'); return camAbort('che camera', true); }
+        if (CAM.fz === 25) { camLog('hình camera đứng yên'); toast('Hình camera không chuyển động. Hãy kiểm tra camera.', 'warn'); }
+        if (CAM.fz >= 60) { camLog('hình camera đứng yên'); camRed('HÌNH CAMERA BẤT THƯỜNG'); return camAbort('hình camera đứng yên, nghi giả mạo', true); }
+        if (CAM.dv === 3) { camLog('thiết bị/sách trong camera'); toast('Có laptop, TV hoặc sách trong khung hình. Hãy dọn đi.', 'warn'); }
+        if (CAM.dv >= 8) { camLog('thiết bị/sách trong camera'); camRed('PHÁT HIỆN THIẾT BỊ / SÁCH TRƯỚC CAMERA'); return camAbort('thiết bị hoặc sách trong khung hình', true); }
+        if (CAM.pa >= 60) { camLog('vắng mặt quá lâu'); camRed('KHÔNG THẤY HỌC SINH TRONG KHUNG HÌNH'); return camAbort('rời khỏi khung hình quá lâu', true); }
         if (CAM.ph >= 2) { camLog('điện thoại trong camera'); camRed('PHÁT HIỆN ĐIỆN THOẠI TRƯỚC CAMERA'); camAbort('phát hiện điện thoại trước camera', true); }
         else if (CAM.pn === 3) { camLog('nhiều người trong camera'); toast('Có nhiều người trong khung hình. Chỉ mình em được làm bài.', 'warn'); }
         else if (CAM.pa === 20) { camLog('rời khỏi khung hình'); toast('Em hãy ngồi vào khung hình camera.', 'warn'); }

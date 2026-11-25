@@ -8290,7 +8290,7 @@ function camWrRes(p, x, k) {
   <h4>Kiểm tra tự động</h4><ul class="cmb-wr-ck">${chk.map(c => `<li class="${c.g ? 'ok' : 'no'}">${c.g ? '✓' : '!'} ${esc(c.m)}</li>`).join('')}</ul>
   <details class="cmb-ts"><summary>Tự chấm theo 4 tiêu chí của Cambridge</summary><div class="cmb-rub">${rub.map(([a, q]) => `<label><input type="checkbox"><span><b>${a}</b><small>${q}</small></span></label>`).join('')}</div><p class="muted" style="font-size:.82rem">Bài viết không được chấm tự động như câu trắc nghiệm. Nên nhờ giáo viên chấm theo 4 tiêu chí này.</p></details></div>`;
 }
-const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=29').then(r => r.json()).then(d => (CAM.d = d));
+const camLoad = () => CAM.d ? Promise.resolve(CAM.d) : fetch('docs/cambridge/yle.json?v=30').then(r => r.json()).then(d => (CAM.d = d));
 const camLv = () => CAM.d.levels.find(x => x.id === CAM.lv), camTest = () => (CAM.sv && CAM.sv._k === CAM.lv + '|' + CAM.ti) ? CAM.sv : camLv().tests[CAM.ti];
 /* Đảo thứ tự câu hỏi trong từng Part của bài Reading (mỗi lần làm một thứ tự riêng); đề giấy vẫn giữ số câu in trên đề. Bài Nghe không đảo vì phải theo thứ tự băng. */
 const CAM_SHUF = true, camK = (KY, sk, p, it, k) => KY[sk[0] + p.n][it._i !== undefined ? it._i : k];

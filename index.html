@@ -8364,7 +8364,7 @@ function camFsAsk(blocking) {
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Bài thi phải làm ở chế độ toàn màn hình</h2><p>' + (blocking ? 'Em vừa thoát toàn màn hình. Bấm nút dưới để vào lại và làm tiếp.' : 'Muốn thoát toàn màn hình, cần mật khẩu giáo viên.') + '</p><button class="btn" type="button" id="cmb-fr">Vào lại toàn màn hình</button><p style="margin-top:18px">Giáo viên nhập mật khẩu để cho phép thoát toàn màn hình:</p><input id="cmb-fpw" type="password" autocomplete="off" placeholder="Mật khẩu giáo viên" style="padding:10px 14px;border-radius:10px;border:0;font-size:1rem;width:min(280px,80%)"><p id="cmb-fpe" style="min-height:1.4em;font-size:.95rem"></p><button class="btn" type="button" id="cmb-fo">Cho phép thoát</button></div>';
   document.body.appendChild(o); const i = o.querySelector('#cmb-fpw');
   o.querySelector('#cmb-fr').onclick = () => { try { document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {} document.body.classList.add('rr-full'); o.remove(); };
-  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === CAM_PIN_H) { CAM.fsFree = 1; try { camFs(false); } catch (e) {} o.remove(); camPaper(); } else { o.querySelector('#cmb-fpe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
+  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === ((S.site && S.site.camPinH) || CAM_PIN_H)) { CAM.fsFree = 1; try { camFs(false); } catch (e) {} o.remove(); camPaper(); } else { o.querySelector('#cmb-fpe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
   o.querySelector('#cmb-fo').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
 }
 function camFsChange() { if (!CAM.lock || CAM.fsFree || document.fullscreenElement || !document.documentElement.requestFullscreen) return; camFsAsk(true); }
@@ -8445,7 +8445,7 @@ function camLeave(v) {
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Đang trong giờ làm bài</h2><p>Em cần làm xong và nộp bài mới được thoát. Nếu thật sự cần thoát giữa chừng, nhờ giáo viên nhập mật khẩu.</p><input id="cmb-pw" type="password" autocomplete="off" placeholder="Mật khẩu giáo viên" style="padding:10px 14px;border-radius:10px;border:0;font-size:1rem;width:min(280px,80%)"><p id="cmb-pe" style="min-height:1.4em;font-size:.95rem"></p><button class="btn" type="button" id="cmb-po">Thoát bài</button> <button class="btn" type="button" id="cmb-pc">Tiếp tục làm bài</button></div>';
   document.body.appendChild(o); const i = o.querySelector('#cmb-pw'); i.focus();
   o.querySelector('#cmb-pc').onclick = () => o.remove();
-  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === CAM_PIN_H) { try { camSave(); } catch (e) {} camStop(); o.remove(); go(v); } else { o.querySelector('#cmb-pe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
+  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === ((S.site && S.site.camPinH) || CAM_PIN_H)) { try { camSave(); } catch (e) {} camStop(); o.remove(); go(v); } else { o.querySelector('#cmb-pe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
   o.querySelector('#cmb-po').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
 }
 async function camAbort(why, inst) {
@@ -8472,7 +8472,7 @@ function camCxAsk() {
   if (document.querySelector('#cmb-cpw')) return; const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov';
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Đề đã bị khoá</h2><p>Giáo viên nhập mật khẩu để mở khoá cho em làm lại.</p><input id="cmb-cpw" type="password" autocomplete="off" placeholder="Mật khẩu giáo viên" style="padding:10px 14px;border-radius:10px;border:0;font-size:1rem;width:min(280px,80%)"><p id="cmb-cpe" style="min-height:1.4em"></p><button class="btn" type="button" id="cmb-co">Mở khoá</button> <button class="btn" type="button" id="cmb-cc">Đóng</button></div>';
   document.body.appendChild(o); const i = o.querySelector('#cmb-cpw'); i.focus(); o.querySelector('#cmb-cc').onclick = () => o.remove();
-  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === CAM_PIN_H) { try { localStorage.removeItem(camCxK()); } catch (e) {} o.remove(); camClearSave(); camStart(); } else { o.querySelector('#cmb-cpe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
+  const ok = async () => { let h = ''; try { h = await camSha(i.value.trim()); } catch (e) {} if (h === ((S.site && S.site.camPinH) || CAM_PIN_H)) { try { localStorage.removeItem(camCxK()); } catch (e) {} o.remove(); camClearSave(); camStart(); } else { o.querySelector('#cmb-cpe').textContent = 'Sai mật khẩu.'; i.value = ''; i.focus(); } };
   o.querySelector('#cmb-co').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
 }
 function camStart(sv, only) {

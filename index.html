@@ -8380,6 +8380,7 @@ const camJs = u => new Promise((ok, no) => { const e = document.createElement('s
 const camMl = () => CAM_ML || (CAM_ML = (async () => { if (!window.cocoSsd) { await camJs(CAM_TF[0]); await camJs(CAM_TF[1]); } return cocoSsd.load({ base: 'lite_mobilenet_v2' }); })().catch(e => { CAM_ML = null; throw e; }));
 let CAM_ML = null;
 function camRed(msg) { const o = document.createElement('div'); o.className = 'cmb-red'; o.innerHTML = '<div>🚫</div><div>' + msg + '</div><small style="font-weight:600;font-size:1rem;margin-top:10px">Bài thi bị huỷ. Báo cáo đã gửi cho giáo viên.</small>'; document.body.appendChild(o); setTimeout(() => o.remove(), 4500); }
+function camWarnRed(h, p) { document.querySelectorAll('.cmb-red').forEach(z => z.remove()); const o = document.createElement('div'); o.className = 'cmb-red'; o.innerHTML = '<div>⚠️</div><div>' + h + '</div><small style="font-weight:600;font-size:1.05rem;margin-top:10px;max-width:520px">' + p + '</small><button class="btn" type="button" style="margin-top:18px">Tôi đã hiểu</button>'; o.querySelector('button').onclick = () => o.remove(); document.body.appendChild(o); setTimeout(() => o.remove(), 8000); }
 function camNeedCam(retry) {
   document.querySelectorAll('.cmb-camov').forEach(z => z.remove()); const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov cmb-camov';
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Cần bật camera để làm bài thi</h2><p>Camera chỉ chạy trên máy của em để kiểm tra có điện thoại hay người khác trong khung hình. Không có hình ảnh nào được gửi đi hay lưu lại.</p><p>Em hãy bấm <b>Cho phép</b> khi trình duyệt hỏi.</p><button class="btn" type="button" id="cmb-cy">Bật camera</button> <button class="btn" type="button" id="cmb-cn">Không thi nữa</button></div>';
@@ -8410,7 +8411,8 @@ async function camCamOn() {
         if (CAM.dv === 3) { camLog('thiết bị/sách trong camera'); toast('Có laptop, TV hoặc sách trong khung hình. Hãy dọn đi.', 'warn'); }
         if (CAM.dv >= 8) { camLog('thiết bị/sách trong camera'); camRed('PHÁT HIỆN THIẾT BỊ / SÁCH TRƯỚC CAMERA'); return camAbort('thiết bị hoặc sách trong khung hình', true); }
         if (CAM.pa >= 60) { camLog('vắng mặt quá lâu'); camRed('KHÔNG THẤY HỌC SINH TRONG KHUNG HÌNH'); return camAbort('rời khỏi khung hình quá lâu', true); }
-        if (CAM.ph >= 2) { camLog('điện thoại trong camera'); camRed('PHÁT HIỆN ĐIỆN THOẠI TRƯỚC CAMERA'); camAbort('phát hiện điện thoại trước camera', true); }
+        if (CAM.ph >= 2 && !CAM.phL) { camLog('điện thoại trong camera'); CAM.phL = 1; CAM.phN = (CAM.phN || 0) + 1; if (CAM.phN >= 2) { camRed('PHÁT HIỆN ĐIỆN THOẠI LẦN 2'); return camAbort('phát hiện điện thoại trước camera 2 lần', true); } camWarnRed('CẢNH BÁO LẦN 1/2', 'Phát hiện điện thoại trước camera. Hãy cất điện thoại ngay. Thêm 1 lần nữa bài sẽ bị huỷ.'); }
+        else if (!ph && CAM.phL) { CAM.phQ = (CAM.phQ || 0) + 1; if (CAM.phQ >= 3) { CAM.phL = 0; CAM.phQ = 0; } } else if (ph) CAM.phQ = 0;
         else if (CAM.pn === 3) { camLog('nhiều người trong camera'); toast('Có nhiều người trong khung hình. Chỉ mình em được làm bài.', 'warn'); }
         else if (CAM.pa === 20) { camLog('rời khỏi khung hình'); toast('Em hãy ngồi vào khung hình camera.', 'warn'); }
       } catch (e) {} CAM.cbusy = 0;

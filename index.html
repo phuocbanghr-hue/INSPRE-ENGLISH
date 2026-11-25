@@ -8426,7 +8426,18 @@ function camAnsN() { const P = camTest()[CAM.sk].parts; let a = 0, t = 0; P.forE
 function camSave() { if (CAM.only || !CAM.ans || CAM.sk === 'writing') return; try { const n = camAnsN().a; if (!n) return localStorage.removeItem(camPK()); localStorage.setItem(camPK(), JSON.stringify({ ans: CAM.ans, left: CAM.left, part: CAM.part, w: Date.now(), n, sd: CAM.sd || 0 })); } catch (e) {} }
 function camSaved() { try { const o = JSON.parse(localStorage.getItem(camPK()) || 'null'); if (o && o.n && o.left > 0 && Date.now() - o.w < 172800000) return o; } catch (e) {} return null; }
 function camTick() { const e = $('#cmb-tm'); if (!e) return; const l = Math.max(0, CAM.left), m = Math.floor(l / 60), s = l % 60; e.textContent = m + ':' + String(s).padStart(2, '0'); e.classList.toggle('low', l <= 120); }
-function camPaper() {
+function camScr() {
+  if (!CAM.lock || CAM.only || !camTest().official) return; if (!CAM.tiltV) CAM.tiltV = (Math.random() * 2 - 1);
+  document.querySelectorAll('.cmb-docs img:not([data-scr])').forEach(im => {
+    im.dataset.scr = '1'; const src = im.currentSrc || im.src, o = new Image(); o.onload = () => { try {
+      const w = o.naturalWidth, h = o.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+      const a = (0.25 + 0.2 * Math.abs(CAM.tiltV)) * Math.PI / 180 * (CAM.tiltV < 0 ? -1 : 1), sc = 1.012; g.translate(w / 2, h / 2); g.rotate(a); g.scale(sc, sc); g.drawImage(o, -w / 2, -h / 2); g.setTransform(1, 0, 0, 1, 0, 0);
+      const d = g.getImageData(0, 0, w, h), px = d.data; for (let i = 0; i < px.length; i += 4) { const n = (Math.random() * 14 - 7) | 0; px[i] += n; px[i + 1] += n; px[i + 2] += n; } g.putImageData(d, 0, 0);
+      c.toBlob(b => { if (b && CAM.lock) { im.src = URL.createObjectURL(b); } }, 'image/jpeg', 0.88);
+    } catch (e) {} }; o.src = src;
+  });
+}
+function camPaper() { setTimeout(camScr, 60);
   const lv = camLv(), t = camTest(), sk = CAM.sk, P = t[sk].parts, p = P[CAM.part], A = CAM.ans[p.n] || (CAM.ans[p.n] = {}), lis = sk === 'listening', off = !!t.official;
   const chips = (it, i) => { const opts = p.t === 'mc' ? it.o : p.opts, cur = A[i], val = (o, j) => p.t === 'mc' ? j : o; const long = opts.some(o => String(o).length > 14) || opts.length > 10; if (long && p.t === 'sel') return `<select data-i="${i}"><option value="">Choose…</option>${opts.map(o => `<option ${cur === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`; return `<div class="cmb-ch2 ${p.t === 'mc' && opts.some(o => String(o).length > 8) ? 'col' : opts.every(o => String(o).length <= 2) ? 'sm' : ''}">${opts.map((o, j) => `<button type="button" data-i="${i}" data-v="${p.t === 'mc' ? j : esc(o)}" class="${cur === val(o, j) ? 'on' : ''}">${esc(o)}</button>`).join('')}</div>`; };
   const itemHTML = (it, i) => { const num = (p.from || 1) + (t.official && it._i !== undefined ? it._i : i); let ctl; if (off && (camDLCfg(p) || camColCfg(p))) ctl = `<div class="cmb-dl" data-dli="${i}"></div>`; else if (p.t === 'sel' || p.t === 'mc') ctl = chips(it, i); else if (p.t === 'self' && p.pages && it.min) ctl = camWrCard(p, it, i, A); else if (p.t === 'self') ctl = `<textarea data-i="${i}" rows="${p.pages ? 9 : 3}" placeholder="Write your answer…">${esc(A[i] || '')}</textarea>${p.pages ? `<small class="cmb-wc" data-wc="${i}">${String(A[i] || '').trim().split(/\s+/).filter(Boolean).length} words</small>` : ''}`; else ctl = `<input data-i="${i}" value="${esc(A[i] || '')}" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Write your answer">`; return `<div class="cmb-it ${p.t === 'mc' && !off ? 'mc' : ''}"><span class="cmb-n">${p.t === 'self' && p.items.length === 1 ? '✎' : num}</span><div class="cmb-iq"><label>${off && camColCfg(p) ? 'Question ' + (i + 1) : esc(it.q)}</label>${ctl}</div></div>`; };

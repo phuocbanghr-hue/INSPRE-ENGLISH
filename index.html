@@ -8347,7 +8347,8 @@ function camCover() {
 const CAM_PIN_H = '7f45974d811b3f070965056e5f067489723ac554b80536740bb3a05577ea65f5';
 const camSha = async x => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('inspire-cam:' + x)); return [...new Uint8Array(b)].map(v => v.toString(16).padStart(2, '0')).join(''); };
 const camOvOff = () => document.querySelectorAll('.cmb-lkov').forEach(z => z.remove());
-const camLog = k => { CAM.ev = CAM.ev || {}; CAM.ev[k] = (CAM.ev[k] || 0) + 1; };
+const camLog = k => { CAM.ev = CAM.ev || {}; CAM.ev[k] = (CAM.ev[k] || 0) + 1; try { camSnap(k); } catch (e) {} };
+function camSnap(tag) { const v = CAM.cv; if (!v || !v.videoWidth) return; CAM.snaps = CAM.snaps || []; const l = CAM.snaps[CAM.snaps.length - 1]; if (l && l.tag === tag && Date.now() - l.t < 8000) return; const c = document.createElement('canvas'); c.width = 192; c.height = 144; c.getContext('2d').drawImage(v, 0, 0, 192, 144); const o = { t: Date.now(), tag, img: c.toDataURL('image/jpeg', 0.55) }; CAM.snaps.push(o); if (CAM.snaps.length > 6) CAM.snaps.splice(1, 1); }
 const camEvTxt = () => Object.entries(CAM.ev || {}).map(([k, v]) => k + ' ×' + v).join('; ');
 function camWarn(why) { if (document.querySelector('.cmb-lkov')) return; const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov'; o.innerHTML = '<div><div class="rm-wx">!</div><h2>CẢNH BÁO LẦN 1/2</h2><p>Hệ thống phát hiện: ' + (why || 'em vừa rời khỏi màn hình làm bài') + '.</p><p><b>Nếu vi phạm thêm 1 lần nữa, bài thi sẽ bị huỷ ngay và báo cáo được gửi cho giáo viên.</b></p><button class="btn" type="button">Tôi đã hiểu, quay lại làm bài</button></div>'; document.body.appendChild(o); o.querySelector('button').onclick = () => o.remove(); }
 function camStrike(why, now) { if (!CAM.lock) return; CAM.leaves = (CAM.leaves || 0) + 1; camLog('vi phạm: ' + why); if (CAM.leaves >= 2) return camAbort(why); if (now) camWarn(why); }
@@ -8388,6 +8389,18 @@ function camNeedCam(retry) {
   o.innerHTML = '<div><div class="rm-wx">!</div><h2>Cần bật camera để làm bài thi</h2><p>Camera chỉ chạy trên máy của em để kiểm tra có điện thoại hay người khác trong khung hình. Không có hình ảnh nào được gửi đi hay lưu lại.</p><p>Em hãy bấm <b>Cho phép</b> khi trình duyệt hỏi.</p><button class="btn" type="button" id="cmb-cy">Bật camera</button> <button class="btn" type="button" id="cmb-cn">Không thi nữa</button></div>';
   document.body.appendChild(o); o.querySelector('#cmb-cy').onclick = () => { o.remove(); retry(); }; o.querySelector('#cmb-cn').onclick = () => { o.remove(); camStop(); camFs(false); camClearSave(); viewCam(); };
 }
+const CAM_FD = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+let CAM_FDP = null;
+const camFd = () => CAM_FDP || (CAM_FDP = (async () => { const m = await import(CAM_FD + '/vision_bundle.mjs'), v = await m.FilesetResolver.forVisionTasks(CAM_FD + '/wasm'); return m.FaceDetector.createFromOptions(v, { baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite' }, runningMode: 'VIDEO' }); })().catch(e => { CAM_FDP = null; throw e; }));
+function camPose(kp) { if (!kp || kp.length < 3) return null; const a = kp[0], b = kp[1], n = kp[2], d = Math.hypot(b.x - a.x, b.y - a.y); if (d < 0.02) return null; return { yaw: (n.x - (a.x + b.x) / 2) / d, pit: (n.y - (a.y + b.y) / 2) / d }; }
+function camGaze(p) {
+  if (!p) { return; } const B = CAM.gB || (CAM.gB = { n: 0, ys: [], ps: [] }), md = x => x.slice().sort((u, v) => u - v)[x.length >> 1];
+  if (B.n < 8) { B.ys.push(p.yaw); B.ps.push(p.pit); B.n++; return; }
+  const by = md(B.ys), bp = md(B.ps), wr = CAM.sk === 'writing', away = Math.abs(p.yaw - by) > 0.55 || (!wr && bp > 0.2 && p.pit < bp * 0.62);
+  if (away) { CAM.ga = (CAM.ga || 0) + 1; CAM.gok = 0; } else { CAM.gok = (CAM.gok || 0) + 1; if (CAM.gok >= 2) CAM.ga = 0; }
+  if (CAM.ga === 5) { CAM.gN = (CAM.gN || 0) + 1; camLog('nhìn chỗ khác'); toast('Em đang nhìn ra ngoài màn hình. Hãy nhìn vào bài làm.', 'warn'); if (CAM.gN >= 4) camLog('nhìn chỗ khác nhiều lần (' + CAM.gN + ')'); }
+  return away;
+}
 function camImg() { try { const v = CAM.cv; if (!v || !v.videoWidth) return null; const c = CAM.cc || (CAM.cc = document.createElement('canvas')); c.width = 32; c.height = 24; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(v, 0, 0, 32, 24); const d = g.getImageData(0, 0, 32, 24).data, n = d.length / 4; let sum = 0, df = 0; const pv = CAM.pf; const cur = new Uint8Array(n); for (let i = 0; i < n; i++) { const y = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3; cur[i] = y; sum += y; if (pv) df += Math.abs(y - pv[i]); } CAM.pf = cur; return { m: sum / n, d: pv ? df / n : 99 }; } catch (e) { return null; } }
 async function camCamOn() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camLog('không hỗ trợ camera'); return; }
@@ -8405,7 +8418,8 @@ async function camCamOn() {
       try {
         const r = await (CAM.mockDet ? CAM.mockDet() : ml.detect(CAM.cv, 8, 0.4)), pw = r.some(o => o.class === 'cell phone' && o.score >= 0.5) ? 2 : r.some(o => (o.class === 'cell phone' && o.score >= 0.3) || (o.class === 'remote' && o.score >= 0.4)) ? 1 : 0, pc = r.filter(o => o.class === 'person' && o.score >= 0.5).length, dv = r.some(o => (o.class === 'laptop' || o.class === 'tv' || o.class === 'book') && o.score >= 0.55), im = camImg();
         CAM.phw = (CAM.phw || []).concat(pw).slice(-8); CAM.ph = CAM.phw.reduce((x, y) => x + y, 0); CAM.pn = pc >= 2 ? CAM.pn + 1 : 0; CAM.pa = pc === 0 ? CAM.pa + 1 : 0; CAM.dv = dv ? (CAM.dv || 0) + 1 : 0;
-        document.body.classList.toggle('cmb-hide', !!(CAM.ph || CAM.phL || CAM.dk > 3 || CAM.pa >= 9)); camBadge(CAM.dk > 6 ? ['bad', 'Camera bị che'] : CAM.ph || CAM.phL ? ['bad', 'Có điện thoại'] : CAM.dv ? ['warn', 'Có thiết bị/sách'] : pc > 1 ? ['warn', 'Nhiều người'] : pc === 0 ? ['warn', 'Không thấy mặt'] : ['ok', 'Đang giám sát']);
+        document.body.classList.toggle('cmb-hide', !!(CAM.ph || CAM.phL || CAM.dk > 3 || CAM.pa >= 9)); camBadge(CAM.dk > 6 ? ['bad', 'Camera bị che'] : CAM.ph || CAM.phL ? ['bad', 'Có điện thoại'] : CAM.dv ? ['warn', 'Có thiết bị/sách'] : pc > 1 ? ['warn', 'Nhiều người'] : pc === 0 ? ['warn', 'Không thấy mặt'] : CAM.ga >= 3 ? ['warn', 'Đang nhìn chỗ khác'] : ['ok', 'Đang giám sát']);
+        CAM.gt = (CAM.gt || 0) + 1; if (CAM.gt % 3 === 0 && (CAM.mockFace || CAM.fd !== 0)) { try { if (CAM.mockFace) camGaze(camPose(CAM.mockFace())); else { CAM.fd = CAM.fd || await camFd().catch(() => 0); if (CAM.fd) { const fr = CAM.fd.detectForVideo(CAM.cv, performance.now()).detections; camGaze(camPose(fr && fr[0] && fr[0].keypoints)); } } } catch (e) { CAM.fd = 0; } }
         if (im) { CAM.dk = im.m < 14 ? (CAM.dk || 0) + 1 : 0; CAM.fz = CAM.pm !== undefined && Math.abs(im.m - CAM.pm) < 0.05 && im.d < 0.4 ? (CAM.fz || 0) + 1 : 0; CAM.pm = im.m; }
         if (CAM.dk === 17) { camLog('camera bị che'); toast('Camera đang bị che. Hãy bỏ vật che ngay, nếu không bài sẽ bị huỷ.', 'warn'); }
         if (CAM.dk >= 40) { camLog('camera bị che'); camRed('CAMERA BỊ CHE'); return camAbort('che camera', true); }
@@ -8424,7 +8438,7 @@ async function camCamOn() {
   go();
 }
 function camCamOff() { document.body.classList.remove('cmb-hide'); clearInterval(CAM.cti); try { CAM.cs && CAM.cs.getTracks().forEach(t => { t.onended = null; t.stop(); }); } catch (e) {} CAM.cs = null; CAM.cv = null; document.querySelectorAll('.cmb-cam,.cmb-camov').forEach(z => z.remove()); }
-function camGuardOn() { camGuardOff(); camWm(); CAM.ev = {}; CAM.dtN = 0; CAM.dtHit = 0; CAM_EV.forEach(([n, f]) => document.addEventListener(n, f, true)); document.body.classList.add('cmb-lock'); CAM.dti = setInterval(camDt, 1500); CAM.lock = 1; CAM.fsFree = 0; CAM.leaves = 0; CAM.away = 0; document.addEventListener('fullscreenchange', camFsChange); document.addEventListener('visibilitychange', camVis); window.addEventListener('blur', camBlur); window.addEventListener('focus', camBack); window.onbeforeunload = () => 'Em đang làm bài thi.'; camCamOn(); }
+function camGuardOn() { camGuardOff(); camWm(); CAM.ev = {}; CAM.snaps = []; CAM.gB = null; CAM.gN = 0; CAM.ga = 0; CAM.dtN = 0; CAM.dtHit = 0; CAM_EV.forEach(([n, f]) => document.addEventListener(n, f, true)); document.body.classList.add('cmb-lock'); CAM.dti = setInterval(camDt, 1500); CAM.lock = 1; CAM.fsFree = 0; CAM.leaves = 0; CAM.away = 0; document.addEventListener('fullscreenchange', camFsChange); document.addEventListener('visibilitychange', camVis); window.addEventListener('blur', camBlur); window.addEventListener('focus', camBack); window.onbeforeunload = () => 'Em đang làm bài thi.'; camCamOn(); }
 function camGuardOff() { camCamOff(); document.querySelectorAll('.cmb-wm').forEach(z => z.remove()); CAM_EV.forEach(([n, f]) => document.removeEventListener(n, f, true)); document.body.classList.remove('cmb-lock'); clearInterval(CAM.dti); CAM.lock = 0; CAM.fsFree = 0; document.removeEventListener('fullscreenchange', camFsChange); document.removeEventListener('visibilitychange', camVis); window.removeEventListener('blur', camBlur); window.removeEventListener('focus', camBack); window.onbeforeunload = null; camOvOff(); }
 function camLeave(v) {
   if (document.querySelector('#cmb-pw')) return; const o = document.createElement('div'); o.className = 'rm-warn cmb-lkov';
@@ -8444,12 +8458,13 @@ async function camAbort(why, inst) {
   let wr = ''; if (sk === 'writing') { const w = x => String(x || '').trim().split(/\s+/).filter(Boolean).length; wr = ' Số từ đã viết: ' + Object.values(ans).reduce((a, o) => a + Object.values(o).reduce((b, x) => b + w(x), 0), 0) + '.'; }
   const msg = '[CẢNH BÁO CAMBRIDGE] ' + who + (inst ? ' VI PHẠM NGHIÊM TRỌNG (' + (why || '') + ') nên bài bị huỷ NGAY. Đề: ' : ' vi phạm quy chế thi 2 lần (lần cuối: ' + (why || 'rời tab') + ') nên bài bị huỷ tự động. Đề: ') + lv.name + ' · ' + t.title + ' · ' + camSK(lv, sk) + '. Đã làm ' + n.a + '/' + n.t + ' câu.' + sc + wr + (evs ? ' Ghi nhận: ' + evs + '.' : '') + ' Lúc ' + when + '.';
   try { await api.sendChat(msg); } catch (e) { toast('Chưa gửi được báo cáo cho giáo viên, em hãy báo trực tiếp nhé.', 'bad'); }
+  try { await api.submitCam('cr_' + S.user.uid + '_' + Date.now(), { classId: 'spk', name: who, level: lv.id, levelName: lv.name, testId: t.id, title: t.title, section: sk, ok: 0, tot: 0, pct: 0, used: Math.round((Date.now() - CAM.t0) / 1000), allot: (t[sk].min || 0) * 60, ev: 'BÀI BỊ HUỶ: ' + (why || 'vi phạm') + (evs ? '; ' + evs : ''), fast: false, flag: true, aborted: true, ...(CAM.snaps && CAM.snaps.length ? { snaps: CAM.snaps } : {}) }); } catch (e) {}
 }
 const camCxK = () => 'cam_cx_' + CAM.lv + '_' + CAM.ti + '_' + CAM.sk;
 const camCx = () => { try { return !!localStorage.getItem(camCxK()); } catch (e) { return false; } };
 async function camSend(ok, tot) {
   try { const lv = camLv(), t = camTest(), sk = CAM.sk, used = Math.max(1, Math.round((Date.now() - CAM.t0) / 1000)), allot = (t[sk].min || 0) * 60, pct = Math.round(ok / Math.max(1, tot) * 100), ev = camEvTxt(), fast = sk !== 'listening' && allot > 0 && used < allot * 0.3 && pct >= 85;
-    await api.submitCam('cr_' + S.user.uid + '_' + Date.now(), { classId: 'spk', name: (S.profile && S.profile.name) || CAM.name || 'Học sinh', level: lv.id, levelName: lv.name, testId: t.id, title: t.title, section: sk, ok, tot, pct, used, allot, ev, fast, flag: !!(fast || ev) });
+    await api.submitCam('cr_' + S.user.uid + '_' + Date.now(), { classId: 'spk', name: (S.profile && S.profile.name) || CAM.name || 'Học sinh', level: lv.id, levelName: lv.name, testId: t.id, title: t.title, section: sk, ok, tot, pct, used, allot, ev, fast, flag: !!(fast || ev), ...(CAM.snaps && CAM.snaps.length ? { snaps: CAM.snaps } : {}) });
   } catch (e) { /* quy tắc Firestore có thể từ chối: bỏ qua, không ảnh hưởng học sinh */ }
 }
 async function camReport(ok, tot) { const evs = camEvTxt(); if (!evs) return; const who = (S.profile && S.profile.name) || CAM.name || 'Học sinh', lv = camLv(), t = camTest(); try { await api.sendChat('[BÁO CÁO CAMBRIDGE] ' + who + ' đã nộp bài ' + lv.name + ' · ' + t.title + ' · ' + camSK(lv, CAM.sk) + ' (' + ok + '/' + tot + ') nhưng hệ thống ghi nhận hành vi đáng ngờ: ' + evs + '. Lúc ' + new Date().toLocaleString('vi-VN') + '.'); } catch (e) {} }

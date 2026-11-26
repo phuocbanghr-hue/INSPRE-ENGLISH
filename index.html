@@ -1560,6 +1560,14 @@ main .card.dl{padding:0!important;border:0!important;background:none!important;b
 #dl-b .dl-mode{display:flex;width:100%}#dl-b .dl-mode .btn{flex:1;padding:9px 6px;font-size:.9rem}
 .dlx-bar{gap:8px}.dl-tools{top:64px}
 }
+
+.ph{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:26px 30px;border-radius:24px;color:#fff;margin:18px 0 18px;overflow:hidden;background:radial-gradient(800px 260px at 85% -20%,rgba(255,196,120,.5),transparent 60%),linear-gradient(120deg,var(--p1,#B10B32) 0%,var(--p2,#D8332A) 55%,var(--p3,#F26522) 100%);box-shadow:0 24px 50px -24px var(--p1,#B10B32)}
+.ph:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 2px,transparent 2px 22px);pointer-events:none}
+.ph-t{position:relative;max-width:680px}.ph-k{display:inline-block;font:800 .7rem 'Be Vietnam Pro',system-ui,sans-serif;letter-spacing:.14em;background:rgba(255,255,255,.2);padding:5px 12px;border-radius:999px;margin-bottom:8px}
+.ph h2,.ph h1{color:#fff!important;margin:0 0 6px!important;font-size:clamp(1.5rem,3.2vw,2.15rem)!important;line-height:1.15}.ph p{margin:0;color:rgba(255,255,255,.92)!important;line-height:1.55;font-size:.96rem}.ph p b{color:#fff}
+.ph-i{position:relative;flex:none;font-size:4.6rem;line-height:1;filter:drop-shadow(0 10px 14px rgba(0,0,0,.25));animation:dlf 5s ease-in-out infinite}
+@media(max-width:700px){.ph{padding:20px 18px;border-radius:20px}.ph-i{display:none}}
+@media(prefers-reduced-motion:reduce){.ph-i{animation:none}}
 @media(max-width:600px){.dl-cards{grid-template-columns:repeat(2,1fr);gap:10px}.dl-cb{padding:9px 10px 11px}.dl-cb h3{font-size:.9rem}}
 </style>
 <style>
@@ -7756,7 +7764,7 @@ function viewPron() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let mode = 'word', lid = 'all', cur = null, meter = null;
   const pool = () => S.lessons.filter(l => lid === 'all' || l.id === lid).flatMap(l => (l.words || []).map(w => ({ ...w, _lid: l.id })));
-  main.innerHTML = `<img class="rr-lban mt" src="img/speaking.webp" alt="Speaking" loading="lazy"><h2 style="margin:26px 0 6px;font-size:2.2rem">Phòng luyện phát âm AI</h2><p class="muted">Nghe mẫu, đọc to và nhận chẩn đoán lỗi từng âm. Học trọng âm bằng nhịp, nhận biết âm tiết nhấn và kiểm tra bằng bài trắc nghiệm. Dùng Chrome, Edge hoặc Safari và cho phép micro.</p>
+  main.innerHTML = `${phHero('AI PRONUNCIATION','Phòng luyện phát âm AI','Nghe mẫu, đọc to và nhận chẩn đoán lỗi từng âm. Học trọng âm bằng nhịp, nhận biết âm tiết nhấn và kiểm tra bằng bài trắc nghiệm. Dùng Chrome, Edge hoặc Safari và cho phép micro.','🎤',['#5B2BB5','#8E44D6','#E8559A'])}
     <div class="rank-tabs" style="margin-top:14px"><button class="btn sm" data-m="word">Luyện từ</button><button class="btn sm soft" data-m="sent">Luyện câu</button><button class="btn sm soft" data-m="stress">Quiz trọng âm</button><button class="btn sm soft" data-m="tips">Mẹo trọng âm</button></div>
     <div style="margin-top:12px"><select id="p-lesson" class="note" style="max-width:420px"><option value="all">Tất cả bài học</option>${S.lessons.map(l => `<option value="${esc(l.id)}">${esc(l.title)}</option>`).join('')}</select></div>
     <section class="card" id="pr" style="margin:12px 0 18px"></section><section class="card" id="spk" style="margin:0 0 18px"></section><section class="card" id="spl" style="margin:0 0 50px;padding:20px"></section>`;
@@ -8751,7 +8759,7 @@ function viewClasses() {
   const nOn = COURSES.filter(c => isEnrolled(c.id)).length;
   const sel = (id, opts, cur) => `<select id="${id}" class="clg-sel">${opts.map(([k, n]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Lớp học</b></nav>
-    <h2 class="cl-title">Lớp học</h2>
+    ${phHero('LỚP CỦA EM','Lớp học','Vào lớp, làm bài tập, xem điểm và trò chuyện cùng thầy cô, bạn bè.','👩‍🏫',['#0E7C66','#12A37F','#7BC74D'])}
     <div class="clg-hello">Chào mừng${nm ? ', ' + esc(nm) : ''}!</div>
     <section class="cx-hi"><div class="cx-hi-av">${avHTML(S.profile || { name: nm })}</div><div class="cx-hi-t"><b>Chào ${esc(nm || 'em')}!</b><small>${CX.list.length ? 'Em đang ở ' + CX.list.length + ' lớp' + (() => { const a = CX.list.map(clPct).filter(x => x != null); return a.length ? ' · tiến độ trung bình ' + Math.round(a.reduce((x, y) => x + y, 0) / a.length) + '%' : ''; })() : 'Các lớp sẽ hiện ở đây ngay khi thầy cô tạo lớp.'}</small></div><button class="btn soft" data-go="courses">Xem khoá học</button></section>
     ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Chưa có lớp nào được tạo. ' + (S.profile && S.profile.className ? 'Lớp em đăng ký là “' + esc(S.profile.className) + '”. Nhập mật khẩu lớp do cô cung cấp để vào ngay, không cần chờ duyệt.' : 'Khi có mật khẩu lớp do thầy cô cung cấp, em bấm “Tham gia lớp” để vào.') + ' Trong lúc chờ, em vào tab <b>Khoá học</b> để học trước nhé.<br><button class="btn soft" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}
@@ -11817,7 +11825,7 @@ function leagueHTML(all) {
   return `<div class="card lg-box" style="padding:14px 16px;margin-bottom:12px"><div class="lg-h"><b style="font-size:1.05rem">Giải đấu tuần · Hạng ${T}</b><span class="muted" style="font-size:.82rem">Còn ${dd} ngày ${hh} giờ</span></div><p class="muted" style="font-size:.84rem;margin:4px 0 8px">${msg}</p>${out}</div>`;
 }
 function viewRank() {
-  main.innerHTML = `<h2 style="margin:26px 0 12px;font-size:2.2rem">Bảng xếp hạng</h2>
+  main.innerHTML = `${phHero('BẢNG VÀNG','Bảng xếp hạng','Ai đang dẫn đầu tuần này? Học đều mỗi ngày để leo hạng và giữ 🧋 của lớp.','🏆',['#7A1FA2','#C2185B','#F26522'])}
     <div class="rank-tabs"><button class="btn sm ${S.rankFilter === 'all' ? '' : 'soft'}" data-f="all">Toàn trường</button><button class="btn sm ${S.rankFilter === 'class' ? '' : 'soft'}" data-f="class">Lớp của em</button></div>
     <div id="cr-slot"></div><div class="card boba-board" id="bb-board" style="padding:12px 14px;margin-bottom:12px"><div class="loading">Đang tải…</div></div><p class="boba-note">🧋 = Top 1 XP tuần này của lớp. Cuối tuần bạn nào giữ 🧋 sẽ được tặng trà sữa!</p><div class="card" id="rk" style="padding:10px;margin-bottom:50px"><div class="loading">Đang tải…</div></div>`;
   main.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { S.rankFilter = b.dataset.f; viewRank(); });
@@ -12314,6 +12322,7 @@ let _docLib = null; const dlIsExam = t => /(^|[^a-z])(de|test|kiem tra|ktra|thi|
 const dlSize = n => !n ? '' : n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 const dlKind = it => it.f ? 'dir' : /^(pdf)$/.test(it.x) ? 'pdf' : /^(docx?|rtf|txt)$/.test(it.x) ? 'doc' : /^(pptx?)$/.test(it.x) ? 'ppt' : /^(xlsx?)$/.test(it.x) ? 'xls' : /^(mp3|wav|m4a)$/.test(it.x) ? 'aud' : /^(zip|rar|7z)$/.test(it.x) ? 'zip' : /^(png|jpe?g|gif)$/.test(it.x) ? 'img' : 'file';
 const DL_IC = { dir: '📁', pdf: '📕', doc: '📘', ppt: '📙', xls: '📗', aud: '🎧', zip: '🗜️', img: '🖼️', file: '📄' };
+const phHero = (k, t, d, e, c) => `<section class="ph"${c ? ` style="--p1:${c[0]};--p2:${c[1]};--p3:${c[2]}"` : ''}><div class="ph-t"><span class="ph-k">${k}</span><h2>${t}</h2><p>${d}</p></div><div class="ph-i" aria-hidden="true">${e}</div></section>`;
 const DL_CL = { pdf: '#E5383B', doc: '#2563EB', ppt: '#F97316', xls: '#16A34A', aud: '#8B5CF6', zip: '#64748B', img: '#EC4899', file: '#475569' };
 const dlArt = k => {
   if (k === 'dir') return '<svg class="dl-sv" viewBox="0 0 120 96" aria-hidden="true"><defs><linearGradient id="dfa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD66B"/><stop offset="1" stop-color="#FFB02E"/></linearGradient><linearGradient id="dfb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE9A8"/><stop offset="1" stop-color="#FFC857"/></linearGradient></defs><path d="M8 20a8 8 0 0 1 8-8h27l10 10h51a8 8 0 0 1 8 8v8H8z" fill="#E8961A"/><rect x="14" y="26" width="92" height="28" rx="5" fill="#fff" opacity=".9" transform="rotate(-2 60 40)"/><path d="M4 36a8 8 0 0 1 8-8h96a8 8 0 0 1 8 8v44a10 10 0 0 1-10 10H14A10 10 0 0 1 4 80z" fill="url(#dfa)"/><path d="M4 42a8 8 0 0 1 8-8h96a8 8 0 0 1 8 8v4H4z" fill="url(#dfb)" opacity=".7"/></svg>';
@@ -13192,7 +13201,7 @@ function viewNews() {
   const f = S.nfl || 'all', cf = S.ncf || 'all';
   const my = ['all', ...S.enrol.filter(id => courseBy(id))];
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Bảng tin và diễn đàn</b></nav>
-    <h1 class="hm-t">Bảng tin và diễn đàn</h1><p class="muted hm-s">Thông báo của trung tâm và thầy cô, cùng nơi trao đổi bài học với các bạn trong khoá.</p>
+    ${phHero('CỘNG ĐỒNG','Bảng tin và diễn đàn','Thông báo của trung tâm và thầy cô, cùng nơi trao đổi bài học với các bạn trong khoá.','📣',['#0B5CA8','#1976D2','#00A8CC'])}
     <div class="flt" style="margin:0 0 18px"><div class="chips">${[['all', 'Tất cả'], ['announce', 'Thông báo'], ['forum', 'Diễn đàn']].map(([k, n]) => `<button class="fchip ${f === k ? 'on' : ''}" data-nf="${k}">${n}</button>`).join('')}</div>
     <select id="ncf" class="sel" aria-label="Lọc theo khoá"><option value="all">Mọi khoá của em</option>${S.enrol.filter(id => courseBy(id)).map(id => `<option value="${esc(id)}" ${cf === id ? 'selected' : ''}>${esc(cname(id))}</option>`).join('')}</select></div>
     <div id="nlist"></div><div style="height:50px"></div>`;

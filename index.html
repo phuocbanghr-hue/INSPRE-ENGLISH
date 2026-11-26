@@ -12261,7 +12261,7 @@ async function viewDocLib() {
   let view = (function () { try { return localStorage.getItem('dlView') || 'card'; } catch (e) { return 'card'; } })(), mode = S.dlMode || 'doc'; let g = (S.dlGrade && _docLib[S.dlGrade]) ? S.dlGrade : ((S.profile && String(S.profile.className || '').match(/[6-9]/) || ['7'])[0]), kind = 'all', q = '';
   const gMapR = { 6: 'gs6', 7: 'unlock7', 8: 'gs8', 9: 'gs9' }, staff = S.role === 'admin' || S.role === 'teacher';
   const okG = () => { const set = new Set(); (CX.list || []).forEach(c => { const m = /(^|\D)([6-9])(?!\d)/.exec(String(c.name || '')); if (m) set.add(m[2]); }); Object.keys(gMapR).forEach(k => { if (isEnrolled(gMapR[k])) set.add(k); }); return set; };
-  const canG = k => staff || okG().has(String(k));
+  const canG = k => true; // tài liệu mở cho mọi học sinh, không cần vào lớp
   let _again = 0;
   const draw = () => {
     if (!canG(g)) { const f = Object.keys(_docLib).find(canG); if (f) g = f; }

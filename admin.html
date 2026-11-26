@@ -4461,39 +4461,97 @@ function attSummary(c, mem) {
 const SPK_K = [['p', 'PRONUNCIATION'], ['v', 'VOCABULARY'], ['g', 'GRAMMAR'], ['f', 'FLUENCY'], ['c', 'CONFIDENCE']];
 const spkNum = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : Math.max(0, Math.min(20, Math.round(n * 2) / 2)); };
 const spkTot = r => { const a = SPK_K.map(([k]) => spkNum((r || {})[k])); return a.some(x => x == null) ? (a.every(x => x == null) ? '' : a.reduce((t, x) => t + (x || 0), 0)) : a.reduce((t, x) => t + x, 0); };
+const spkNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+let _xlsLib = null;
+const loadXLSX = () => _xlsLib || (_xlsLib = window.XLSX ? Promise.resolve() : new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = ok; s.onerror = () => { _xlsLib = null; no(new Error('Không tải được thư viện đọc Excel. Kiểm tra mạng rồi thử lại.')); }; document.head.appendChild(s); }));
+/* đọc bảng từ file Excel/CSV: tự nhận cột Họ tên, Nickname, 5 tiêu chí, Nhận xét (có hoặc không có dòng tiêu đề) */
+function spkParse(aoa) {
+  const rows = aoa.map(r => (r || []).map(x => String(x == null ? '' : x).trim())).filter(r => r.some(Boolean));
+  const hdI = rows.slice(0, 10).findIndex(r => r.some(x => /full ?name|họ ?và ?tên|họ tên|ho ten|^tên$|^name$/i.test(x)));
+  const col = { name: -1, nick: -1, cm: -1, p: -1, v: -1, g: -1, f: -1, c: -1 };
+  let data;
+  if (hdI >= 0) {
+    rows[hdI].forEach((h, i) => {
+      if (/nick|biệt danh|tên gọi/i.test(h)) col.nick = i; else if (/full ?name|họ ?và ?tên|họ tên|ho ten|^tên$|^name$/i.test(h)) col.name = i;
+      else if (/pronun|phát âm/i.test(h)) col.p = i; else if (/vocab|từ vựng/i.test(h)) col.v = i; else if (/gram|ngữ pháp/i.test(h)) col.g = i;
+      else if (/fluen|lưu loát/i.test(h)) col.f = i; else if (/confid|tự tin/i.test(h)) col.c = i; else if (/comment|nhận xét|ghi chú/i.test(h)) col.cm = i;
+    });
+    data = rows.slice(hdI + 1);
+  } else {
+    const n0 = /^\d+$/.test(rows[0][0] || '') ? 1 : 0; col.name = n0; col.nick = n0 + 1; ['p', 'v', 'g', 'f', 'c'].forEach((k, i) => { col[k] = n0 + 2 + i; }); data = rows;
+  }
+  return data.map(r => { const o = { name: r[col.name] || '', nick: col.nick >= 0 ? (r[col.nick] || '') : '', cm: col.cm >= 0 ? (r[col.cm] || '') : '', sc: {} };
+    ['p', 'v', 'g', 'f', 'c'].forEach(k => { if (col[k] >= 0) { const n = spkNum(r[col[k]]); if (n != null) o.sc[k] = n; } }); return o; })
+    .filter(o => o.name && !/^(full ?name|họ ?và ?tên|no\.?)$/i.test(o.name));
+}
 function cxSpeak(c, el) {
   const list = c.speak || [], mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));
   let cur = list.find(x => x.id === S.spkId) || list[list.length - 1];
   const sel = `<select id="sp-s" class="at-s" style="min-width:200px">${list.map(x => `<option value="${esc(x.id)}" ${cur && x.id === cur.id ? 'selected' : ''}>${esc(x.title)}${x.date ? ' · ' + esc(fmtDue(x.date)) : ''}</option>`).join('')}</select>`;
-  const head = `<div class="card" style="max-width:1100px"><h3>Chấm Speaking</h3><p class="muted" style="margin:0 0 10px">Phiếu chấm như bản giấy: 5 tiêu chí, mỗi tiêu chí tối đa 20 điểm (nhập số lẻ .5 được), tổng tự cộng tối đa 100. Điểm lưu trong dữ liệu của lớp.</p>
+  const head = `<div class="card" style="max-width:1100px"><h3>Chấm Speaking</h3><p class="muted" style="margin:0 0 10px">Phiếu chấm như bản giấy: 5 tiêu chí, mỗi tiêu chí tối đa 20 điểm (nhập số lẻ .5 được), tổng tự cộng tối đa 100. Sửa được họ tên và nickname. Có thể tải file Excel lên để tự điền.</p>
     <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">${list.length ? sel : ''}<button class="btn" id="sp-new">＋ Bài chấm mới</button>${cur ? '<button class="btn soft" id="sp-del">Xoá bài này</button>' : ''}</div></div>`;
   if (!cur) { el.innerHTML = head + '<div class="card empty" style="max-width:1100px;margin-top:14px">Chưa có bài chấm nào. Bấm “Bài chấm mới” (ví dụ Speaking Unit 7).</div>'; }
   else {
     S.spkId = cur.id;
-    const sc = cur.sc || {}, nk = cur.nick || {}, cm = cur.cm || {};
-    const row = (u, i) => { const r = sc[u.id] || {}; return `<tr data-u="${esc(u.id)}"><td>${i + 1}</td><td style="white-space:nowrap"><b>${esc(u.name || 'Học sinh')}</b></td><td><input class="sp-n" value="${esc(nk[u.id] || u.nickname || '')}" style="width:90px"></td>${SPK_K.map(([k]) => `<td><input class="sp-i" data-k="${k}" inputmode="decimal" value="${r[k] == null ? '' : esc(r[k])}" style="width:56px;text-align:center"></td>`).join('')}<td class="sp-t" style="text-align:center;font-weight:800">${spkTot(r)}</td><td><input class="sp-c" value="${esc(cm[u.id] || '')}" style="width:100%;min-width:160px"></td></tr>`; };
-    el.innerHTML = head + `<div class="card" style="max-width:1100px;margin-top:14px"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><label class="field" style="margin:0"><span>Tên bài</span><input id="sp-ti" value="${esc(cur.title)}" style="min-width:220px"></label><label class="field" style="margin:0"><span>Ngày</span><input type="date" id="sp-d" value="${esc(cur.date || '')}"></label><span class="grow"></span><button class="btn soft" id="sp-print">In phiếu</button><button class="btn soft" id="sp-csv">Tải Excel (CSV)</button><button class="btn" id="sp-save">Lưu điểm</button></div>
-      ${mem.length ? `<div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>No.</th><th>Họ và tên</th><th>Nickname</th>${SPK_K.map(([, n]) => `<th style="text-align:center">${n}<br><small>(Max 20)</small></th>`).join('')}<th style="text-align:center">OVERALL<br><small>(Max 100)</small></th><th>COMMENTS</th></tr></thead><tbody>${mem.map(row).join('')}</tbody><tfoot><tr><td></td><td colspan="2"><b>Trung bình lớp</b></td>${SPK_K.map(([k]) => `<td class="sp-a" data-k="${k}" style="text-align:center"></td>`).join('')}<td class="sp-a" data-k="t" style="text-align:center;font-weight:800"></td><td></td></tr></tfoot></table></div>` : '<p class="muted">Lớp chưa có học sinh.</p>'}</div>`;
+    const sc = cur.sc || {}, nk = cur.nick || {}, cm = cur.cm || {}, nm = cur.nm || {}, hide = cur.hide || {}, extra = cur.extra || [];
+    const nHid = mem.filter(u => hide[u.id]).length;
+    const vis = [...mem.filter(u => S.spkAll || !hide[u.id]).map(u => ({ id: u.id, name: u.name || 'Học sinh', nick: u.nickname || '', ex: false })), ...extra.map(e => ({ id: e.id, name: e.name || '', nick: '', ex: true }))];
+    const row = (u, i) => { const r = sc[u.id] || {}, hd = !!hide[u.id]; return `<tr data-u="${esc(u.id)}" ${hd ? 'style="opacity:.5"' : ''}><td>${i + 1}</td><td><input class="sp-nm" value="${esc(nm[u.id] != null ? nm[u.id] : u.name)}" style="width:190px" aria-label="Họ và tên"></td><td><input class="sp-n" value="${esc(nk[u.id] != null ? nk[u.id] : u.nick)}" style="width:100px" aria-label="Nickname"></td>${SPK_K.map(([k]) => `<td><input class="sp-i" data-k="${k}" inputmode="decimal" value="${r[k] == null ? '' : esc(r[k])}" style="width:56px;text-align:center"></td>`).join('')}<td class="sp-t" style="text-align:center;font-weight:800">${spkTot(r)}</td><td><input class="sp-c" value="${esc(cm[u.id] || '')}" style="width:100%;min-width:150px"></td><td><button class="btn soft sm sp-h" type="button" title="${u.ex ? 'Xoá dòng' : hd ? 'Hiện lại' : 'Ẩn khỏi phiếu'}">${u.ex ? 'Xoá' : hd ? 'Hiện' : 'Ẩn'}</button></td></tr>`; };
+    el.innerHTML = head + `<div class="card" style="max-width:1100px;margin-top:14px"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><label class="field" style="margin:0"><span>Tên bài</span><input id="sp-ti" value="${esc(cur.title)}" style="min-width:220px"></label><label class="field" style="margin:0"><span>Ngày</span><input type="date" id="sp-d" value="${esc(cur.date || '')}"></label><span class="grow"></span><button class="btn soft" id="sp-up">Tải file Excel lên</button><input type="file" id="sp-f" accept=".xlsx,.xls,.csv" hidden><button class="btn soft" id="sp-tpl">Tải file mẫu</button><button class="btn soft" id="sp-print">In phiếu</button><button class="btn soft" id="sp-csv">Tải Excel (CSV)</button><button class="btn" id="sp-save">Lưu điểm</button></div>
+      <p class="muted" style="margin:8px 0 0;font-size:.86rem">File Excel/CSV cần có cột <b>Full name</b> (họ tên), tuỳ chọn <b>Nickname</b>, 5 cột điểm và <b>Comments</b>. Hệ thống ghép theo tên (không phân biệt dấu), điền nickname và điểm vào đúng em, tên nào không có trong lớp sẽ được thêm thành dòng mới.</p>
+      <div class="row" style="gap:10px;margin-top:8px;flex-wrap:wrap"><button class="btn soft sm" id="sp-add">＋ Thêm dòng</button>${nHid ? `<button class="btn soft sm" id="sp-all">${S.spkAll ? 'Ẩn lại các tài khoản đã ẩn' : 'Hiện ' + nHid + ' tài khoản đang ẩn'}</button>` : ''}<span class="muted" style="font-size:.86rem">${vis.length} dòng trên phiếu${nHid && !S.spkAll ? ' · ' + nHid + ' đang ẩn' : ''}</span></div>
+      ${vis.length ? `<div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>No.</th><th>Họ và tên</th><th>Nickname</th>${SPK_K.map(([, n]) => `<th style="text-align:center">${n}<br><small>(Max 20)</small></th>`).join('')}<th style="text-align:center">OVERALL<br><small>(Max 100)</small></th><th>COMMENTS</th><th></th></tr></thead><tbody>${vis.map(row).join('')}</tbody><tfoot><tr><td></td><td colspan="2"><b>Trung bình lớp</b></td>${SPK_K.map(([k]) => `<td class="sp-a" data-k="${k}" style="text-align:center"></td>`).join('')}<td class="sp-a" data-k="t" style="text-align:center;font-weight:800"></td><td colspan="2"></td></tr></tfoot></table></div>` : '<p class="muted">Chưa có dòng nào. Tải file Excel lên hoặc bấm “Thêm dòng”.</p>'}</div>`;
     const calc = () => {
       el.querySelectorAll('tr[data-u]').forEach(tr => { const r = {}; tr.querySelectorAll('.sp-i').forEach(i => { r[i.dataset.k] = spkNum(i.value); }); tr.querySelector('.sp-t').textContent = spkTot(r); });
       const avg = a => { const v = a.filter(x => x !== '' && x != null && !isNaN(x)); return v.length ? (v.reduce((t, x) => t + x, 0) / v.length).toFixed(1) : ''; };
-      SPK_K.forEach(([k]) => { el.querySelector('.sp-a[data-k="' + k + '"]').textContent = avg([...el.querySelectorAll('.sp-i[data-k="' + k + '"]')].map(i => spkNum(i.value))); });
-      el.querySelector('.sp-a[data-k="t"]').textContent = avg([...el.querySelectorAll('.sp-t')].map(t => t.textContent === '' ? '' : +t.textContent));
+      SPK_K.forEach(([k]) => { const t = el.querySelector('.sp-a[data-k="' + k + '"]'); if (t) t.textContent = avg([...el.querySelectorAll('.sp-i[data-k="' + k + '"]')].map(i => spkNum(i.value))); });
+      const t = el.querySelector('.sp-a[data-k="t"]'); if (t) t.textContent = avg([...el.querySelectorAll('.sp-t')].map(x => x.textContent === '' ? '' : +x.textContent));
     };
     el.querySelectorAll('.sp-i').forEach(i => { i.oninput = calc; i.onblur = () => { const n = spkNum(i.value); i.value = n == null ? '' : n; calc(); }; });
     calc();
-    const collect = () => { const o = { ...cur, title: el.querySelector('#sp-ti').value.trim() || 'Speaking Test', date: el.querySelector('#sp-d').value || '', sc: {}, nick: {}, cm: {} };
-      el.querySelectorAll('tr[data-u]').forEach(tr => { const id = tr.dataset.u, r = {}; tr.querySelectorAll('.sp-i').forEach(i => { const n = spkNum(i.value); if (n != null) r[i.dataset.k] = n; }); if (Object.keys(r).length) o.sc[id] = r; const nn = tr.querySelector('.sp-n').value.trim(), cc = tr.querySelector('.sp-c').value.trim(); if (nn) o.nick[id] = nn; if (cc) o.cm[id] = cc; }); return o; };
+    const collect = () => { const o = { ...cur, title: el.querySelector('#sp-ti').value.trim() || 'Speaking Test', date: el.querySelector('#sp-d').value || '', sc: { ...(cur.sc || {}) }, nick: { ...(cur.nick || {}) }, cm: { ...(cur.cm || {}) }, nm: { ...(cur.nm || {}) }, hide: { ...(cur.hide || {}) }, extra: (cur.extra || []).map(e => ({ ...e })) };
+      el.querySelectorAll('tr[data-u]').forEach(tr => { const id = tr.dataset.u, r = {}; tr.querySelectorAll('.sp-i').forEach(i => { const n = spkNum(i.value); if (n != null) r[i.dataset.k] = n; });
+        if (Object.keys(r).length) o.sc[id] = r; else delete o.sc[id];
+        const nn = tr.querySelector('.sp-n').value.trim(), cc = tr.querySelector('.sp-c').value.trim(), na = tr.querySelector('.sp-nm').value.trim();
+        if (nn) o.nick[id] = nn; else delete o.nick[id]; if (cc) o.cm[id] = cc; else delete o.cm[id];
+        const ex = o.extra.find(e => e.id === id); if (ex) ex.name = na; else { const u = mem.find(x => x.id === id); if (u && na && na !== (u.name || '')) o.nm[id] = na; else delete o.nm[id]; } });
+      return o; };
     const put = o => saveClass(c, { speak: (c.speak || []).map(x => x.id === o.id ? o : x) });
+    const rowsOf = o => [...mem.filter(u => !(o.hide || {})[u.id]).map(u => ({ id: u.id, name: (o.nm || {})[u.id] || u.name || '' })), ...(o.extra || []).map(e => ({ id: e.id, name: e.name }))];
+    const nickOf = (o, id) => (o.nick || {})[id] != null ? o.nick[id] : ((mem.find(u => u.id === id) || {}).nickname || '');
     el.querySelector('#sp-save').onclick = async () => { const b = el.querySelector('#sp-save'); b.disabled = true; try { await put(collect()); toast('Đã lưu điểm Speaking.'); } catch (er) { toast(er.message, 'bad'); } finally { b.disabled = false; } };
-    el.querySelector('#sp-csv').onclick = () => { const o = collect(); const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; dlFile('speaking-' + (c.name || 'lop').replace(/[^\w-]+/g, '_') + '.csv', '﻿' + [['No.', 'Họ và tên', 'Nickname', ...SPK_K.map(x => x[1]), 'OVERALL', 'COMMENTS'], ...mem.map((u, i) => { const r = o.sc[u.id] || {}; return [i + 1, u.name || '', o.nick[u.id] || '', ...SPK_K.map(([k]) => r[k] == null ? '' : r[k]), spkTot(r), o.cm[u.id] || '']; })].map(r => r.map(q).join(',')).join('\n'), 'text/csv;charset=utf-8'); };
+    el.querySelector('#sp-csv').onclick = () => { const o = collect(); const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; dlFile('speaking-' + (c.name || 'lop').replace(/[^\w-]+/g, '_') + '.csv', '﻿' + [['No.', 'Full name', 'Nickname', ...SPK_K.map(x => x[1]), 'OVERALL', 'Comments'], ...rowsOf(o).map((u, i) => { const r = o.sc[u.id] || {}; return [i + 1, u.name, nickOf(o, u.id), ...SPK_K.map(([k]) => r[k] == null ? '' : r[k]), spkTot(r), o.cm[u.id] || '']; })].map(r => r.map(q).join(',')).join('\n'), 'text/csv;charset=utf-8'); };
+    el.querySelector('#sp-tpl').onclick = () => { const o = collect(), q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; dlFile('mau-speaking.csv', '﻿' + [['No.', 'Full name', 'Nickname', ...SPK_K.map(x => x[1]), 'Comments'], ...rowsOf(o).map((u, i) => [i + 1, u.name, nickOf(o, u.id), '', '', '', '', '', ''])].map(r => r.map(q).join(',')).join('\n'), 'text/csv;charset=utf-8'); };
     el.querySelector('#sp-print').onclick = () => { const o = collect(), w = window.open('', '_blank'); if (!w) return toast('Trình duyệt chặn cửa sổ in.', 'bad');
-      w.document.write('<title>Speaking - ' + esc(c.name) + '</title><body style="font-family:Arial,sans-serif;margin:24px;color:#111"><div style="text-align:center"><b style="font-size:20px">INSPIRE ENGLISH</b><br><b>ASSESSMENT FORM FOR SPEAKING TEST</b><br>Class: ' + esc(c.name) + (o.title ? ' · ' + esc(o.title) : '') + (o.date ? ' · ' + esc(fmtDue(o.date)) : '') + '</div><table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:13px" border="1" cellpadding="6"><tr style="background:#eee"><th>No.</th><th>Full name</th><th>Nickname</th>' + SPK_K.map(x => '<th>' + x[1] + '<br>(Max: 20)</th>').join('') + '<th>OVERALL<br>(Max: 100)</th><th>COMMENTS</th></tr>' + mem.map((u, i) => { const r = o.sc[u.id] || {}; return '<tr><td align="center">' + (i + 1) + '</td><td>' + esc(u.name || '') + '</td><td>' + esc(o.nick[u.id] || '') + '</td>' + SPK_K.map(([k]) => '<td align="center">' + (r[k] == null ? '' : r[k]) + '</td>').join('') + '<td align="center"><b>' + spkTot(r) + '</b></td><td>' + esc(o.cm[u.id] || '') + '</td></tr>'; }).join('') + '</table></body>'); w.document.close(); setTimeout(() => w.print(), 300); };
-    const sl = el.querySelector('#sp-s'); if (sl) sl.onchange = () => { S.spkId = sl.value; cxSpeak(c, el); };
+      w.document.write('<title>Speaking - ' + esc(c.name) + '</title><body style="font-family:Arial,sans-serif;margin:24px;color:#111"><div style="text-align:center"><b style="font-size:20px">INSPIRE ENGLISH</b><br><b>ASSESSMENT FORM FOR SPEAKING TEST</b><br>Class: ' + esc(c.name) + (o.title ? ' · ' + esc(o.title) : '') + (o.date ? ' · ' + esc(fmtDue(o.date)) : '') + '</div><table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:13px" border="1" cellpadding="6"><tr style="background:#eee"><th>No.</th><th>Full name</th><th>Nickname</th>' + SPK_K.map(x => '<th>' + x[1] + '<br>(Max: 20)</th>').join('') + '<th>OVERALL<br>(Max: 100)</th><th>COMMENTS</th></tr>' + rowsOf(o).map((u, i) => { const r = o.sc[u.id] || {}; return '<tr><td align="center">' + (i + 1) + '</td><td>' + esc(u.name) + '</td><td>' + esc(nickOf(o, u.id)) + '</td>' + SPK_K.map(([k]) => '<td align="center">' + (r[k] == null ? '' : r[k]) + '</td>').join('') + '<td align="center"><b>' + spkTot(r) + '</b></td><td>' + esc(o.cm[u.id] || '') + '</td></tr>'; }).join('') + '</table></body>'); w.document.close(); setTimeout(() => w.print(), 300); };
+    const sl = el.querySelector('#sp-s'); if (sl) sl.onchange = () => { S.spkId = sl.value; S.spkAll = false; cxSpeak(c, el); };
     el.querySelector('#sp-del').onclick = async () => { if (!confirm('Xoá bài chấm “' + cur.title + '” và toàn bộ điểm?')) return; try { await saveClass(c, { speak: list.filter(x => x.id !== cur.id) }); S.spkId = ''; toast('Đã xoá.'); } catch (er) { toast(er.message, 'bad'); } };
-    el.querySelector('#sp-ti').onchange = () => { };
+    el.querySelector('#sp-add').onclick = async () => { const o = collect(); o.extra.push({ id: 'x' + Date.now().toString(36), name: '' }); try { await put(o); } catch (er) { toast(er.message, 'bad'); } };
+    const al = el.querySelector('#sp-all'); if (al) al.onclick = () => { S.spkAll = !S.spkAll; cxSpeak(c, el); };
+    el.querySelectorAll('.sp-h').forEach(b => b.onclick = async () => { const tr = b.closest('tr'), id = tr.dataset.u, o = collect(), ex = o.extra.findIndex(e => e.id === id);
+      if (ex >= 0) { o.extra.splice(ex, 1); delete o.sc[id]; delete o.nick[id]; delete o.cm[id]; } else if (o.hide[id]) delete o.hide[id]; else o.hide[id] = 1;
+      try { await put(o); } catch (er) { toast(er.message, 'bad'); } });
+    el.querySelector('#sp-up').onclick = () => el.querySelector('#sp-f').click();
+    el.querySelector('#sp-f').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try {
+        await loadXLSX(); const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' }), ws = wb.Sheets[wb.SheetNames[0]];
+        const F = spkParse(window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }));
+        if (!F.length) return toast('Không đọc được dòng nào. File cần có cột Full name (họ tên).', 'bad');
+        const o = collect(), used = new Set(), match = new Set(); let nOk = 0, nNew = 0;
+        const cand = mem.map(u => ({ u, keys: [...new Set([spkNorm(u.name), ...String(u.name || '').split(/\s[-–]\s/).map(spkNorm), spkNorm((o.nm || {})[u.id]), spkNorm(u.nickname), spkNorm((o.nick || {})[u.id])].filter(Boolean))] }));
+        const find = (n, nk) => { const a = spkNorm(n), b = spkNorm(nk); if (!a) return null; const free = cand.filter(x => !used.has(x.u.id));
+          return free.find(x => x.keys.includes(a)) || free.find(x => a.length >= 4 && x.keys.some(k => k.length >= 4 && (k.includes(a) || a.includes(k)))) || (b && free.find(x => x.keys.includes(b))) || null; };
+        F.forEach(r => { const m = find(r.name, r.nick); let id;
+          if (m) { id = m.u.id; used.add(id); nOk++; delete o.nm[id]; if (r.name && !m.keys.includes(spkNorm(r.name))) o.nm[id] = r.name; }
+          else { const ex = o.extra.find(e => spkNorm(e.name) === spkNorm(r.name)); if (ex) id = ex.id; else { id = 'x' + Date.now().toString(36) + o.extra.length; o.extra.push({ id, name: r.name }); nNew++; } }
+          match.add(id); if (r.nick) o.nick[id] = r.nick; if (r.cm) o.cm[id] = r.cm; if (Object.keys(r.sc).length) o.sc[id] = { ...(o.sc[id] || {}), ...r.sc }; });
+        let nH = 0; mem.forEach(u => { if (!match.has(u.id)) { if (!o.hide[u.id]) nH++; o.hide[u.id] = 1; } else delete o.hide[u.id]; });
+        o.extra = o.extra.filter(e => match.has(e.id) || (o.sc[e.id] && Object.keys(o.sc[e.id]).length));
+        S.spkAll = false; await put(o);
+        toast('Đã điền ' + F.length + ' dòng: ' + nOk + ' khớp với học sinh trong lớp' + (nNew ? ', ' + nNew + ' thêm mới (chưa có trong lớp)' : '') + (nH ? ', đã ẩn ' + nH + ' tài khoản không có trong file' : '') + '.');
+      } catch (er) { toast(er.message || 'Không đọc được file.', 'bad'); } };
   }
-  el.querySelector('#sp-new').onclick = async () => { const t = (prompt('Tên bài chấm Speaking (ví dụ: Speaking Unit 7)', 'Speaking Test') || '').trim(); if (!t) return; const o = { id: 'sp' + Date.now().toString(36), title: t, date: todayStr(), sc: {}, nick: {}, cm: {} }; try { await saveClass(c, { speak: [...(c.speak || []), o] }); S.spkId = o.id; toast('Đã tạo bài chấm.'); } catch (er) { toast(er.message, 'bad'); } };
+  el.querySelector('#sp-new').onclick = async () => { const t = (prompt('Tên bài chấm Speaking (ví dụ: Speaking Unit 7)', 'Speaking Test') || '').trim(); if (!t) return; const o = { id: 'sp' + Date.now().toString(36), title: t, date: todayStr(), sc: {}, nick: {}, cm: {}, nm: {}, hide: {}, extra: [] }; try { await saveClass(c, { speak: [...(c.speak || []), o] }); S.spkId = o.id; S.spkAll = false; toast('Đã tạo bài chấm.'); } catch (er) { toast(er.message, 'bad'); } };
 }
 function cxAtt(c, el) {
   const date = S.attDate || todayStr(), mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));

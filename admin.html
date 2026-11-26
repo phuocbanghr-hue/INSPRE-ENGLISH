@@ -5756,9 +5756,9 @@ const crHTML = lvHTML + (CR.length ? sumHTML + pwHTML + `<h3 style="margin:18px 
     const cd = e.target.closest('[data-crdel]'); if (cd) { try { await api.del('artworks', cd.dataset.crdel); toast('Đã xoá.'); } catch (er) { toast(er.message, 'bad'); } return; }
     const sv = e.target.closest('[data-spsave]'), sd = e.target.closest('[data-spdel]');
     if (sv || sd) { const k = (sv || sd).dataset.spsave || (sv || sd).dataset.spdel, L = G[k]; if (!L) return;
-      if (sd) { if (!confirm('Xoá bài nói này của học sinh?')) return; try { await Promise.all(L.map(d => api.del('artworks', d.id))); toast('Đã xoá bài nói.'); } catch (er) { toast(er.message, 'bad'); } return; }
+      if (sd) { if (!confirm('Xoá bài nói này của học sinh?')) return; try { await Promise.all([...L.map(d => api.del('artworks', d.id)), api.del('artworks', 'spkscore_' + k).catch(() => 0)]); toast('Đã xoá bài nói.'); } catch (er) { toast(er.message, 'bad'); } return; }
       const card = sv.closest('[data-spg]'), score = +card.querySelector('[data-spsc]').value, fb = card.querySelector('[data-spfb]').value.trim();
-      try { await Promise.all(L.map(d => api.update('artworks', d.id, { score, fb, gradedAt: Date.now() }))); toast('Đã lưu điểm cho ' + (L[0].name || 'học sinh') + '.'); } catch (er) { toast(er.message, 'bad'); } return; }
+      try { await Promise.all(L.map(d => api.update('artworks', d.id, { score, fb, gradedAt: Date.now() }))); await api.set('artworks', 'spkscore_' + k, { kind: 'spkscore', uid: L[0].uid, name: L[0].name || 'Học sinh', className: L[0].className || '', levelName: L[0].levelName || '', score, fb, atMs: L[0].atMs || Date.now(), gradedAt: Date.now() }).catch(er => console.warn('spkscore', er)); toast('Đã lưu điểm cho ' + (L[0].name || 'học sinh') + '.'); } catch (er) { toast(er.message, 'bad'); } return; }
     const b = e.target.closest('[data-artdel]'); if (!b) return;
     if (!confirm('Xoá tranh này? Học sinh sẽ không còn thấy tranh.')) return;
     try { await api.del('artworks', b.dataset.artdel); toast('Đã xoá tranh.'); } catch (er) { toast(er.message, 'bad'); }

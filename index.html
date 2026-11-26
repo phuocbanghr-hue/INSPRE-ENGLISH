@@ -7923,6 +7923,7 @@ if (MODE === 'firebase' && FB) {
     watchArt: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'artworks'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error('art', e); cb([]); }),
     submitSpk: (id, d) => FB.setDoc(FB.doc(db, 'artworks', id), { kind: 'speaking', uid: S.user.uid, atMs: Date.now(), ...d }),
     submitCam: (id, d) => FB.setDoc(FB.doc(db, 'artworks', id), { kind: 'camres', uid: S.user.uid, atMs: Date.now(), ...d }),
+    classSpk: c => FB.getDocs(FB.query(FB.collection(db, 'artworks'), FB.where('kind', '==', 'spkscore'), FB.where('className', '==', c.name || ''))).then(q => q.docs.map(d => ({ id: d.id, ...d.data() }))),
     mySpk: () => FB.getDocs(FB.query(FB.collection(db, 'artworks'), FB.where('uid', '==', S.user.uid), FB.where('kind', '==', 'speaking'))).then(q => q.docs.map(d => ({ id: d.id, ...d.data() }))),
     submitArt: (cid, bid, qi, d) => FB.setDoc(FB.doc(db, 'artworks', cid + '_' + bid + '_' + qi + '_' + S.user.uid), { classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }),
     watchKudos: (c, cb) => FB.onSnapshot(FB.query(FB.collection(db, 'kudos'), FB.where('classId', '==', c.id)), s => cb(s.docs.map(d => d.data())), e => { console.error('kudos', e); cb([]); }),
@@ -7983,6 +7984,7 @@ if (MODE === 'firebase' && FB) {
     watchArt: (c, cb) => { ART_L.push(cb); setTimeout(() => cb(cpy(ART_D)), 0); return () => { const i = ART_L.indexOf(cb); if (i >= 0) ART_L.splice(i, 1); }; },
     submitCam: async (id, d) => { const r = { id, kind: 'camres', uid: S.user.uid, atMs: Date.now(), ...d }; ART_D.push(r); ART_L.forEach(f => f(cpy(ART_D))); },
     submitSpk: async (id, d) => { const r = { id, kind: 'speaking', uid: S.user.uid, atMs: Date.now(), ...d }, k = ART_D.findIndex(v => v.id === id); if (k >= 0) ART_D[k] = r; else ART_D.push(r); ART_L.forEach(f => f(cpy(ART_D))); },
+    classSpk: async () => [],
     mySpk: async () => cpy(ART_D.filter(a => a.kind === 'speaking' && a.uid === S.user.uid)),
     submitArt: async (cid, bid, qi, d) => { const id = cid + '_' + bid + '_' + qi + '_' + S.user.uid, r = { id, classId: cid, bankId: bid, qi, uid: S.user.uid, name: d.name, png: d.png, base: d.base, prompt: d.prompt, atMs: Date.now() }, k = ART_D.findIndex(v => v.id === id); if (k >= 0) ART_D[k] = r; else ART_D.push(r); ART_L.forEach(f => f(cpy(ART_D))); },
     watchClassmates: (c, cb) => { setTimeout(() => cb([{ id: S.user.uid, name: myName(), xp: (S.profile || {}).xp || 0, streak: (S.profile || {}).streak || 0 }, { id: 'm1', name: 'Kelvin', xp: 320, streak: 4 }, { id: 'm2', name: 'Nick', xp: 540, streak: 1 }]), 0); return () => { }; },
@@ -8854,7 +8856,7 @@ function drawClassTab(c) {
   else if (CX.tab === 'arena') { window.__arLock = true; el.innerHTML = cxlArena(c); mountArena(c); }
   else if (CX.tab === 'listen') el.innerHTML = cxlListen(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
-  else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
+  else if (CX.tab === 'grades') { el.innerHTML = cxlGrades(c); cxlSpkLoad(c); }
   else cxlChat(c, el);
 }
 async function mountCYT(it) {
@@ -8975,18 +8977,26 @@ function cxlPeople(c) {
   return `<section class="card"><h3>Giáo viên</h3>${Object.values(c.teacherNames || {}).map(n => `<div class="cxl-p"><span class="cxl-av t">${esc(inic(n))}</span><b>${esc(n)}</b><span class="tg tk">Giáo viên</span></div>`).join('') || '<p class="muted">Chưa có.</p>'}</section>
     <section class="card" style="margin-top:16px"><h3>Bạn cùng lớp (${ids.length})</h3><div class="cxl-ppl">${ids.map(id => { const n = (c.names || {})[id] || 'Học sinh'; return `<div class="cxl-p"><span class="cxl-av">${esc(inic(n))}</span><b>${esc(n)}${id === me ? ' (em)' : ''}</b>${id !== me ? `<button class="btn soft sm" data-dm="${esc(id)}">Nhắn tin</button>` : ''}</div>`; }).join('')}</div></section>`;
 }
+async function cxlSpkLoad(c) {
+  const box = () => $('#gr-spk'); if (!box()) return;
+  try {
+    const mem = new Set(c.members || []), L = (await api.classSpk(c)).filter(d => mem.has(d.uid) && d.score != null).sort((a, b) => (b.gradedAt || b.atMs || 0) - (a.gradedAt || a.atMs || 0)), me = S.user.uid;
+    if (!box()) return;
+    box().innerHTML = `<div class="gr-card" style="margin-top:16px"><h3 style="margin:14px 16px 4px">Điểm Speaking của cả lớp</h3><p class="muted" style="margin:0 16px 8px">Cả lớp cùng xem điểm Speaking để học hỏi nhau. Điểm tối đa 5 khiên.</p>` + (L.length ? `<table class="gr-tb"><thead><tr><th>Học sinh</th><th>Bài</th><th>Điểm</th><th>Nhận xét</th><th>Ngày</th></tr></thead><tbody>${L.map(d => `<tr${d.uid === me ? ' style="font-weight:700"' : ''}><td>${esc(d.name || 'Học sinh')}${d.uid === me ? ' (em)' : ''}</td><td>${esc(d.levelName || '')}</td><td>${typeof camShieldsHTML === 'function' ? camShieldsHTML(+d.score) : ''} ${+d.score}/5</td><td>${esc(d.fb || '–')}</td><td>${d.atMs ? new Date(d.atMs).toLocaleDateString('vi-VN') : '–'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted" style="margin:0 16px 14px">Chưa có bài Speaking nào được chấm.</p>') + '</div>';
+  } catch (e) { console.warn('classSpk', e); const b = box(); if (b) b.innerHTML = '<p class="muted">Chưa tải được điểm Speaking của lớp.</p>'; }
+}
 function cxlGrades(c) {
   const P = S.profile || {}, B = (S.banks || []).filter(b => b.classId === c.id);
   const ini = String(P.name || 'E').trim().charAt(0).toUpperCase();
   const pill = v => v == null ? '<span class="gs none">–</span>' : `<span class="gs ${v >= 80 ? 'hi' : v >= 50 ? 'mid' : 'lo'}">${v}%</span>`;
   const head = `<div class="gr-head"><span class="gr-av">${esc(ini)}</span><h3>${esc(P.name || 'Học sinh')}</h3></div>`;
-  if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div></section>`;
+  if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div><div id="gr-spk"></div></section>`;
   const rows = B.map(b => { const v = (P.bankbest || {})[b.id], at = (P.bankat || {})[b.id], n = (P.bankatt || {})[b.id] || (v != null ? 1 : 0);
     return `<tr><td class="gr-name"><span class="gr-ic">▸</span>${esc(b.title)}</td><td>${pill(v)}</td><td>${n}</td><td>${at ? new Date(at).toLocaleDateString('vi-VN') : '–'}</td></tr>`; }).join('');
   const vals = B.map(b => (P.bankbest || {})[b.id]).filter(v => v != null), avg = vals.length ? Math.round(vals.reduce((x, y) => x + y, 0) / vals.length) : null, top = vals.length ? Math.max(...vals) : null;
   const tiles = `<div class="gr-sum"><div><b>${avg == null ? '–' : avg + '%'}</b><small>Điểm trung bình</small></div><div><b>${top == null ? '–' : top + '%'}</b><small>Điểm cao nhất</small></div><div><b>${vals.length}/${B.length}</b><small>Bài đã làm</small></div></div><div class="gr-bars" aria-hidden="true">${B.map(b => { const v = (P.bankbest || {})[b.id]; return `<i title="${esc(b.title)}: ${v == null ? 'chưa làm' : v + '%'}" class="${v == null ? 'n' : v >= 80 ? 'hi' : v >= 50 ? 'mid' : 'lo'}" style="height:${v == null ? 6 : Math.max(8, v)}%"></i>`; }).join('')}</div>`;
   return `<section class="gr"><h2 class="gr-t">Điểm số của em</h2>${head}${tiles}
-    <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+    <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div><div id="gr-spk"></div></section>`;
 }
 
 /* ----- chat lớp + nhắn riêng ----- */

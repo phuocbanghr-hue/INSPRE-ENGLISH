@@ -1423,7 +1423,6 @@ body:has(.rm-paper){background:#E4E7EB}
 .rm-rev{border-radius:2px}
 .rm-sr{flex-wrap:wrap}.rm-sr .rm-n{flex:none}
 main.wrap:has(>.card.dl){max-width:none;padding-left:clamp(12px,2.5vw,40px);padding-right:clamp(12px,2.5vw,40px)}.dl-tools #dl-q{flex:1;min-width:0}.dl-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.dl-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-main>.card.mt.dl .dlg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:6px 0 20px}.dlg-t{position:relative;text-align:left;background:#fff;border:1px solid var(--line,#d9e2ec);border-radius:14px;padding:16px 16px 14px;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:4px;transition:transform .15s,box-shadow .15s}.dlg-t:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(0,0,0,.35);border-color:var(--brand,#BE1A2F)}.dlg-f{width:42px;height:30px;background:#F6B93B;border-radius:4px 8px 8px 8px;position:relative;margin-bottom:6px}.dlg-f:before{content:'';position:absolute;left:0;top:-6px;width:18px;height:8px;background:#F6B93B;border-radius:4px 4px 0 0}.dlg-t b{font-size:1rem}.dlg-t small{color:var(--brand,#BE1A2F);font-weight:700}.dlg-t em{font-style:normal;color:#6b7280;font-size:.78rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.dlg-bc{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
 main>.card.mt.dl{max-width:none;width:auto;margin:16px 0 40px;text-align:left}
 .dl-tools input{flex:1;min-width:200px;padding:10px 14px;border:1.5px solid var(--line,#d9e2ec);border-radius:10px;font:inherit}
 .dl-chips{display:flex;gap:6px;flex-wrap:wrap}.dl-chips .chip{border:1px solid var(--line,#d9e2ec);background:#fff;border-radius:99px;padding:6px 12px;cursor:pointer;font:inherit;font-size:.85rem}.dl-chips .chip.on{background:#2f6fed;color:#fff;border-color:#2f6fed}
@@ -12260,22 +12259,6 @@ const DL_IC = { dir: '📁', pdf: '📕', doc: '📘', ppt: '📙', xls: '📗',
 const DL_LB = { all: 'Tất cả', dir: 'Thư mục', pdf: 'PDF', doc: 'Word', aud: 'Âm thanh', zip: 'File nén' };
 const dlNorm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
 function dlTag(it) { const t = dlNorm(it.t); return /vao 10|vao lop 10|tuyen sinh/.test(t) ? ['Thi vào lớp 10', '#e11d48'] : /hsg|hoc sinh gioi|chuyen anh|hung bien/.test(t) ? ['Học sinh giỏi', '#7c3aed'] : /nghe|listening|audio|mp3/.test(t) || /^(mp3|wav|m4a)$/.test(it.x) ? ['Luyện nghe', '#0891b2'] : /ngu phap|grammar|tu vung|vocab/.test(t) ? ['Ngữ pháp · Từ vựng', '#16a34a'] : /giao an|ppt|powerpoint|bai giang/.test(t) || /^pptx?$/.test(it.x) ? ['Giáo án · Bài giảng', '#d97706'] : dlIsExam(it.t) ? ['Đề thi · Kiểm tra', '#2563eb'] : /bai tap|btbt|exercise|practice/.test(t) ? ['Bài tập', '#0d9488'] : ['Tài liệu', '#64748b']; }
-const DL_GRP = [
-  ['gv', 'Giáo án & bài giảng', /giao an|ke hoach|tap huan|5512|bai giang|\bppt\b|dien tu|mind ?map/],
-  ['v10', 'Thi vào lớp 10', /vao 10|vao lop 10|tuyen sinh/],
-  ['hsg', 'Học sinh giỏi & chuyên', /hsg|hoc sinh gioi|chuyen anh|hung bien|boi duong|bd hs|chuyen sau/],
-  ['nn', 'Nghe & Nói', /nghe|listening|audio|mp3|speaking|noi\b|thuyet trinh|phat am|video/],
-  ['vt', 'Từ vựng', /tu vung|vocab|word ?form|tuvung|ngu am/],
-  ['np', 'Ngữ pháp', /ngu phap|grammar/],
-  ['dc', 'Đề cương & ôn tập', /de cuong|on tap|revision|on thi|on he|ky nang/],
-  ['dt', 'Đề kiểm tra & đề thi', /(^|[^a-z])(de|test|tests|kiem tra|ktra|thi|exam|key|dap an|midterm|final)([^a-z]|$)|giua (ki|ky|hk)|cuoi (ki|ky|hk)|bo de|hk ?(i|1|2|ii)\b|practice/],
-  ['bt', 'Bài tập & chuyên đề', /bai tap|btbt|bt |bo tro|phieu|chuyen de|day them|tang cuong|chinh phuc|nang cao|luyen|workbook|sbt|mlh/],
-  ['sh', 'Sách & tài liệu chung', /sach|student|book|tong hop|em hoc gioi|lam chu/]
-];
-const dlGrp = it => { const t = dlNorm(it.t); const g = DL_GRP.find(x => x[2].test(t)); return g ? g[0] : 'kh'; };
-const dlTerm = it => { const t = dlNorm(it.t), m = /(^|[^a-z0-9])(giua (ki|ky|hk|hoc ki|hoc ky) ?(2|ii)|gk ?2|mid ?term ?2|mid ?2)/.test(t) ? 'g2' : /giua (ki|ky|hk|hoc ki|hoc ky) ?(1|i)\b|gk ?1|mid ?term ?1/.test(t) ? 'g1' : /(hk|ki|ky|hoc ki|hoc ky|cuoi ki|cuoi ky) ?(2|ii)\b|hk2|\bhkii\b|ky 2|ki 2/.test(t) ? 'k2' : /(hk|ki|ky|hoc ki|hoc ky|cuoi ki|cuoi ky) ?(1|i)\b|hk1|\bhki\b|ky 1|ki 1/.test(t) ? 'k1' : 'o'; return m; };
-const DL_TERM = { g1: 'Giữa kì 1', k1: 'Học kì 1', g2: 'Giữa kì 2', k2: 'Học kì 2', o: 'Khác' };
-const dlGrpName = k => (DL_GRP.find(x => x[0] === k) || [0, 'Tài liệu khác'])[1];
 function dlCard(it) {
   const k = dlKind(it), tg = dlTag(it), isNew = false, th = it.f ? '' : `<img src="https://drive.google.com/thumbnail?id=${it.i}&sz=w480" alt="" loading="lazy" onerror="this.remove()">`;
   return `<article class="dl-cd" data-view="${it.i}" tabindex="0" role="button"><div class="dl-th" style="--c:${tg[1]}"><span class="dl-tg" style="color:${tg[1]}">${tg[0]}</span><span class="dl-bi">${DL_IC[k]}</span>${th}</div><div class="dl-cb"><h3>${esc(it.t)}</h3><p>${it.f ? 'Thư mục tài liệu' : (it.x || 'file').toUpperCase() + (it.s ? ' · ' + dlSize(it.s) : '')}</p><small>${k === 'dir' ? 'Thư mục' : k === 'aud' ? 'File nghe' : dlIsExam(it.t) ? 'Đề thi – kiểm tra' : 'Tài liệu'}</small></div></article>`;
@@ -12283,7 +12266,7 @@ function dlCard(it) {
 async function viewDocLib() {
   main.innerHTML = `<section class="card mt dl"><h2>Tài liệu &amp; đề thi</h2><p class="muted"><b>Kho tài liệu</b>: sách, bài tập, giáo án. <b>Ngân hàng đề thi</b>: đề kiểm tra, đề cương, đề HSG và đáp án. Tài liệu giáo viên dùng để in và học sinh tham khảo, chia theo từng khối lớp. Bấm <b>Xem</b> để đọc ngay trên màn hình. Muốn dùng để in, bấm <b>Header</b> để chèn khung đầu trang/chân trang của trung tâm rồi tải về.</p><div id="dl-b"><p class="muted">Đang tải danh sách…</p></div></section><div style="height:50px"></div>`;
   if (!_docLib) { try { _docLib = await (await fetch('docs/kho-tai-lieu.json', { cache: 'no-cache' })).json(); } catch (e) { $('#dl-b').innerHTML = '<p class="muted">Không tải được danh sách tài liệu. Em thử tải lại trang nhé.</p>'; return; } }
-  let view = (function () { try { return localStorage.getItem('dlView') || 'card'; } catch (e) { return 'card'; } })(), mode = S.dlMode || 'doc'; let g = (S.dlGrade && _docLib[S.dlGrade]) ? S.dlGrade : ((S.profile && String(S.profile.className || '').match(/[6-9]/) || ['7'])[0]), kind = 'all', q = '', grp = '', term = '';
+  let view = (function () { try { return localStorage.getItem('dlView') || 'card'; } catch (e) { return 'card'; } })(), mode = S.dlMode || 'doc'; let g = (S.dlGrade && _docLib[S.dlGrade]) ? S.dlGrade : ((S.profile && String(S.profile.className || '').match(/[6-9]/) || ['7'])[0]), kind = 'all', q = '';
   const gMapR = { 6: 'gs6', 7: 'unlock7', 8: 'gs8', 9: 'gs9' }, staff = S.role === 'admin' || S.role === 'teacher';
   const okG = () => { const set = new Set(); (CX.list || []).forEach(c => { const m = /(^|\D)([6-9])(?!\d)/.exec(String(c.name || '')); if (m) set.add(m[2]); }); Object.keys(gMapR).forEach(k => { if (isEnrolled(gMapR[k])) set.add(k); }); return set; };
   const canG = k => true; // tài liệu mở cho mọi học sinh, không cần vào lớp
@@ -12291,30 +12274,19 @@ async function viewDocLib() {
   const draw = () => {
     if (!canG(g)) { const f = Object.keys(_docLib).find(canG); if (f) g = f; }
     if (!canG(g)) { $('#dl-b').innerHTML = `<div class="dl-tabs">${Object.keys(_docLib).map(k => `<button class="btn soft dl-lock" data-lock="${k}"><img class="dl-lk" src="img/lock.webp" alt="" width="18" height="24">Lớp ${k}</button>`).join('')}</div><div class="empty" style="margin:16px 0"><img src="img/lock.webp" alt="" width="96" height="131" style="margin-bottom:6px"><p><b>Em chưa tham gia lớp nào.</b></p><p class="muted">Tham gia lớp bằng mật khẩu của giáo viên để mở tài liệu và đề thi của khối lớp đó.</p><button class="btn" id="dl-join">Tham gia lớp</button></div>`; $$('[data-lock]', $('#dl-b')).forEach(b => b.onclick = () => askClassKey('Tham gia lớp ' + b.dataset.lock + ' để mở tài liệu.')); const jb = $('#dl-join'); if (jb) jb.onclick = () => askClassKey(''); if (!_again) { _again = 1; setTimeout(() => { if ($('#dl-b')) draw(); }, 1500); } return; }
-    const D0 = _docLib[g], D = { ...D0, items: D0.items.filter(it => (mode === 'exam') === dlIsExam(it.t)) }, L = D.items.filter(it => (kind === 'all' || dlKind(it) === kind) && (q ? norm(it.t).includes(norm(q)) : ((!grp || dlGrp(it) === grp) && (!term || dlTerm(it) === term))));
+    const D0 = _docLib[g], D = { ...D0, items: D0.items.filter(it => (mode === 'exam') === dlIsExam(it.t)) }, L = D.items.filter(it => (kind === 'all' || dlKind(it) === kind) && (!q || norm(it.t).includes(norm(q))));
     const kinds = ['all', ...['dir', 'pdf', 'doc', 'aud', 'zip'].filter(k => D.items.some(it => dlKind(it) === k))];
     $('#dl-b').innerHTML = `<div class="dl-tabs dl-mode"><button class="btn ${mode === 'doc' ? '' : 'soft'}" data-m="doc">Kho tài liệu</button><button class="btn ${mode === 'exam' ? '' : 'soft'}" data-m="exam">Ngân hàng đề thi</button></div><div class="dl-tabs">${Object.keys(_docLib).map(k => canG(k) ? `<button class="btn ${k === g ? '' : 'soft'}" data-g="${k}">Lớp ${k}</button>` : `<button class="btn soft dl-lock" data-lock="${k}" title="Tham gia lớp ${k} để xem"><img class="dl-lk" src="img/lock.webp" alt="" width="18" height="24">Lớp ${k}</button>`).join('')}<a class="btn soft" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${D.root}">Mở thư mục lớp ${g} trên Drive ↗</a><button class="btn" id="dl-hfb" type="button">Chèn header/footer cho file</button></div>
       <div class="dl-tools"><input id="dl-q" type="search" placeholder="Tìm tài liệu…" value="${esc(q)}" autocomplete="off"></div>
       <div class="dlx-bar"><p class="muted dl-n">${L.length} mục</p><div class="dlx-sw"><button type="button" class="${view === 'card' ? 'on' : ''}" data-vw="card">▦ Dạng thẻ</button><button type="button" class="${view === 'list' ? 'on' : ''}" data-vw="list">☰ Danh sách</button></div></div>${view === 'card' ? `<div class="dl-cards">${L.map(dlCard).join('') || '<p class="muted">Không tìm thấy tài liệu phù hợp.</p>'}</div>` : ''}<div class="dl-list" ${view === 'card' ? 'hidden' : ''}>${view === 'card' ? '' : L.map(it => { const k = dlKind(it), u = it.f ? 'https://drive.google.com/drive/folders/' + it.i : 'https://drive.google.com/file/d/' + it.i + '/view'; return `<div class="dl-it"><span class="dl-ic">${DL_IC[k]}</span><div class="dl-m"><b>${esc(it.t)}</b><small>${it.f ? 'Thư mục' : (it.x || 'file').toUpperCase() + (it.s ? ' · ' + dlSize(it.s) : '')}</small></div><div class="dl-a">${it.f ? `<button class="btn sm" data-view="${it.i}">Xem thư mục</button><a class="btn soft sm" target="_blank" rel="noopener" href="${u}">Mở tab mới</a>` : `<button class="btn sm" data-view="${it.i}">Xem</button><a class="btn soft sm" target="_blank" rel="noopener" href="https://drive.google.com/uc?export=download&id=${it.i}">Tải về</a>${/^(docx|pdf)$/.test(it.x) ? `<button class="btn soft sm" data-hf="${it.i}" title="Chèn header/footer Inspire">Header</button>` : ''}`}</div></div>`; }).join('') || '<p class="muted">Không tìm thấy tài liệu phù hợp.</p>'}</div>`;
-    { const bar = $('.dlx-bar', $('#dl-b'));
-      if (bar && !q && !grp) {
-        const gs = [...DL_GRP.map(x => x[0]), 'kh'].map(k => [k, D.items.filter(it => dlGrp(it) === k)]).filter(x => x[1].length);
-        let n = bar.nextElementSibling; while (n) { const nx = n.nextElementSibling; n.remove(); n = nx; }
-        bar.querySelector('.dl-n').textContent = D.items.length + ' mục trong ' + gs.length + ' thư mục nhỏ';
-        bar.querySelector('.dlx-sw').remove();
-        bar.insertAdjacentHTML('afterend', '<div class="dlg">' + gs.map(([k, a]) => `<button type="button" class="dlg-t" data-grp="${k}"><span class="dlg-f"></span><b>${esc(dlGrpName(k))}</b><small>${a.length} mục</small><em>${a.slice(0, 3).map(x => esc(x.t.replace(/\.[a-z0-9]{2,4}$/i, ''))).join(' · ')}</em></button>`).join('') + '</div>');
-      } else if (bar && grp && !q) bar.insertAdjacentHTML('beforebegin', `<div class="dlg-bc"><button type="button" class="btn soft sm" data-grp="">← Tất cả thư mục</button><b>Lớp ${g} › ${esc(dlGrpName(grp))}</b></div>` + (() => { const inG = D.items.filter(it => dlGrp(it) === grp); if (inG.length < 12) return ''; const ts = Object.keys(DL_TERM).filter(t => inG.some(it => dlTerm(it) === t)); return ts.length < 2 ? '' : `<div class="dl-tabs"><button class="btn sm ${term ? 'soft' : ''}" data-term="">Tất cả (${inG.length})</button>${ts.map(t => `<button class="btn sm ${term === t ? '' : 'soft'}" data-term="${t}">${DL_TERM[t]} (${inG.filter(it => dlTerm(it) === t).length})</button>`).join('')}</div>`; })());
-    }
-    $$('[data-grp]', $('#dl-b')).forEach(b => b.onclick = () => { grp = b.dataset.grp; kind = 'all'; term = ''; draw(); });
-    $$('[data-term]', $('#dl-b')).forEach(b => b.onclick = () => { term = b.dataset.term; draw(); });
     const byId = id => D0.items.find(x => x.i === id);
     $$('[data-view]', $('#dl-b')).forEach(b => { b.onclick = () => openDocView(byId(b.dataset.view)); b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } }; });
     $$('[data-vw]', $('#dl-b')).forEach(b => b.onclick = () => { view = b.dataset.vw; try { localStorage.setItem('dlView', view); } catch (e) {} draw(); });
     $$('[data-hf]', $('#dl-b')).forEach(b => b.onclick = () => openHF(byId(b.dataset.hf)));
     const hb = $('#dl-hfb'); if (hb) hb.onclick = () => openHF();
-    $$('[data-m]', $('#dl-b')).forEach(b => b.onclick = () => { mode = b.dataset.m; S.dlMode = mode; kind = 'all'; q = ''; grp = ''; draw(); });
+    $$('[data-m]', $('#dl-b')).forEach(b => b.onclick = () => { mode = b.dataset.m; S.dlMode = mode; kind = 'all'; q = ''; draw(); });
     $$('[data-lock]', $('#dl-b')).forEach(b => b.onclick = () => { toast('Em cần tham gia lớp ' + b.dataset.lock + ' (nhập mật khẩu lớp) để xem tài liệu khối này.', 'warn'); try { askClassKey('Tham gia lớp ' + b.dataset.lock + ' để mở tài liệu và đề thi khối này.'); } catch (er) {} });
-    $$('[data-g]', $('#dl-b')).forEach(b => b.onclick = () => { g = b.dataset.g; S.dlGrade = g; kind = 'all'; q = ''; grp = ''; draw(); });
+    $$('[data-g]', $('#dl-b')).forEach(b => b.onclick = () => { g = b.dataset.g; S.dlGrade = g; kind = 'all'; q = ''; draw(); });
     $$('[data-k]', $('#dl-b')).forEach(b => b.onclick = () => { kind = b.dataset.k; draw(); });
     const qi = $('#dl-q'); qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; draw(); const n = $('#dl-q'); n.focus(); n.setSelectionRange(pos, pos); };
   };

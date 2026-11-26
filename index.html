@@ -8797,7 +8797,7 @@ function viewClass() {
     ${themeCSS(c)}<section class="cxl-hero">${/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(c.banner || '') ? `<img src="${esc(c.banner)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="cxl-hero-t"><span class="eyebrow">Lớp học</span><h1>${esc(c.name)}</h1>${c.desc ? `<p>${esc(c.desc)}</p>` : ''}<small>Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'đang cập nhật')} · ${(c.members || []).length} học sinh</small>${heroExtra(c)}${meetBtn(c)}${avNudge()}</div></section>
     ${drw}
     <button class="cxl-fab" data-drawer="1" aria-label="Mở mục lục" ${secs.length ? '' : 'hidden'}>☰ Mục lục</button>
-    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['qa', 'Hỏi cô'], ['arena', 'Cyber Arena'], ['live', 'Chơi chung'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['speak', 'Điểm Speaking'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
+    <div class="cxl"><aside class="cxl-side card"><nav aria-label="Menu lớp"><button class="cxl-nb" data-go="srsreview">🔁 Ôn lỗi sai${srsDue().length ? ' <span class="bdg-n">' + srsDue().length + '</span>' : ''}</button>${[['content', 'Nội dung lớp'], ['announce', 'Thông báo'], ['tasks', 'Bài tập và nộp bài'], ['listen', 'Nghe'], ['qa', 'Hỏi cô'], ['arena', 'Cyber Arena'], ['live', 'Chơi chung'], ['attend', 'Điểm danh'], ['people', 'Bạn cùng lớp'], ['board', 'Bảng vàng lớp'], ['art', 'Phòng tranh'], ['grades', 'Điểm số của em'], ['speak', 'Điểm Speaking'], ['exam', 'Điểm bài thi'], ['chat', 'Chat và nhắn tin']].concat(canvaTab(c) ? [['canva', 'Dự án Canva']] : []).map(([k, n]) => `<button class="cxl-nb ${CX.tab === k ? 'on' : ''}" data-ct="${k}">${n}${k === 'chat' && un ? ` <span class="bdg-n">${un}</span>` : ''}${k === 'announce' && annNew(c) ? ` <span class="bdg-n">${annNew(c)}</span>` : ''}</button>`).join('')}</nav></aside>
     <section class="cxl-main" id="cxl-main"></section></div>`;
   main.onclick = e => {
     const dr = e.target.closest('[data-drawer]'), dc = e.target.closest('[data-drawer-close]');
@@ -8846,6 +8846,7 @@ function drawClassTab(c) {
   else if (CX.tab === 'announce') { el.innerHTML = cxlAnn(c); markAnnSeen(c); }
   else if (CX.tab === 'attend') el.innerHTML = cxlAttend(c);
   else if (CX.tab === 'speak') el.innerHTML = cxlSpeak(c);
+  else if (CX.tab === 'exam') el.innerHTML = cxlExam(c);
   else if (CX.tab === 'art') { el.innerHTML = cxlArt(c); mountArt(c); }
   else if (CX.tab === 'board') { el.innerHTML = cxlBoard(c); mountBoard(c); const bb = $('#bd-body'); if (bb) bb.onclick = boardClick; }
   else if (CX.tab === 'qa') { el.innerHTML = cxlQA(c); mountQA(c); }
@@ -13423,6 +13424,14 @@ function cxlSpeak(c) {
   return L.map(x => { const r = x.sc[uid], tot = K.reduce((t, [k]) => t + (+r[k] || 0), 0), full = K.every(([k]) => r[k] != null);
     return `<section class="card" style="margin-bottom:14px"><h3>${esc(x.title)}${x.date ? ' <small class="muted">· ' + dmy(x.date) + '</small>' : ''}</h3>
       <div class="gr-card"><table class="gr-tb"><thead><tr>${K.map(([, n]) => `<th>${n}</th>`).join('')}<th>Tổng</th></tr></thead><tbody><tr>${K.map(([k]) => `<td>${r[k] == null ? '–' : r[k]}<small class="muted"> /20</small></td>`).join('')}<td><b>${tot}</b><small class="muted"> /100</small>${full ? '' : ' <small class="muted">(chưa đủ)</small>'}</td></tr></tbody></table></div>
+      ${(x.cm || {})[uid] ? `<p style="margin:10px 0 0"><b>Nhận xét của thầy cô:</b> ${esc(x.cm[uid])}</p>` : ''}</section>`; }).join('');
+}
+function cxlExam(c) {
+  const uid = S.user && S.user.uid, L = (c.exams || []).filter(x => x.sc && x.sc[uid]).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  if (!L.length) return '<section class="card"><h3>Điểm bài thi của em</h3><p class="muted">Thầy cô chưa nhập điểm bài thi cho em. Khi có, điểm sẽ hiện ở đây.</p></section>';
+  return L.map(x => { const r = x.sc[uid], cols = x.cols || [], got = cols.reduce((t, k) => t + (+r[k.k] || 0), 0), mx = cols.reduce((t, k) => t + (+k.max || 0), 0), pc = mx ? Math.round(got / mx * 1000) / 10 : 0;
+    return `<section class="card" style="margin-bottom:14px"><h3>${esc(x.title)}${x.date ? ' <small class="muted">· ' + dmy(x.date) + '</small>' : ''}</h3>
+      <div class="gr-card"><table class="gr-tb"><thead><tr>${cols.map(k => `<th>${esc(k.n)}</th>`).join('')}<th>Tổng</th></tr></thead><tbody><tr>${cols.map(k => `<td>${r[k.k] == null ? '–' : r[k.k]}<small class="muted"> /${k.max}</small></td>`).join('')}<td><b>${Math.round(got * 100) / 100}</b><small class="muted"> /${mx} (${pc}%)</small></td></tr></tbody></table></div>
       ${(x.cm || {})[uid] ? `<p style="margin:10px 0 0"><b>Nhận xét của thầy cô:</b> ${esc(x.cm[uid])}</p>` : ''}</section>`; }).join('');
 }
 /* ----- điểm danh của em ----- */

@@ -3851,11 +3851,11 @@ function classForm() {
 /* ----- trang chi tiết một lớp ----- */
 function vClassDetail() {
   const c = classById(S.cx.id), pend = pending(c); let tab = S.cx.tab || 'content';
-  const TABS0 = [['over', 'Tổng quan'], ['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['spk', 'Chấm Speaking'], ['risk', 'Cảnh báo'], ['tools', 'Công cụ GV'], ['plus', 'Phân tích sâu'], ['kids', 'Bé học (Kids)'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
+  const TABS0 = [['over', 'Tổng quan'], ['content', 'Nội dung'], ['ann', 'Thông báo'], ['members', 'Thành viên' + (pend.length ? ' (' + pend.length + ' chờ duyệt)' : '')], ['att', 'Điểm danh'], ['subs', 'Bài nộp'], ['banks', 'Đề và kiểm tra'], ['listen', 'Nghe'], ['qa', 'Hỏi đáp'], ['live', 'Chơi chung'], ['arena', 'Bộ câu game'], ['qstat', 'Câu hay sai'], ['grades', 'Bảng điểm'], ['spk', 'Chấm Speaking'], ['exam', 'Điểm bài thi'], ['risk', 'Cảnh báo'], ['tools', 'Công cụ GV'], ['plus', 'Phân tích sâu'], ['kids', 'Bé học (Kids)'], ['chat', 'Chat lớp'], ['canva', 'Dự án Canva'], ['settings', 'Thiết lập']];
   const TABS = TABS0.filter(([k]) => can(TABMAP[k])); if (!TABS.some(([k]) => k === tab)) S.cx.tab = tab = (TABS[0] || ['content'])[0];
   $('#content').innerHTML = `<div class="cxhead"><button class="btn soft sm" data-a="back">← Tất cả lớp</button><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><span class="muted">${(c.members || []).length} học sinh · Giáo viên: ${esc(Object.values(c.teacherNames || {}).join(', ') || 'chưa gán')}${c.archived ? ' · đã lưu trữ' : ''}</span></div><button class="btn soft sm" data-a="share-class">Chia sẻ lớp</button></div>
     <div class="cxtabs">${TABS.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${esc(n)}</button>`).join('')}</div><div id="cx-body"></div>`;
-  ({ over: cxOverview, content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, tools: cxTools, spk: cxSpeak, plus: cxPlus, kids: cxKids, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
+  ({ over: cxOverview, content: cxContent, ann: cxAnn, members: cxMembers, att: cxAtt, subs: cxSubs, banks: cxBanks, qstat: cxQstat, listen: cxListen, qa: cxQA, live: cxLive, arena: cxArenaSets, grades: cxGrades, risk: cxRisk, tools: cxTools, spk: cxSpeak, exam: cxExam, plus: cxPlus, kids: cxKids, chat: cxChat, canva: cxCanva, settings: cxSettings })[tab](c, $('#cx-body'));
   $('#content').onclick = cxClick;
 }
 const secHTML = (s, si, n) => `<section class="cxs ${s.hidden ? 'off' : ''}" data-s="${esc(s.id)}"><div class="cxs-h"><h3>${esc(s.title)}</h3>${s.hidden ? '<span class="tag off">Đang ẩn</span>' : ''}<span class="grow"></span>
@@ -4553,6 +4553,99 @@ function cxSpeak(c, el) {
   }
   el.querySelector('#sp-new').onclick = async () => { const t = (prompt('Tên bài chấm Speaking (ví dụ: Speaking Unit 7)', 'Speaking Test') || '').trim(); if (!t) return; const o = { id: 'sp' + Date.now().toString(36), title: t, date: todayStr(), sc: {}, nick: {}, cm: {}, nm: {}, hide: {}, extra: [] }; try { await saveClass(c, { speak: [...(c.speak || []), o] }); S.spkId = o.id; S.spkAll = false; toast('Đã tạo bài chấm.'); } catch (er) { toast(er.message, 'bad'); } };
 }
+/* ----- Điểm bài thi giấy: cột điểm tuỳ chỉnh (Nghe, Nói, Đọc, Viết...), nhập tay hoặc tải file Excel lên ----- */
+const exNum = (v, max) => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : Math.max(0, Math.min(max == null ? 1000 : max, Math.round(n * 100) / 100)); };
+const exTot = (cols, r) => { const a = cols.map(c => exNum((r || {})[c.k], c.max)).filter(x => x != null); return a.length ? Math.round(a.reduce((t, x) => t + x, 0) * 100) / 100 : ''; };
+const exPct = (cols, r) => { const t = exTot(cols, r), m = cols.reduce((s, c) => s + (+c.max || 0), 0); return t === '' || !m ? '' : Math.round(t / m * 1000) / 10; };
+function exParse(aoa) {
+  const rows = aoa.map(r => (r || []).map(x => String(x == null ? '' : x).trim())).filter(r => r.some(Boolean));
+  const hdI = rows.slice(0, 10).findIndex(r => r.some(x => /full ?name|họ ?và ?tên|họ tên|ho ten|^tên$|^name$|^học sinh$/i.test(x)));
+  if (hdI < 0) throw new Error('File cần có dòng tiêu đề với cột Full name (họ tên) và các cột điểm.');
+  const H = rows[hdI], data = rows.slice(hdI + 1), col = { name: -1, nick: -1, cm: -1 }, sc = [];
+  H.forEach((h, i) => {
+    if (/nick|biệt danh|tên gọi/i.test(h)) col.nick = i; else if (/full ?name|họ ?và ?tên|họ tên|ho ten|^tên$|^name$|^học sinh$/i.test(h)) { if (col.name < 0) col.name = i; }
+    else if (/comment|nhận xét|ghi chú/i.test(h)) col.cm = i;
+    else if (h && !/^(no\.?|stt|#)$/i.test(h) && !/total|overall|tổng|trung bình|average|^%|phần trăm|xếp loại|rank/i.test(h) && data.some(r => exNum(r[i]) != null)) {
+      const m = h.match(/max[^0-9]*(\d+(?:[.,]\d+)?)/i) || h.match(/\/\s*(\d+(?:[.,]\d+)?)/);
+      sc.push({ i, n: h.replace(/\(.*?\)|\[.*?\]|\/\s*\d+.*$/g, '').trim() || h, max: m ? parseFloat(m[1].replace(',', '.')) : null });
+    }
+  });
+  if (col.name < 0) throw new Error('Không tìm thấy cột Full name.');
+  return { cols: sc, rows: data.map(r => ({ name: r[col.name] || '', nick: col.nick >= 0 ? (r[col.nick] || '') : '', cm: col.cm >= 0 ? (r[col.cm] || '') : '', v: sc.map(c => r[c.i]) })).filter(o => o.name && !/^(full ?name|họ ?và ?tên|no\.?)$/i.test(o.name)) };
+}
+function cxExam(c, el) {
+  const list = c.exams || [], mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));
+  let cur = list.find(x => x.id === S.exId) || list[list.length - 1];
+  const sel = `<select id="ex-s" class="at-s" style="min-width:220px">${list.map(x => `<option value="${esc(x.id)}" ${cur && x.id === cur.id ? 'selected' : ''}>${esc(x.title)}${x.date ? ' · ' + esc(fmtDue(x.date)) : ''}</option>`).join('')}</select>`;
+  const head = `<div class="card" style="max-width:1200px"><h3>Điểm bài thi</h3><p class="muted" style="margin:0 0 10px">Nhập điểm bài thi giấy của lớp (ví dụ Unit 5: Nghe, Nói, Đọc, Viết). Tên cột và điểm tối đa sửa được. Học sinh xem điểm của mình ở tab “Điểm bài thi” trong trang lớp. Có thể tải file Excel lên để tự điền.</p>
+    <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">${list.length ? sel : ''}<button class="btn" id="ex-new">＋ Bài thi mới</button>${cur ? '<button class="btn soft" id="ex-del">Xoá bài thi này</button>' : ''}</div></div>`;
+  if (!cur) { el.innerHTML = head + '<div class="card empty" style="max-width:1200px;margin-top:14px">Chưa có bài thi nào. Bấm “Bài thi mới” (ví dụ Unit 5 Skills).</div>'; }
+  else {
+    S.exId = cur.id;
+    const cols = cur.cols || [], sc = cur.sc || {}, nk = cur.nick || {}, cm = cur.cm || {}, nm = cur.nm || {}, hide = cur.hide || {}, extra = cur.extra || [];
+    const nHid = mem.filter(u => hide[u.id]).length;
+    const vis = [...mem.filter(u => S.exAll || !hide[u.id]).map(u => ({ id: u.id, name: u.name || 'Học sinh', ex: false })), ...extra.map(e => ({ id: e.id, name: e.name || '', ex: true }))];
+    const row = (u, i) => { const r = sc[u.id] || {}, hd = !!hide[u.id]; return `<tr data-u="${esc(u.id)}" ${hd ? 'style="opacity:.5"' : ''}><td>${i + 1}</td><td><input class="ex-nm" value="${esc(nm[u.id] != null ? nm[u.id] : u.name)}" style="width:190px" aria-label="Họ và tên"></td>${cols.map(k => `<td><input class="ex-i" data-k="${esc(k.k)}" inputmode="decimal" value="${r[k.k] == null ? '' : esc(r[k.k])}" style="width:60px;text-align:center"></td>`).join('')}<td class="ex-t" style="text-align:center;font-weight:800"></td><td><input class="ex-c" value="${esc(cm[u.id] || '')}" style="width:100%;min-width:150px"></td><td><button class="btn soft sm ex-h" type="button">${u.ex ? 'Xoá' : hd ? 'Hiện' : 'Ẩn'}</button></td></tr>`; };
+    el.innerHTML = head + `<div class="card" style="max-width:1200px;margin-top:14px"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><label class="field" style="margin:0"><span>Tên bài thi</span><input id="ex-ti" value="${esc(cur.title)}" style="min-width:240px"></label><label class="field" style="margin:0"><span>Ngày</span><input type="date" id="ex-d" value="${esc(cur.date || '')}"></label><span class="grow"></span><button class="btn soft" id="ex-up">Tải file Excel lên</button><input type="file" id="ex-f" accept=".xlsx,.xls,.csv" hidden><button class="btn soft" id="ex-tpl">Tải file mẫu</button><button class="btn soft" id="ex-csv">Tải Excel (CSV)</button><button class="btn" id="ex-save">Lưu điểm</button></div>
+      <p class="muted" style="margin:8px 0 0;font-size:.86rem">File Excel/CSV: dòng đầu là tiêu đề, có cột <b>Full name</b>, các cột điểm (ghi tên cột như <b>Listening (Max: 10)</b> để tự lấy điểm tối đa), tuỳ chọn <b>Nickname</b> và <b>Comments</b>. Hệ thống ghép tên không phân biệt dấu, tên chưa có trong lớp sẽ thêm thành dòng mới, tài khoản không có trong file tự ẩn.</p>
+      <div class="row" style="gap:10px;margin-top:8px;flex-wrap:wrap"><button class="btn soft sm" id="ex-addc">＋ Thêm cột điểm</button><button class="btn soft sm" id="ex-add">＋ Thêm dòng</button>${nHid ? `<button class="btn soft sm" id="ex-all">${S.exAll ? 'Ẩn lại các tài khoản đã ẩn' : 'Hiện ' + nHid + ' tài khoản đang ẩn'}</button>` : ''}<span class="muted" style="font-size:.86rem">${vis.length} dòng${nHid && !S.exAll ? ' · ' + nHid + ' đang ẩn' : ''}</span></div>
+      ${cols.length && vis.length ? `<div class="tbl-wrap" style="margin-top:12px"><table><thead><tr><th>No.</th><th>Họ và tên</th>${cols.map((k, i) => `<th style="text-align:center;vertical-align:top"><input class="ex-cn" data-i="${i}" value="${esc(k.n)}" style="width:100px;text-align:center;font-weight:700"><br><small>Max</small> <input class="ex-cmx" data-i="${i}" inputmode="decimal" value="${esc(k.max)}" style="width:46px;text-align:center"> <button class="btn soft sm ex-dc" type="button" data-i="${i}" title="Xoá cột" style="padding:0 6px">×</button></th>`).join('')}<th style="text-align:center">Tổng<br><small class="ex-mx"></small></th><th>Nhận xét</th><th></th></tr></thead><tbody>${vis.map(row).join('')}</tbody><tfoot><tr><td></td><td><b>Trung bình lớp</b></td>${cols.map(k => `<td class="ex-a" data-k="${esc(k.k)}" style="text-align:center"></td>`).join('')}<td class="ex-a" data-k="t" style="text-align:center;font-weight:800"></td><td colspan="2"></td></tr></tfoot></table></div>` : `<p class="muted" style="margin-top:12px">${cols.length ? 'Chưa có dòng nào.' : 'Chưa có cột điểm.'} Tải file Excel lên hoặc bấm “Thêm cột điểm” / “Thêm dòng”.</p>`}</div>`;
+    const curCols = () => cols.map((k, i) => { const n = el.querySelector('.ex-cn[data-i="' + i + '"]'), m = el.querySelector('.ex-cmx[data-i="' + i + '"]'); return { k: k.k, n: n ? n.value.trim() || k.n : k.n, max: m ? (exNum(m.value) || k.max) : k.max }; });
+    const calc = () => { const CC = curCols();
+      el.querySelectorAll('tr[data-u]').forEach(tr => { const r = {}; tr.querySelectorAll('.ex-i').forEach(i => { r[i.dataset.k] = i.value; }); const t = exTot(CC, r), p = exPct(CC, r); tr.querySelector('.ex-t').textContent = t === '' ? '' : t + ' (' + p + '%)'; });
+      const mx = el.querySelector('.ex-mx'); if (mx) mx.textContent = '/ ' + CC.reduce((s, k) => s + (+k.max || 0), 0);
+      const avg = a => { const v = a.filter(x => x != null && x !== '' && !isNaN(x)); return v.length ? Math.round(v.reduce((t, x) => t + x, 0) / v.length * 10) / 10 : ''; };
+      CC.forEach(k => { const t = el.querySelector('.ex-a[data-k="' + k.k + '"]'); if (t) t.textContent = avg([...el.querySelectorAll('.ex-i[data-k="' + k.k + '"]')].map(i => exNum(i.value, k.max))); });
+      const t = el.querySelector('.ex-a[data-k="t"]'); if (t) t.textContent = avg([...el.querySelectorAll('tr[data-u]')].map(tr => { const r = {}; tr.querySelectorAll('.ex-i').forEach(i => { r[i.dataset.k] = i.value; }); const x = exTot(CC, r); return x === '' ? null : x; })); };
+    el.querySelectorAll('.ex-i,.ex-cmx').forEach(i => { i.oninput = calc; i.onblur = () => { const k = cols.find(x => x.k === i.dataset.k), n = exNum(i.value, k ? k.max : null); if (i.classList.contains('ex-i')) i.value = n == null ? '' : n; calc(); }; });
+    calc();
+    const collect = () => { const o = { ...cur, title: el.querySelector('#ex-ti').value.trim() || 'Bài thi', date: el.querySelector('#ex-d').value || '', cols: curCols(), sc: { ...(cur.sc || {}) }, nick: { ...(cur.nick || {}) }, cm: { ...(cur.cm || {}) }, nm: { ...(cur.nm || {}) }, hide: { ...(cur.hide || {}) }, extra: (cur.extra || []).map(e => ({ ...e })) };
+      el.querySelectorAll('tr[data-u]').forEach(tr => { const id = tr.dataset.u, r = {}; tr.querySelectorAll('.ex-i').forEach(i => { const k = o.cols.find(x => x.k === i.dataset.k), n = exNum(i.value, k ? k.max : null); if (n != null) r[i.dataset.k] = n; });
+        if (Object.keys(r).length) o.sc[id] = r; else delete o.sc[id];
+        const cc = tr.querySelector('.ex-c').value.trim(), na = tr.querySelector('.ex-nm').value.trim(); if (cc) o.cm[id] = cc; else delete o.cm[id];
+        const ex = o.extra.find(e => e.id === id); if (ex) ex.name = na; else { const u = mem.find(x => x.id === id); if (u && na && na !== (u.name || '')) o.nm[id] = na; else delete o.nm[id]; } });
+      return o; };
+    const put = o => saveClass(c, { exams: (c.exams || []).map(x => x.id === o.id ? o : x) });
+    const rowsOf = o => [...mem.filter(u => !(o.hide || {})[u.id]).map(u => ({ id: u.id, name: (o.nm || {})[u.id] || u.name || '' })), ...(o.extra || []).map(e => ({ id: e.id, name: e.name }))];
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"', csv = rows => '﻿' + rows.map(r => r.map(q).join(',')).join('\n');
+    const hdr = o => ['No.', 'Full name', ...o.cols.map(k => k.n + ' (Max: ' + k.max + ')')];
+    el.querySelector('#ex-save').onclick = async () => { const b = el.querySelector('#ex-save'); b.disabled = true; try { await put(collect()); toast('Đã lưu điểm bài thi.'); } catch (er) { toast(er.message, 'bad'); } finally { b.disabled = false; } };
+    el.querySelector('#ex-csv').onclick = () => { const o = collect(); dlFile('diem-' + (c.name || 'lop').replace(/[^\w-]+/g, '_') + '-' + o.title.replace(/[^\w-]+/g, '_') + '.csv', csv([[...hdr(o), 'Tổng', '%', 'Comments'], ...rowsOf(o).map((u, i) => { const r = o.sc[u.id] || {}; return [i + 1, u.name, ...o.cols.map(k => r[k.k] == null ? '' : r[k.k]), exTot(o.cols, r), exPct(o.cols, r), o.cm[u.id] || '']; })]), 'text/csv;charset=utf-8'); };
+    el.querySelector('#ex-tpl').onclick = () => { const o = collect(); dlFile('mau-diem-bai-thi.csv', csv([[...hdr(o), 'Comments'], ...rowsOf(o).map((u, i) => [i + 1, u.name, ...o.cols.map(() => ''), ''])]), 'text/csv;charset=utf-8'); };
+    const sl = el.querySelector('#ex-s'); if (sl) sl.onchange = () => { S.exId = sl.value; S.exAll = false; cxExam(c, el); };
+    el.querySelector('#ex-del').onclick = async () => { if (!confirm('Xoá bài thi “' + cur.title + '” và toàn bộ điểm?')) return; try { await saveClass(c, { exams: list.filter(x => x.id !== cur.id) }); S.exId = ''; toast('Đã xoá.'); } catch (er) { toast(er.message, 'bad'); } };
+    el.querySelector('#ex-add').onclick = async () => { const o = collect(); o.extra.push({ id: 'x' + Date.now().toString(36), name: '' }); try { await put(o); } catch (er) { toast(er.message, 'bad'); } };
+    el.querySelector('#ex-addc').onclick = async () => { const n = (prompt('Tên cột điểm mới (ví dụ: Listening)', '') || '').trim(); if (!n) return; const o = collect(); o.cols.push({ k: 'c' + Date.now().toString(36), n, max: 10 }); try { await put(o); } catch (er) { toast(er.message, 'bad'); } };
+    el.querySelectorAll('.ex-dc').forEach(b => b.onclick = async () => { const o = collect(), k = o.cols[+b.dataset.i]; if (!k || !confirm('Xoá cột “' + k.n + '” và điểm của cột này?')) return; o.cols.splice(+b.dataset.i, 1); Object.values(o.sc).forEach(r => { delete r[k.k]; }); try { await put(o); } catch (er) { toast(er.message, 'bad'); } });
+    const al = el.querySelector('#ex-all'); if (al) al.onclick = () => { S.exAll = !S.exAll; cxExam(c, el); };
+    el.querySelectorAll('.ex-h').forEach(b => b.onclick = async () => { const id = b.closest('tr').dataset.u, o = collect(), ex = o.extra.findIndex(e => e.id === id);
+      if (ex >= 0) { o.extra.splice(ex, 1); delete o.sc[id]; delete o.cm[id]; } else if (o.hide[id]) delete o.hide[id]; else o.hide[id] = 1;
+      try { await put(o); } catch (er) { toast(er.message, 'bad'); } });
+    el.querySelector('#ex-up').onclick = () => el.querySelector('#ex-f').click();
+    el.querySelector('#ex-f').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try {
+        await loadXLSX(); const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' }), ws = wb.Sheets[wb.SheetNames[0]];
+        const F = exParse(window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }));
+        if (!F.rows.length) return toast('Không đọc được dòng nào trong file.', 'bad');
+        if (!F.cols.length) return toast('Không thấy cột điểm nào (cột có số) trong file.', 'bad');
+        const o = collect(), used = new Set(), match = new Set(); let nOk = 0, nNew = 0;
+        const map = F.cols.map((fc, i) => { let k = o.cols.find(x => spkNorm(x.n) === spkNorm(fc.n)); if (!k) { k = { k: 'c' + Date.now().toString(36) + i, n: fc.n, max: fc.max || 10 }; o.cols.push(k); } else if (fc.max) k.max = fc.max; return k; });
+        const cand = mem.map(u => ({ u, keys: [...new Set([spkNorm(u.name), ...String(u.name || '').split(/\s[-–]\s/).map(spkNorm), spkNorm((o.nm || {})[u.id]), spkNorm(u.nickname)].filter(Boolean))] }));
+        const find = (n, nk) => { const a = spkNorm(n), b = spkNorm(nk); if (!a) return null; const free = cand.filter(x => !used.has(x.u.id));
+          return free.find(x => x.keys.includes(a)) || free.find(x => a.length >= 4 && x.keys.some(k => k.length >= 4 && (k.includes(a) || a.includes(k)))) || (b && free.find(x => x.keys.includes(b))) || null; };
+        F.rows.forEach(r => { const m = find(r.name, r.nick); let id;
+          if (m) { id = m.u.id; used.add(id); nOk++; delete o.nm[id]; if (!m.keys.includes(spkNorm(r.name))) o.nm[id] = r.name; }
+          else { const ex = o.extra.find(e => spkNorm(e.name) === spkNorm(r.name)); if (ex) id = ex.id; else { id = 'x' + Date.now().toString(36) + o.extra.length; o.extra.push({ id, name: r.name }); nNew++; } }
+          match.add(id); if (r.cm) o.cm[id] = r.cm;
+          r.v.forEach((v, i) => { const n = exNum(v, map[i].max); if (n != null) (o.sc[id] = o.sc[id] || {})[map[i].k] = n; }); });
+        let nH = 0; mem.forEach(u => { if (!match.has(u.id)) { if (!o.hide[u.id]) nH++; o.hide[u.id] = 1; } else delete o.hide[u.id]; });
+        o.extra = o.extra.filter(e => match.has(e.id) || (o.sc[e.id] && Object.keys(o.sc[e.id]).length));
+        S.exAll = false; await put(o);
+        toast('Đã điền ' + F.rows.length + ' dòng, ' + F.cols.length + ' cột điểm: ' + nOk + ' khớp với học sinh trong lớp' + (nNew ? ', ' + nNew + ' thêm mới (chưa có trong lớp)' : '') + (nH ? ', đã ẩn ' + nH + ' tài khoản không có trong file' : '') + '.');
+      } catch (er) { toast(er.message || 'Không đọc được file.', 'bad'); } };
+  }
+  el.querySelector('#ex-new').onclick = async () => { const t = (prompt('Tên bài thi (ví dụ: Unit 5 Skills)', 'Unit 5 Skills') || '').trim(); if (!t) return; const stamp = Date.now().toString(36), o = { id: 'ex' + stamp, title: t, date: todayStr(), cols: ['Listening', 'Speaking', 'Reading', 'Writing'].map((n, i) => ({ k: 'c' + stamp + i, n, max: 10 })), sc: {}, nick: {}, cm: {}, nm: {}, hide: {}, extra: [] }; try { await saveClass(c, { exams: [...(c.exams || []), o] }); S.exId = o.id; S.exAll = false; toast('Đã tạo bài thi.'); } catch (er) { toast(er.message, 'bad'); } };
+}
 function cxAtt(c, el) {
   const date = S.attDate || todayStr(), mem = (c.members || []).map(id => stuOf(c, id)).sort((x, y) => (x.name || '').localeCompare(y.name || '', 'vi'));
   const cur = attOf(c, date);
@@ -4920,7 +5013,7 @@ const PERMS = [
   ['lessons', 'Nội dung học tập 6–9', 'Thêm, sửa bài học và từ vựng của 4 khối']
 ];
 const PRESET = { full: PERMS.map(p => p[0]), assist: ['grades', 'notes', 'chat'] };
-const TABMAP = { over: 'grades', arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', spk: 'grades', risk: 'notes', tools: 'grades', plus: 'grades', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
+const TABMAP = { over: 'grades', arena: 'content', live: 'content', qa: 'content', listen: 'banks', qstat: 'banks', content: 'content', ann: 'content', members: 'members', att: 'members', subs: 'content', banks: 'banks', grades: 'grades', spk: 'grades', exam: 'grades', risk: 'notes', tools: 'grades', plus: 'grades', kids: 'members', chat: 'chat', canva: 'canva', settings: 'settings' };
 /* admin luôn có đủ quyền; giáo viên chưa được cấp quyền riêng thì mặc định đầy đủ */
 const can = k => { if (!TEACHER()) return true; if (k === 'admin') return false; if (k === 'lessons') return !(S.me && S.me.perms) || S.me.perms.lessons !== false; return !(S.me && S.me.perms) || !!S.me.perms[k]; };
 const permOf = A => A === 'ov-nudge' ? 'notes' : A === 'ov-csv' || A === 'ov-copy' ? 'grades' : A === 'risk-nudge' ? 'notes' : A === 'set-save' ? 'settings' : /^(sec|item)-|^bulk$/.test(A) ? 'content' : A.startsWith('mem-') ? 'members' : A.startsWith('bk-') ? 'banks' : A === 'gr-csv' ? 'grades' : A === 'canva-access' ? 'admin' : A.startsWith('canva-') ? 'canva' : A.startsWith('chat-') ? 'chat' : /^set-/.test(A) ? 'admin' : null;

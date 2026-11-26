@@ -8856,7 +8856,7 @@ function drawClassTab(c) {
   else if (CX.tab === 'arena') { window.__arLock = true; el.innerHTML = cxlArena(c); mountArena(c); }
   else if (CX.tab === 'listen') el.innerHTML = cxlListen(c);
   else if (CX.tab === 'people') el.innerHTML = cxlPeople(c);
-  else if (CX.tab === 'grades') { el.innerHTML = cxlGrades(c); cxlSpkLoad(c); }
+  else if (CX.tab === 'grades') el.innerHTML = cxlGrades(c);
   else cxlChat(c, el);
 }
 async function mountCYT(it) {
@@ -8990,13 +8990,13 @@ function cxlGrades(c) {
   const ini = String(P.name || 'E').trim().charAt(0).toUpperCase();
   const pill = v => v == null ? '<span class="gs none">–</span>' : `<span class="gs ${v >= 80 ? 'hi' : v >= 50 ? 'mid' : 'lo'}">${v}%</span>`;
   const head = `<div class="gr-head"><span class="gr-av">${esc(ini)}</span><h3>${esc(P.name || 'Học sinh')}</h3></div>`;
-  if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div><div id="gr-spk"></div></section>`;
+  if (!B.length) return `<section class="gr"><h2 class="gr-t">Báo cáo người dùng</h2>${head}<div class="card empty">Lớp chưa có đề nào để tính điểm.</div></section>`;
   const rows = B.map(b => { const v = (P.bankbest || {})[b.id], at = (P.bankat || {})[b.id], n = (P.bankatt || {})[b.id] || (v != null ? 1 : 0);
     return `<tr><td class="gr-name"><span class="gr-ic">▸</span>${esc(b.title)}</td><td>${pill(v)}</td><td>${n}</td><td>${at ? new Date(at).toLocaleDateString('vi-VN') : '–'}</td></tr>`; }).join('');
   const vals = B.map(b => (P.bankbest || {})[b.id]).filter(v => v != null), avg = vals.length ? Math.round(vals.reduce((x, y) => x + y, 0) / vals.length) : null, top = vals.length ? Math.max(...vals) : null;
   const tiles = `<div class="gr-sum"><div><b>${avg == null ? '–' : avg + '%'}</b><small>Điểm trung bình</small></div><div><b>${top == null ? '–' : top + '%'}</b><small>Điểm cao nhất</small></div><div><b>${vals.length}/${B.length}</b><small>Bài đã làm</small></div></div><div class="gr-bars" aria-hidden="true">${B.map(b => { const v = (P.bankbest || {})[b.id]; return `<i title="${esc(b.title)}: ${v == null ? 'chưa làm' : v + '%'}" class="${v == null ? 'n' : v >= 80 ? 'hi' : v >= 50 ? 'mid' : 'lo'}" style="height:${v == null ? 6 : Math.max(8, v)}%"></i>`; }).join('')}</div>`;
   return `<section class="gr"><h2 class="gr-t">Điểm số của em</h2>${head}${tiles}
-    <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div><div id="gr-spk"></div></section>`;
+    <div class="gr-card"><table class="gr-tb"><thead><tr><th>Mục điểm</th><th>Điểm cao nhất</th><th>Số lượt làm</th><th>Lần gần nhất</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
 /* ----- chat lớp + nhắn riêng ----- */
@@ -13428,13 +13428,14 @@ function askSubmit(c, iid) {
 
 /* ----- điểm Speaking của em (thầy cô nhập ở trang quản lý) ----- */
 function cxlSpeak(c) {
-  const uid = S.user && S.user.uid, K = [['p', 'Pronunciation'], ['v', 'Vocabulary'], ['g', 'Grammar'], ['f', 'Fluency'], ['c', 'Confidence']];
-  const L = (c.speak || []).filter(x => x.sc && x.sc[uid]).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  if (!L.length) return '<section class="card"><h3>Điểm Speaking của em</h3><p class="muted">Thầy cô chưa nhập điểm Speaking cho em. Khi có, điểm sẽ hiện ở đây.</p></section>';
-  return L.map(x => { const r = x.sc[uid], tot = K.reduce((t, [k]) => t + (+r[k] || 0), 0), full = K.every(([k]) => r[k] != null);
+  const uid = S.user && S.user.uid, K = [['p', 'Pronunciation'], ['v', 'Vocabulary'], ['g', 'Grammar'], ['f', 'Fluency'], ['c', 'Confidence']], names = c.names || {};
+  const L = (c.speak || []).filter(x => x.sc && Object.keys(x.sc).length).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  if (!L.length) return '<section class="card"><h3>Điểm Speaking của lớp</h3><p class="muted">Thầy cô chưa nhập điểm Speaking. Khi có, điểm của cả lớp sẽ hiện ở đây.</p></section>';
+  return L.map(x => {
+    const rows = Object.keys(x.sc).map(id => { const r = x.sc[id] || {}; return { id, r, tot: K.reduce((t, [k]) => t + (+r[k] || 0), 0), full: K.every(([k]) => r[k] != null) }; }).sort((a, b) => b.tot - a.tot || String(names[a.id] || '').localeCompare(String(names[b.id] || ''), 'vi'));
     return `<section class="card" style="margin-bottom:14px"><h3>${esc(x.title)}${x.date ? ' <small class="muted">· ' + dmy(x.date) + '</small>' : ''}</h3>
-      <div class="gr-card"><table class="gr-tb"><thead><tr>${K.map(([, n]) => `<th>${n}</th>`).join('')}<th>Tổng</th></tr></thead><tbody><tr>${K.map(([k]) => `<td>${r[k] == null ? '–' : r[k]}<small class="muted"> /20</small></td>`).join('')}<td><b>${tot}</b><small class="muted"> /100</small>${full ? '' : ' <small class="muted">(chưa đủ)</small>'}</td></tr></tbody></table></div>
-      ${(x.cm || {})[uid] ? `<p style="margin:10px 0 0"><b>Nhận xét của thầy cô:</b> ${esc(x.cm[uid])}</p>` : ''}</section>`; }).join('');
+      <div class="gr-card" style="overflow-x:auto"><table class="gr-tb"><thead><tr><th>#</th><th>Học sinh</th>${K.map(([, n]) => `<th>${n}</th>`).join('')}<th>Tổng</th></tr></thead><tbody>${rows.map((o, i) => `<tr${o.id === uid ? ' style="font-weight:700;background:#FFF4E5"' : ''}><td>${i + 1}</td><td>${esc(names[o.id] || 'Học sinh')}${o.id === uid ? ' (em)' : ''}</td>${K.map(([k]) => `<td>${o.r[k] == null ? '–' : o.r[k]}<small class="muted"> /20</small></td>`).join('')}<td><b>${o.tot}</b><small class="muted"> /100</small>${o.full ? '' : ' <small class="muted">(chưa đủ)</small>'}</td></tr>`).join('')}</tbody></table></div>
+      ${(x.cm || {})[uid] ? `<p style="margin:10px 0 0"><b>Nhận xét của thầy cô cho em:</b> ${esc(x.cm[uid])}</p>` : ''}</section>`; }).join('');
 }
 function cxlExam(c) {
   const uid = S.user && S.user.uid, L = (c.exams || []).filter(x => x.sc && x.sc[uid]).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));

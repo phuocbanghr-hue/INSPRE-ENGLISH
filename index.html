@@ -8074,7 +8074,7 @@ function kcCardHTML(c) {
 function camCardHTML() {
   let n = 0; try { const r = JSON.parse(localStorage.getItem('cam_res') || '{}'); Object.values(r).forEach(o => { n += Object.keys(o || {}).length; }); } catch (e) {}
   return `<article class="kc on kc-cam" data-go="cam" role="button" tabindex="0" aria-label="Cambridge: Starters, Movers, Flyers, PET, mở sẵn">
-    <div class="kc-cv kc-cvc"><span class="kc-bd ok">${K_OK}Mở sẵn</span><img src="${CAM_LOGO}" alt="" width="84" height="84"></div>
+    <div class="kc-cv kc-cvc"><span class="kc-bd ok">${K_OK}Mở sẵn</span><img src="docs/cambridge/cambridge-english-logo.png" alt="Cambridge English" width="220" height="64"></div>
     <div class="kc-t"><h3>Cambridge: Starters, Movers, Flyers, PET</h3></div>
     <div class="kc-s">${n ? n + ' phần đã làm · ' : ''}Luyện đề thật, chấm điểm bằng khiên</div></article>`;
 }
@@ -14027,7 +14027,7 @@ else {
 .kc-count{font-size:.78rem;font-weight:700;color:#0B5CA8;background:#E8F1FA;border-radius:99px;padding:3px 11px;margin-left:10px;vertical-align:middle}
 .kc-tip{margin:14px 20px 0;padding:12px 16px;border-radius:12px;background:#FFF4EB;border:1px solid #FAD3B5;color:#8A4310;font-size:.95rem}
 .kc-tip b{color:#D4521A}
-.kc-cvc{background:linear-gradient(135deg,#4b1d6b,#8a4f9e)!important;display:flex;align-items:center;justify-content:center}.kc.kc-cam .kc-cv img{position:static!important;inset:auto!important;width:84px!important;height:84px!important;max-width:84px!important;object-fit:contain!important;filter:drop-shadow(0 6px 10px rgba(0,0,0,.3))}.kcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:12px 20px 22px}
+.kc-cvc{background:#fff!important;border-bottom:1px solid #E3E9F1;padding-top:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}.kc.kc-cam .kc-cv img{position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:72%!important;max-height:56px!important;object-fit:contain!important}.kcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:12px 20px 22px}
 .kc{display:flex;flex-direction:column;background:#fff;border:1px solid #E3E9F1;border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.05);transition:transform .18s,box-shadow .18s,border-color .18s;animation:lrIn .4s ease both}
 .kc:hover{transform:translateY(-4px);border-color:#B9D3EE;box-shadow:0 20px 34px -22px rgba(11,92,168,.6)}
 .kc:focus-visible{outline:3px solid #9CC3EA;outline-offset:2px}

@@ -12224,7 +12224,7 @@ function openFolderView(root) {
     if (st.view) { const v = st.view, pv = /google-apps\.(document|spreadsheet|presentation)/.test(v.mimeType) ? 'https://drive.google.com/file/d/' + v.id + '/preview' : 'https://drive.google.com/file/d/' + v.id + '/preview'; ov.innerHTML = head + `<div class="dl-if"><iframe src="${pv}" allow="autoplay" title="${esc(v.name)}"></iframe></div>`; return; }
     ov.innerHTML = head + '<div class="fb-body"><p class="muted fb-ld">Đang tải danh sách…</p></div>';
     let L; try { L = await driveList(cur.id); } catch (er) {
-      if (ov.isConnected && st.stack[st.stack.length - 1] === cur && !st.view) ov.querySelector('.fb-body').innerHTML = `<p class="muted" style="padding:6px 2px">Không tải được danh sách (${esc(er.message)}). Đang hiện bản của Google Drive.</p><div class="dl-if" style="height:70vh"><iframe src="https://drive.google.com/embeddedfolderview?id=${cur.id}#list" title="${esc(cur.name)}"></iframe></div>`; return; }
+      if (ov.isConnected && st.stack[st.stack.length - 1] === cur && !st.view) ov.querySelector('.fb-body').innerHTML = `<div class="card" style="margin:8px 2px;padding:14px"><p style="margin:0 0 10px"><b>Chưa hiện được danh sách tài liệu trong trang.</b> <span class="muted">(${esc(er.message)})</span> Em bấm nút bên dưới để mở thư mục trực tiếp trên Google Drive nhé.</p><a class="btn" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${cur.id}">Mở thư mục trên Google Drive</a> <button class="btn soft" type="button" data-retry>Thử lại</button></div><div class="dl-if" style="height:70vh"><iframe src="https://drive.google.com/embeddedfolderview?id=${cur.id}#list" title="${esc(cur.name)}"></iframe></div>`; return; }
     if (!ov.isConnected || st.view || st.stack[st.stack.length - 1] !== cur) return;
     const q = norm(st.q), F = L.filter(f => !q || norm(f.name).includes(q)), nd = L.filter(f => fbKind(f) === 'dir').length;
     ov.querySelector('.fb-body').innerHTML = `<div class="fb-t"><input type="search" id="fb-q" placeholder="Tìm trong thư mục này…" value="${esc(st.q)}" autocomplete="off"><span class="muted">${nd} thư mục · ${L.length - nd} tệp</span></div>` + (F.length ? `<div class="fb-g">${F.map(f => { const k = fbKind(f); return `<button type="button" class="fb-c" data-id="${esc(f.id)}" data-k="${k}">${tile(k)}<span class="fb-n"><b>${esc(f.name)}</b><small>${k === 'dir' ? 'Thư mục' : esc(FB_KIND[k][0]) + (f.size ? ' · ' + dlSize(+f.size) : '')}${f.modifiedTime ? ' · ' + new Date(f.modifiedTime).toLocaleDateString('vi-VN') : ''}</small></span></button>`; }).join('')}</div>` : `<p class="muted" style="padding:20px 4px">${L.length ? 'Không tìm thấy.' : 'Thư mục này đang trống.'}</p>`);
@@ -12232,6 +12232,7 @@ function openFolderView(root) {
   };
   ov.onclick = e => {
     if (e.target.closest('[data-x]')) return close();
+    if (e.target.closest('[data-retry]')) { _fbCache.clear(); return draw(); }
     if (e.target.closest('[data-back]')) { if (st.view) st.view = null; else st.stack.pop(); st.q = ''; return draw(); }
     const b = e.target.closest('[data-bc]'); if (b) { st.stack = st.stack.slice(0, +b.dataset.bc + 1); st.view = null; st.q = ''; return draw(); }
     const c = e.target.closest('.fb-c'); if (!c) return;
@@ -13432,6 +13433,7 @@ function cxlExam(c) {
   return L.map(x => { const r = x.sc[uid], cols = x.cols || [], got = cols.reduce((t, k) => t + (+r[k.k] || 0), 0), mx = cols.reduce((t, k) => t + (+k.max || 0), 0), pc = mx ? Math.round(got / mx * 1000) / 10 : 0;
     return `<section class="card" style="margin-bottom:14px"><h3>${esc(x.title)}${x.date ? ' <small class="muted">· ' + dmy(x.date) + '</small>' : ''}</h3>
       <div class="gr-card"><table class="gr-tb"><thead><tr>${cols.map(k => `<th>${esc(k.n)}</th>`).join('')}<th>Tổng</th></tr></thead><tbody><tr>${cols.map(k => `<td>${r[k.k] == null ? '–' : r[k.k]}<small class="muted"> /${k.max}</small></td>`).join('')}<td><b>${Math.round(got * 100) / 100}</b><small class="muted"> /${mx} (${pc}%)</small></td></tr></tbody></table></div>
+      <div style="margin-top:12px;display:grid;gap:6px">${cols.map(k => { const v = r[k.k] == null ? null : Math.round(+r[k.k] / (+k.max || 1) * 100); return `<div style="display:flex;align-items:center;gap:8px;font-size:.88rem"><span style="width:90px">${esc(k.n)}</span><span style="flex:1;height:8px;border-radius:4px;background:#e5e7eb;overflow:hidden"><span style="display:block;height:100%;width:${v == null ? 0 : v}%;background:${v != null && v < 50 ? '#DC2626' : '#16A34A'}"></span></span><b style="width:42px;text-align:right">${v == null ? '–' : v + '%'}</b></div>`; }).join('')}</div>
       ${(x.cm || {})[uid] ? `<p style="margin:10px 0 0"><b>Nhận xét của thầy cô:</b> ${esc(x.cm[uid])}</p>` : ''}</section>`; }).join('');
 }
 /* ----- điểm danh của em ----- */

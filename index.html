@@ -8759,7 +8759,7 @@ function viewClasses() {
   const nOn = COURSES.filter(c => isEnrolled(c.id)).length;
   const sel = (id, opts, cur) => `<select id="${id}" class="clg-sel">${opts.map(([k, n]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Lớp học</b></nav>
-    ${phHero('LỚP CỦA EM','Lớp học','Vào lớp, làm bài tập, xem điểm và trò chuyện cùng thầy cô, bạn bè.','👩‍🏫',['#0E7C66','#12A37F','#7BC74D'])}
+    <h2 class="cl-title">Lớp học</h2>
     <div class="clg-hello">Chào mừng${nm ? ', ' + esc(nm) : ''}!</div>
     <section class="cx-hi"><div class="cx-hi-av">${avHTML(S.profile || { name: nm })}</div><div class="cx-hi-t"><b>Chào ${esc(nm || 'em')}!</b><small>${CX.list.length ? 'Em đang ở ' + CX.list.length + ' lớp' + (() => { const a = CX.list.map(clPct).filter(x => x != null); return a.length ? ' · tiến độ trung bình ' + Math.round(a.reduce((x, y) => x + y, 0) / a.length) + '%' : ''; })() : 'Các lớp sẽ hiện ở đây ngay khi thầy cô tạo lớp.'}</small></div><button class="btn soft" data-go="courses">Xem khoá học</button></section>
     ${CX.list.length ? '' : '<div class="empty" style="margin:14px 0">Chưa có lớp nào được tạo. ' + (S.profile && S.profile.className ? 'Lớp em đăng ký là “' + esc(S.profile.className) + '”. Nhập mật khẩu lớp do cô cung cấp để vào ngay, không cần chờ duyệt.' : 'Khi có mật khẩu lớp do thầy cô cung cấp, em bấm “Tham gia lớp” để vào.') + ' Trong lúc chờ, em vào tab <b>Khoá học</b> để học trước nhé.<br><button class="btn soft" data-go="courses" style="margin-top:12px">Đến tab Khoá học</button></div>'}

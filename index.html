@@ -8124,7 +8124,7 @@ function kcCardHTML(c) {
   const pc = on && ls.length ? Math.round(ls.reduce((n, l) => n + doneCount(l.id), 0) / (ls.length * NA) * 100) : 0, nw = on ? newIn(c.id, '') : 0;
   const full = c.name + (c.sub ? ' (' + c.sub + ')' : '');
   return `<article class="kc ${on ? 'on' : 'lock'}" data-kc="${esc(c.id)}" role="button" tabindex="0" title="${esc(c.desc || full)}" aria-label="${esc(full)}${on ? ', đã ghi danh' : ', cần mật khẩu ghi danh'}">
-    <div class="kc-cv" style="background-image:${clCover(c.id)}"><span class="kc-bd ${on ? 'ok' : ''}">${on ? K_OK + 'Đã ghi danh' : K_LOCK + 'Cần mật khẩu'}</span>${nw ? `<span class="kc-new">${nw} tin mới</span>` : ''}</div>
+    <div class="kc-cv ${c.id === 'ielts' ? 'kc-cvc kc-ie' : ''}" ${c.id === 'ielts' ? '' : `style="background-image:${clCover(c.id)}"`}><span class="kc-bd ${on ? 'ok' : ''}">${on ? K_OK + 'Đã ghi danh' : K_LOCK + 'Cần mật khẩu'}</span>${nw ? `<span class="kc-new">${nw} tin mới</span>` : ''}${c.id === 'ielts' ? '<img src="img/ielts-logo.png" alt="IELTS" width="150" height="48"><small class="kc-tag">English for International Opportunity</small>' : ''}</div>
     <div class="kc-t"><h3>${esc(full)}</h3></div>
     <div class="kc-s">${on ? `${pc}% hoàn thành · ${ls.length} bài học` : `${ls.length} bài học · bấm để nhập mật khẩu`}</div>${on ? `<div class="kc-p2"><i style="width:${pc}%"></i></div>` : ''}</article>`;
 }
@@ -14130,7 +14130,7 @@ else {
 .kc-count{font-size:.78rem;font-weight:700;color:#0B5CA8;background:#E8F1FA;border-radius:99px;padding:3px 11px;margin-left:10px;vertical-align:middle}
 .kc-tip{margin:14px 20px 0;padding:12px 16px;border-radius:12px;background:#FFF4EB;border:1px solid #FAD3B5;color:#8A4310;font-size:.95rem}
 .kc-tip b{color:#D4521A}
-.kc-cvc{background:#fff!important;border-bottom:1px solid #E3E9F1;padding-top:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}.kc.kc-cam .kc-cv img{position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:72%!important;max-height:56px!important;object-fit:contain!important}.kcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:12px 20px 22px}
+.kc.kc-cvc2{}.kc-ie{flex-direction:column;gap:3px;padding-top:46px!important}.kc-ie .kc-tag{font:600 .64rem system-ui;color:#6b7686;letter-spacing:.02em}.kc .kc-ie img{position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:50%!important;max-height:38px!important;object-fit:contain!important}.kc-cvc{background:#fff!important;border-bottom:1px solid #E3E9F1;padding-top:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}.kc.kc-cam .kc-cv img{position:static!important;inset:auto!important;width:auto!important;height:auto!important;max-width:72%!important;max-height:56px!important;object-fit:contain!important}.kcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:12px 20px 22px}
 .kc{display:flex;flex-direction:column;background:#fff;border:1px solid #E3E9F1;border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.05);transition:transform .18s,box-shadow .18s,border-color .18s;animation:lrIn .4s ease both}
 .kc:hover{transform:translateY(-4px);border-color:#B9D3EE;box-shadow:0 20px 34px -22px rgba(11,92,168,.6)}
 .kc:focus-visible{outline:3px solid #9CC3EA;outline-offset:2px}

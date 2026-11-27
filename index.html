@@ -7036,6 +7036,72 @@ function thWrite(el) {
       if (e.target.closest('[data-back]')) { step = 1; draw(); } };
   }; draw();
 }
+/* ===== Shadowing Studio: nghe câu mẫu, nói theo, ghi âm, máy chấm từng từ + tốc độ nói ===== */
+const SH = { list: [], i: 0, rate: .8, rec: null, chunks: [], url: '', words: null, sr: null, t0: 0, tmr: null, heard: '' };
+const shBackup = [['I usually get up at six and have a quick breakfast.', 'Tôi thường dậy lúc sáu giờ và ăn sáng nhanh.'], ['Could you tell me how to get to the station?', 'Bạn chỉ giúp tôi đường đến ga được không?'], ['I would like to improve my English this year.', 'Tôi muốn cải thiện tiếng Anh trong năm nay.'], ['She has been learning English for three years.', 'Cô ấy học tiếng Anh được ba năm rồi.'], ['The weather is getting better, so let us go outside.', 'Thời tiết đang đẹp lên, ra ngoài thôi.'], ['I am interested in listening to music in my free time.', 'Tôi thích nghe nhạc lúc rảnh.']];
+const shBest = () => { try { return JSON.parse(localStorage.getItem('sh_best') || '{}'); } catch (e) { return {}; } };
+const shWords = t => String(t).toLowerCase().replace(/[’]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
+function shBuild() {
+  const out = [], seen = new Set();
+  (S.lessons || []).forEach(l => (l.words || []).forEach(w => { const ex = String(w.ex || '').trim(), n = shWords(ex).length; if (n >= 4 && n <= 16 && /^[A-Za-z]/.test(ex) && !seen.has(ex)) { seen.add(ex); out.push([ex, w.vi ? 'Từ khoá: ' + w.en + ' = ' + w.vi : '']); } }));
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+  return out.length >= 5 ? out.slice(0, 60) : out.concat(shBackup);
+}
+function shScore(target, heard) {
+  const T = shWords(target), H = shWords(heard), used = new Array(H.length).fill(false);
+  const res = T.map(w => { let k = H.findIndex((x, i) => !used[i] && x === w); if (k < 0) k = H.findIndex((x, i) => !used[i] && x.length > 3 && w.length > 3 && (x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4)))); if (k >= 0) used[k] = true; return { w, ok: k >= 0 }; });
+  return { res, pct: T.length ? Math.round(res.filter(r => r.ok).length / T.length * 100) : 0 };
+}
+function shStop(keep) {
+  try { if (SH.sr) { SH.sr.onend = null; SH.sr.stop(); } } catch (e) {} SH.sr = null;
+  try { if (SH.rec && SH.rec.state !== 'inactive') SH.rec.stop(); } catch (e) {}
+  if (SH.rec && SH.rec.stream) SH.rec.stream.getTracks().forEach(t => t.stop());
+  clearInterval(SH.tmr); if (!keep) { SH.rec = null; }
+}
+async function shWave(blob, cv) {
+  try { const ctx = new (window.AudioContext || window.webkitAudioContext)(), buf = await ctx.decodeAudioData(await blob.arrayBuffer()), d = buf.getChannelData(0), W = cv.width, H = cv.height, g = cv.getContext('2d'), step = Math.floor(d.length / W) || 1; g.clearRect(0, 0, W, H); g.fillStyle = '#0B5CA8';
+    for (let x = 0; x < W; x++) { let mx = 0; for (let k = 0; k < step; k += 8) mx = Math.max(mx, Math.abs(d[x * step + k] || 0)); const h = Math.max(2, mx * H * 1.6); g.fillRect(x, (H - h) / 2, 1, h); } ctx.close(); return buf.duration; } catch (e) { return 0; }
+}
+function viewShadow() {
+  shStop(); if (!SH.list.length) SH.list = shBuild(); const cur = SH.list[SH.i % SH.list.length], best = shBest(), nBest = Object.keys(best).length;
+  main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Shadowing Studio</b></nav>
+  <h2 style="margin:18px 0 6px;font-size:2rem">Shadowing Studio</h2><p class="muted">Nghe câu mẫu, nói theo thật giống, máy sẽ chấm từng từ em đã nói đúng, đo tốc độ và cho em nghe lại giọng của mình. Dùng Chrome để có chấm từng từ.</p>
+  <section class="card" style="margin:14px 0 50px;max-width:860px"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:.9rem">Câu ${SH.i % SH.list.length + 1}/${SH.list.length} · đã đạt 80% trở lên: ${Object.values(best).filter(v => v >= 80).length}/${nBest}</span><span class="grow"></span><button class="btn soft sm" id="sh-prev">‹ Câu trước</button><button class="btn soft sm" id="sh-next">Câu sau ›</button></div>
+    <p id="sh-t" style="font-size:1.7rem;line-height:1.5;font-weight:700;margin:18px 0 6px">${shWords(cur[0]).length ? cur[0].split(/\s+/).map(w => `<span class="sh-w">${esc(w)}</span>`).join(' ') : esc(cur[0])}</p>
+    ${cur[1] ? `<p class="muted" style="margin:0 0 14px">${esc(cur[1])}</p>` : ''}
+    <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="sh-play">Nghe mẫu</button><span class="muted">Tốc độ:</span>${[[.6, 'Chậm'], [.8, 'Vừa'], [1, 'Thường']].map(([r, n]) => `<button class="btn sm ${SH.rate === r ? '' : 'soft'}" data-r="${r}">${n}</button>`).join('')}</div>
+    <div class="row" style="gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap"><button class="btn" id="sh-rec" style="min-width:150px">Bắt đầu nói</button><span id="sh-st" class="muted"></span></div>
+    <canvas id="sh-cv" width="800" height="70" style="width:100%;height:70px;margin-top:12px;background:#f5f8fc;border-radius:8px;display:none"></canvas>
+    <div id="sh-res" style="margin-top:12px"></div><div id="sh-pl" style="margin-top:8px"></div></section>
+  <style>.sh-w{padding:1px 3px;border-radius:5px}.sh-w.ok{background:#d9f5e6;color:#0F7A4D}.sh-w.bad{background:#fde1e4;color:#B3122A;text-decoration:underline wavy}</style>`;
+  $('#sh-prev').onclick = () => { SH.i = (SH.i - 1 + SH.list.length) % SH.list.length; viewShadow(); };
+  $('#sh-next').onclick = () => { SH.i = (SH.i + 1) % SH.list.length; viewShadow(); };
+  $('#sh-play').onclick = () => speak(cur[0], SH.rate);
+  main.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { SH.rate = +b.dataset.r; main.querySelectorAll('[data-r]').forEach(x => x.classList.toggle('soft', x !== b)); speak(cur[0], SH.rate); });
+  const st = $('#sh-st'), rb = $('#sh-rec'); let recording = false;
+  rb.onclick = async () => {
+    if (recording) { recording = false; shStop(true); rb.textContent = 'Bắt đầu nói'; st.textContent = 'Đang chấm…'; return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) return toast('Trình duyệt này không hỗ trợ ghi âm. Em dùng Chrome nhé.', 'bad');
+    let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return toast('Em cần cho phép dùng micro để luyện nói.', 'bad'); }
+    try { speechSynthesis.cancel(); } catch (e) {}
+    SH.chunks = []; SH.heard = ''; $('#sh-res').innerHTML = ''; $('#sh-pl').innerHTML = ''; main.querySelectorAll('.sh-w').forEach(x => x.className = 'sh-w');
+    const mr = SH.rec = new MediaRecorder(stream); mr.ondataavailable = e => { if (e.data.size) SH.chunks.push(e.data); };
+    mr.onstop = async () => { const blob = new Blob(SH.chunks, { type: mr.mimeType || 'audio/webm' }), dur = (Date.now() - SH.t0) / 1000; if (SH.url) URL.revokeObjectURL(SH.url); SH.url = URL.createObjectURL(blob);
+      const cv = $('#sh-cv'); if (!cv) return; cv.style.display = 'block'; const d2 = await shWave(blob, cv) || dur, T = shWords(cur[0]);
+      const sc = shScore(cur[0], SH.heard), hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition), wps = T.length / Math.max(.5, d2);
+      main.querySelectorAll('.sh-w').forEach((x, i) => { if (hasSR && SH.heard && sc.res[i]) x.className = 'sh-w ' + (sc.res[i].ok ? 'ok' : 'bad'); });
+      const pace = wps < 1.4 ? 'hơi chậm, thử nói liền mạch hơn' : wps > 3.6 ? 'hơi nhanh, hãy nói rõ từng từ' : 'tốc độ tự nhiên, rất tốt';
+      if (hasSR && SH.heard) { const b = shBest(); if (sc.pct > (b[cur[0]] || 0)) { b[cur[0]] = sc.pct; try { localStorage.setItem('sh_best', JSON.stringify(b)); } catch (e) {} } }
+      $('#sh-res').innerHTML = (hasSR ? `<div style="font-size:1.4rem;font-weight:800;color:${sc.pct >= 80 ? '#0F7A4D' : sc.pct >= 50 ? '#B7791F' : '#B3122A'}">${SH.heard ? sc.pct + '% từ khớp' : 'Chưa chấm được'} ${!SH.heard ? '' : sc.pct >= 80 ? '· Tuyệt vời!' : sc.pct >= 50 ? '· Khá tốt, thử lại để đạt 80%' : '· Nghe lại mẫu rồi thử thêm lần nữa'}</div>${SH.heard ? `<p class="muted" style="margin:6px 0 0">Máy nghe được: “${esc(SH.heard)}”</p>` : '<p class="muted" style="margin:6px 0 0">Máy chưa nghe được tiếng nào, em nói to và gần micro hơn nhé.</p>'}` : '<p class="muted">Trình duyệt này chưa hỗ trợ nhận dạng giọng nói để chấm từng từ (dùng Chrome). Em vẫn nghe lại giọng của mình bên dưới.</p>') + `<p style="margin:6px 0 0">Tốc độ nói: <b>${wps.toFixed(1)} từ/giây</b> (${pace}).</p>`;
+      $('#sh-pl').innerHTML = `<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><audio controls src="${SH.url}" style="height:36px"></audio><button class="btn soft sm" id="sh-ab">Nghe mẫu rồi nghe lại em</button></div>`;
+      $('#sh-ab').onclick = () => { const a = $('#sh-pl audio'); speak(cur[0], SH.rate); const wait = setInterval(() => { if (!speechSynthesis.speaking) { clearInterval(wait); a.currentTime = 0; a.play(); } }, 250); setTimeout(() => clearInterval(wait), 20000); };
+      st.textContent = ''; };
+    SH.t0 = Date.now(); mr.start(); recording = true; rb.textContent = 'Dừng'; st.textContent = 'Đang nghe… nói theo câu mẫu';
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) { const sr = SH.sr = new SR(); sr.lang = 'en-US'; sr.interimResults = false; sr.continuous = true; sr.maxAlternatives = 1; sr.onresult = e => { SH.heard = Array.from(e.results).map(r => r[0].transcript).join(' ').trim(); }; sr.onend = () => { if (recording && SH.sr === sr) { try { sr.start(); } catch (er) {} } }; try { sr.start(); } catch (e) {} }
+    clearInterval(SH.tmr); SH.tmr = setTimeout(() => { if (recording) rb.click(); }, 25000);
+  };
+}
 function viewThink() {
   const tabs = [['vocab', 'Từ vựng 3 cấp'], ['gram', 'Viết câu đúng'], ['read', 'Đọc rút gọn'], ['write', 'Làm rõ đề & ý']];
   S.thTab = S.thTab || 'vocab';
@@ -9353,7 +9419,7 @@ function go(v) {
   renderTop(); renderFoot(); renderChat();
   try { document.body.classList.toggle('kids', (v === 'course' && S.course === 'kids') || (v === 'lesson' && !!S.lesson && (courseOf(S.lesson) || {}).id === 'kids')); } catch (e) {}
   if (S.site.maintenance && v !== 'loading') { main.innerHTML = `<section class="card mt"><h2>Website đang bảo trì</h2><p class="muted" style="margin:10px 0">Trung tâm đang cập nhật hệ thống. Em quay lại sau nhé! Hotline: ${esc(S.site.phone)}</p></section>`; return; }
-  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, think: viewThink, picall: viewPicAll, docs: viewDocLib, courses: viewCourses, cam: viewCam, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames, read: viewRead })[v]();
+  ({ loading: viewLoading, auth: viewAuth, home: viewHome, picex: viewPicEx, think: viewThink, shadow: viewShadow, picall: viewPicAll, docs: viewDocLib, courses: viewCourses, cam: viewCam, classes: viewClasses, class: viewClass, cbank: viewClassBank, ctest: viewClassTest, srsreview: viewSrs, rank: viewRank, course: viewCourse, bank: viewBank, lesson: viewLesson, review: viewReview, profile: viewProfile, exam: viewExam, room: viewRoom, cd: viewCD, mock: viewMock, daily: viewDaily, pron: viewPron, journey: viewJourney, plan: viewPlan, group: viewGroup, search: viewSearch, cards: viewCards, news: viewNews, games: viewGames, read: viewRead })[v]();
   scrollTo(0, 0);
 }
 /* ===== Phòng thi thử: đề trộn từ ngân hàng câu hỏi của lớp, mã đề, bấm giờ, bút highlight ===== */
@@ -10606,6 +10672,7 @@ function viewHome() {
   main.innerHTML = `<nav class="crumbs"><a href="#" data-go="home">Trang chủ</a><span>›</span><b>Danh mục khoá học</b></nav>
     <div class="hm${showDash('results') || showDash('reminders') ? '' : ' solo'}" id="hm"><div class="hm-l"><h1 class="hm-t">Khoá học của em</h1><p class="muted hm-s">Tất cả khoá học đã mở sẵn cho em, không cần mật khẩu. <a href="#" data-go="courses" style="color:#0B5CA8;font-weight:700">Xem tất cả khoá học</a></p><div id="cc"></div>
       <a href="#" class="th-pill" data-go="think">💡 Luyện tư duy: từ vựng · viết câu · đọc · ý tưởng ›</a>
+      <a href="#" class="th-pill" data-go="shadow">🎙 Shadowing Studio: nói theo, máy chấm từng từ ›</a>
       <h2 class="sec" id="lsec">Bài học của em</h2>
       <div class="flt"><input id="q" type="search" placeholder="Tìm bài học tại đây…" value="${esc(S.q)}" aria-label="Tìm bài học"><div class="chips">${[['all', 'Tất cả'], ['new', 'Chưa học'], ['doing', 'Đang học'], ['done', 'Hoàn thành']].map(([k, n]) => `<button class="fchip ${(S.flt || 'all') === k ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div></div>
       <div id="courses"></div></div><aside class="hm-r" id="dash" hidden></aside></div>`;

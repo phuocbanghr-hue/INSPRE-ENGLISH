@@ -8929,6 +8929,7 @@ function itemCard(c, it) {
   const u = safeUrl(it.url);
   const fr = (src, cls) => `<div class="vframe ${cls}"><iframe src="${esc(src)}" loading="lazy" allowfullscreen allow="fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" title="Nội dung lớp"></iframe></div>`;
   if (it.type === 'text') return `<div class="cxl-i cxl-text">${it.title ? `<b>${esc(it.title)}</b>` : ''}<div>${linkM(it.text)}</div></div>`;
+  if (it.type === 'link' && /^https:\/\/([\w-]+\.)*(flipbuilder\.com|fliphtml5\.com|anyflip\.com|heyzine\.com|issuu\.com)\//i.test(u)) return row('Sách online · đọc ngay tại đây', `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở toàn màn hình</a>`, `<details class="cxl-det" open><summary>Sách (bấm để thu gọn)</summary>${fr(u, 'tall cxl-doc')}</details>`);
   if (it.type === 'link') return row(esc(u.replace(/^https?:\/\//, '').slice(0, 60)), `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở liên kết</a>`);
   const open = `<a class="btn soft sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">`;
   if (it.type === 'drive') return isMob() ? row('Tài liệu Google Drive', `<a class="btn sm" href="${esc(u)}" target="_blank" rel="noopener noreferrer">Mở tài liệu</a>`, `<details class="cxl-det" open><summary>Tài liệu (bấm để thu gọn)</summary>${fr(embedUrl(u), 'tall cxl-doc')}</details>`) : row('Tài liệu Google Drive', `${open}Mở tab mới</a>`, fr(embedUrl(u), 'tall cxl-doc'));
